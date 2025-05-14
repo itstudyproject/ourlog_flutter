@@ -57,5 +57,4 @@ assets/react/HomePage.css
 assets/react/HomePage.tsx
 assets/react/MainBanner.css
 assets/react/MainLayout.tsx
-pubspec.yaml
-/assets/react
+pubspec.yaml/assets/react

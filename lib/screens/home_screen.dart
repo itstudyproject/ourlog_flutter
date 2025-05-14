@@ -293,14 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.white.withOpacity(0.6),
-              blurRadius: 20,
-              spreadRadius: 3,
-            ),
-          ],
+          border: Border.all(color: Colors.white, width: 5),
         ),
         child: Stack(
           fit: StackFit.expand,
@@ -400,7 +393,7 @@ class _HomeScreenState extends State<HomeScreen> {
           );
           return Container(
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 10),
+              border: Border.all(color: Colors.white, width: 5),
               boxShadow: [
                 BoxShadow(
                   color: Colors.white.withOpacity(0.4),

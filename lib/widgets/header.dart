@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../constants/theme.dart';
+import '../providers/auth_provider.dart';
 
 class Header extends StatefulWidget {
   const Header({Key? key}) : super(key: key);
@@ -10,7 +12,6 @@ class Header extends StatefulWidget {
 
 class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
   bool _isSidebarOpen = false;
-  bool _isLoggedIn = false;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   OverlayEntry? _overlayEntry;
@@ -52,6 +53,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
   }
 
   Widget _buildHeader() {
+    final authProvider = Provider.of<AuthProvider>(context);
+    
     return Container(
       height: 130,
       color: Colors.black.withOpacity(0.9),
@@ -141,42 +144,28 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                       const SizedBox(width: 24),
                     ],
                     
-                    // 사용자 메뉴
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // 마이페이지 아이콘
-                        if (_isLoggedIn)
-                          GestureDetector(
-                            onTap: () {
-                              // 마이페이지로 이동
-                            },
-                            child: const Icon(
-                              Icons.person,
-                              color: Colors.white,
-                              size: 24,
-                            ),
-                          ),
-                        const SizedBox(width: 16),
-                        
-                        // 로그인/로그아웃 버튼
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _isLoggedIn = !_isLoggedIn;
-                            });
-                          },
-                          child: Text(
-                            _isLoggedIn ? 'LOGOUT' : 'LOGIN',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                    // 로그인/로그아웃 버튼
+                    GestureDetector(
+                      onTap: () {
+                        if (authProvider.isLoggedIn) {
+                          authProvider.logout().then((_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('로그아웃 되었습니다')),
+                            );
+                          });
+                        } else {
+                          Navigator.pushNamed(context, '/login');
+                        }
+                      },
+                      child: Text(
+                        authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 );
@@ -194,6 +183,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     setState(() {
       _isSidebarOpen = true;
     });
+    
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -247,6 +238,51 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               ),
                               const SizedBox(height: 40),
                               
+                              // 로그인 상태에 따른 사용자 정보 표시
+                              if (authProvider.isLoggedIn) ...[
+                                Row(
+                                  children: [
+                                    const CircleAvatar(
+                                      backgroundColor: Colors.grey,
+                                      radius: 30,
+                                      child: Icon(Icons.person, size: 40, color: Colors.white),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          authProvider.userEmail ?? '사용자',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        GestureDetector(
+                                          onTap: () {
+                                            _closeSidebar();
+                                            Navigator.pushNamed(context, '/mypage');
+                                          },
+                                          child: const Text(
+                                            '마이페이지',
+                                            style: TextStyle(
+                                              color: Color(0xFF9BCABF),
+                                              fontSize: 14,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 32),
+                                const Divider(color: Colors.white24),
+                                const SizedBox(height: 16),
+                              ],
+                              
                               // 아트 섹션
                               _buildSidebarSection('아트', [
                                 '아트 등록',
@@ -264,8 +300,50 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
                               
-                              // 마이페이지 섹션
-                              _buildSidebarSection('마이페이지', []),
+                              // 마이페이지 섹션 (로그인 시에만 표시)
+                              if (authProvider.isLoggedIn)
+                                _buildSidebarSection('마이페이지', [
+                                  '프로필 관리',
+                                  '나의 작품',
+                                  '좋아요 목록',
+                                  '구매 내역',
+                                  '설정',
+                                ]),
+
+                              // 회원탈퇴 섹션 (로그인 시에만 표시)
+                              if (authProvider.isLoggedIn)
+                                GestureDetector(
+                                  onTap: () {
+                                    _closeSidebar();
+                                    Navigator.pushNamed(context, '/delete');
+                                  },
+                                  child: Container(
+                                    margin: const EdgeInsets.only(top: 20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.warning_amber_rounded,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '회원탈퇴',
+                                              style: TextStyle(
+                                                color: Colors.red[300],
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
                               
                               // 하단 로고
                               Padding(
@@ -343,6 +421,21 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       child: GestureDetector(
         onTap: () {
           // 해당 메뉴로 이동
+          _closeSidebar();
+          
+          // 메뉴 항목에 따른 라우팅 처리
+          switch (title) {
+            case '프로필 관리':
+              Navigator.pushNamed(context, '/mypage/profile');
+              break;
+            case '나의 작품':
+              Navigator.pushNamed(context, '/mypage/artworks');
+              break;
+            case '설정':
+              Navigator.pushNamed(context, '/mypage/settings');
+              break;
+            // 다른 메뉴 항목들에 대한 처리 추가
+          }
         },
         child: Text(
           title,

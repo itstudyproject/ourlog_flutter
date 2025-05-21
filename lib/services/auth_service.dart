@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
   
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
@@ -201,11 +201,11 @@ class AuthService {
   }
 
   // 특정 userId의 프로필 정보 가져오기
-  static Future<Map<String, dynamic>> fetchProfile(int userId) async {
-    final url = '$_baseUrl/profile/get/$userId';
+  static Future<Map<String, dynamic>> fetchProfile(int userId, String? token) async {
+    final path = '/profile/get/$userId';
     try {
-      print('프로필 조회 요청 시작: $url');
-      final response = await authenticatedGet(url, null); // 프로필 조회는 토큰 필요 (authenticatedGet 사용)
+      print('프로필 조회 요청 시작 (상대 경로): $path');
+      final response = await authenticatedGet(path, token);
 
       print('프로필 조회 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
 
@@ -227,7 +227,20 @@ class AuthService {
       }
 
       print('프로필 조회 실패: ${response.statusCode}');
-      return {'success': false, 'message': '프로필 조회에 실패했습니다. (상태 코드: ${response.statusCode})'};
+       String errorMessage = '프로필 조회에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+           final errorData = jsonDecode(response.body);
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else {
+              errorMessage = '프로필 조회 실패: ${response.body}';
+            }
+         } catch (e) {
+            // JSON 파싱 실패 시 원본 응답 본문 사용
+            errorMessage = '프로필 조회 실패: ${response.body}';
+         }
+
+      return {'success': false, 'message': errorMessage};
     } catch (e) {
       print('프로필 조회 요청 오류: $e');
       return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
@@ -235,55 +248,59 @@ class AuthService {
   }
 
   // 새로운 사용자 프로필 생성
-  static Future<Map<String, dynamic>> createProfile(int userId, String nickname) async {
-     final url = '$_baseUrl/profile/create';
-     try {
-       print('프로필 생성 요청 시작: $url, userId: $userId, nickname: $nickname');
-       final response = await authenticatedPost(
-         url,
-         null, // create 엔드포인트는 authenticatedPost를 사용하되, body에 userId와 nickname 전달
-         body: jsonEncode({
-           'userId': userId,
-           'nickname': nickname,
-           // 필요에 따라 기본 introduction 등 추가
-           'introduction': '', // 기본값 추가
-         }),
-       );
+  static Future<Map<String, dynamic>> createProfile(int userId, String nickname, String? token) async {
+    final path = '/profile/create';
+    try {
+      print('프로필 생성 요청 시작 (상대 경로): $path, userId: $userId, nickname: $nickname');
+      final response = await authenticatedPost(
+        path,
+        token,
+        body: {
+          'userId': userId,
+          'nickname': nickname,
+          'introduction': '', // 기본값 추가
+          'originImagePath': '/images/mypage.png',
+          'thumbnailImagePath': '/images/mypage.png',
+          'followCnt': 0,
+          'followingCnt': 0,
+        }, // ❌ jsonEncode 제거
+      );
 
-       print('프로필 생성 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
 
-       if (response.statusCode == 200) {
-         if (response.body.isEmpty) {
-           return {'success': false, 'message': '프로필 생성 응답이 비어있습니다.'};
-         }
-         try {
-           final data = jsonDecode(response.body);
-           print('프로필 생성 응답 파싱 성공: $data');
-           return {'success': true, 'profile': data};
-         } catch (parseError) {
-           print('프로필 생성 응답 JSON 파싱 오류: $parseError');
-           return {'success': false, 'message': '프로필 생성 응답 데이터 파싱에 실패했습니다: $parseError'};
-         }
-       } else {
-         // 오류 응답 본문 디버깅
-         String errorMessage = '프로필 생성에 실패했습니다. (상태 코드: ${response.statusCode})';
-         try {
-           final errorData = jsonDecode(response.body);
-            if (errorData is Map && errorData.containsKey('message')) {
-              errorMessage = errorData['message'];
-            } else {
-              errorMessage = '프로필 생성 실패: ${response.body}';
-            }
-         } catch (e) {
-            // JSON 파싱 실패 시 원본 응답 본문 사용
-            errorMessage = '프로필 생성 실패: ${response.body}';
-         }
-         return {'success': false, 'message': errorMessage};
-       }
-     } catch (e) {
-       print('프로필 생성 요청 오류: $e');
-       return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
-     }
+      print('프로필 생성 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return {'success': false, 'message': '프로필 생성 응답이 비어있습니다.'};
+        }
+        try {
+          final data = jsonDecode(response.body);
+          print('프로필 생성 응답 파싱 성공: $data');
+          return {'success': true, 'profile': data};
+        } catch (parseError) {
+          print('프로필 생성 응답 JSON 파싱 오류: $parseError');
+          return {'success': false, 'message': '프로필 생성 응답 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      } else {
+        // 오류 응답 본문 디버깅
+        String errorMessage = '프로필 생성에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+          final errorData = jsonDecode(response.body);
+           if (errorData is Map && errorData.containsKey('message')) {
+             errorMessage = errorData['message'];
+           } else {
+             errorMessage = '프로필 생성 실패: ${response.body}';
+           }
+        } catch (e) {
+           // JSON 파싱 실패 시 원본 응답 본문 사용
+           errorMessage = '프로필 생성 실패: ${response.body}';
+        }
+        return {'success': false, 'message': errorMessage};
+      }
+    } catch (e) {
+      print('프로필 생성 요청 오류: $e');
+      return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
+    }
   }
 
   // 회원가입
@@ -431,7 +448,10 @@ class AuthService {
       authToken = 'Bearer $token';
     }
 
-    print('API 요청: GET $_baseUrl$path');
+    // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+    final url = Uri.parse('$_baseUrl$path');
+
+    print('API 요청: GET $url');
     print('인증 헤더: ${authToken.substring(0, authToken.length > 30 ? 30 : authToken.length)}...');
 
     final headers = <String, String>{'Content-Type': 'application/json'};
@@ -440,7 +460,7 @@ class AuthService {
     }
 
     return http.get(
-      Uri.parse('$_baseUrl$path'),
+      url,
       headers: headers,
     );
   }
@@ -451,13 +471,17 @@ class AuthService {
       authToken = 'Bearer $token';
     }
 
-     final headers = <String, String>{'Content-Type': 'application/json'};
-     if (token != null) {
+    // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+    final url = Uri.parse('$_baseUrl$path');
+
+    print('API 요청: POST $url'); // POST 요청임을 명확히 표시
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
        headers['Authorization'] = authToken;
-     }
+    }
 
     return http.post(
-      Uri.parse('$_baseUrl$path'),
+      url,
       headers: headers,
       body: body != null ? jsonEncode(body) : null,
     );
@@ -469,13 +493,17 @@ class AuthService {
        authToken = 'Bearer $token';
      }
 
+     // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+     final url = Uri.parse('$_baseUrl$path');
+
+     print('API 요청: DELETE $url'); // DELETE 요청임을 명확히 표시
      final headers = <String, String>{'Content-Type': 'application/json'};
      if (token != null) {
        headers['Authorization'] = authToken;
      }
 
     return http.delete(
-      Uri.parse('$_baseUrl$path'),
+      url,
       headers: headers,
     );
   }

@@ -155,7 +155,8 @@ class AuthProvider extends ChangeNotifier {
         print('회원가입 성공, userId: $userId');
 
         // 회원가입 성공 후 프로필 자동 생성 시도
-        final profileResponse = await AuthService.createProfile(userId, nickname);
+        // createProfile 호출 시 토큰 전달 (회원가입 직후에는 _token이 null일 수 있음)
+        final profileResponse = await AuthService.createProfile(userId, nickname, _token); 
 
         if (profileResponse['success']) {
            print('프로필 자동 생성 성공');
@@ -312,6 +313,7 @@ class AuthProvider extends ChangeNotifier {
 
        if (_userId == null) {
           print('loadUserInfoAndProfile: userId가 null입니다. getUserInfo 시도.');
+          // getUserInfo 호출 시 토큰 전달
           final userInfoResponse = await AuthService.getUserInfo(token, email);
            if (userInfoResponse['success'] && userInfoResponse['userId'] != null) {
              _userId = userInfoResponse['userId'];
@@ -338,7 +340,8 @@ class AuthProvider extends ChangeNotifier {
 
        // userId가 확보되었으므로 프로필 로드 시도
        print('loadUserInfoAndProfile: userId 확보 ($_userId), 프로필 로드 시도');
-       final profileResponse = await AuthService.fetchProfile(_userId!); // userId는 null이 아님
+       // fetchProfile 호출 시 토큰 전달
+       final profileResponse = await AuthService.fetchProfile(_userId!, token); // userId와 토큰 전달
 
        if (profileResponse['success']) {
          print('프로필 로드 성공');
@@ -363,7 +366,8 @@ class AuthProvider extends ChangeNotifier {
              // 닉네임이 없는 경우 기본값 사용 또는 에러 처리
              _userNickname = '사용자'; // 임시 기본 닉네임
          }
-         final createProfileResponse = await AuthService.createProfile(_userId!, _userNickname!); // userId와 nickname 사용
+         // createProfile 호출 시 토큰 전달
+         final createProfileResponse = await AuthService.createProfile(_userId!, _userNickname!, token); // userId, nickname, 토큰 사용
 
          if (createProfileResponse['success']) {
             print('프로필 생성 성공 후 정보 로드');

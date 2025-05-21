@@ -193,13 +193,13 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // 회원가입
-  Future<bool> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
+  Future<bool> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await AuthService.register(email, password, name, nickname, mobile, fromSocial);
+      final response = await AuthService.register(email, password, passwordConfirm, name, nickname, mobile, fromSocial);
       
       if (response['success']) {
         _isLoading = false;

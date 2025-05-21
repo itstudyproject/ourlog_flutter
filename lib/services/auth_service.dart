@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
   
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
@@ -153,10 +153,10 @@ class AuthService {
   }
 
   // 사용자 정보 가져오기 (토큰에서 userId를 추출할 수 없는 경우 사용)
-  static Future<Map<String, dynamic>> getUserInfo(String token, [String? email]) async {
+  static Future<Map<String, dynamic>> getUserInfo(String token, [String? email, int? userId]) async {
     try {
       // 이메일 정보가 있으면 쿼리 파라미터로 추가
-      final endpoint = email != null ? '/user/get?email=$email' : '/user/get';
+      final endpoint = email != null ? '/user/get?email=$email' : '/user/getUser/${userId}';
       print('사용자 정보 요청 시작: $_baseUrl$endpoint, 토큰: ${token.substring(0, 20)}..., 이메일: $email');
       
       final response = await authenticatedGet(endpoint, token);
@@ -201,7 +201,7 @@ class AuthService {
   }
 
   // 회원가입
-  static Future<Map<String, dynamic>> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
+  static Future<Map<String, dynamic>> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
     
     try {
@@ -212,6 +212,7 @@ class AuthService {
         body: jsonEncode({
           'email': email, 
           'password': password,
+          'passwordConfirm': passwordConfirm,
           'name': name,
           'nickname': nickname,
           'mobile': mobile,

@@ -13,7 +13,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController passwordConfirmController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController nicknameController = TextEditingController();
   final TextEditingController mobileController = TextEditingController();
@@ -24,7 +24,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() async {
     // 비밀번호 확인
-    if (passwordController.text != confirmPasswordController.text) {
+    if (passwordController.text != passwordConfirmController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('비밀번호가 일치하지 않습니다.')),
       );
@@ -42,6 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     // 빈 필드 확인
     if (emailController.text.isEmpty || 
         passwordController.text.isEmpty || 
+        passwordConfirmController.text.isEmpty || 
         nameController.text.isEmpty || 
         nicknameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -55,6 +56,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final success = await authProvider.register(
       emailController.text,
       passwordController.text,
+      passwordConfirmController.text,
       nameController.text,
       nicknameController.text,
       mobileController.text,
@@ -192,7 +194,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 _buildInputField(
                   label: '비밀번호 확인',
                   hintText: '비밀번호 확인',
-                  controller: confirmPasswordController,
+                  controller: passwordConfirmController
+                  ,
                   isPassword: true,
                 ),
               if (!isSocialRegister)

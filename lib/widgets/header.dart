@@ -143,7 +143,21 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                       ),
                       const SizedBox(width: 24),
                     ],
-                    
+
+                    // MyPage 아이콘: 로그인 시에만 표시
+                    if (authProvider.isLoggedIn) ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png'),
+                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                      ),
+                    ] else ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
+                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                      ),
+                    ],
+
+
                     // 로그인/로그아웃 버튼
                     GestureDetector(
                       onTap: () {

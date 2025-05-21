@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/screens/appinfo_screen.dart';
+import 'package:ourlog/screens/customer/customercenter_screen.dart';
+import 'package:ourlog/screens/customer/inquiry_screen.dart';
+import 'package:ourlog/screens/customer/terms_condition_screen.dart';
+
 import 'package:provider/provider.dart';
 import 'constants/theme.dart';
 import 'screens/home_screen.dart';
@@ -35,6 +40,11 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
+        '/appinfo': (context) => const AppinfoScreen(),
+        '/customer/termscondition': (context) => const TermsConditionScreen(),
+        '/customer/privacypolicy': (context) => const InquiryScreen(),
+        '/customer/center': (context) => const CustomerCenterScreen(),
+
       },
     );
   }

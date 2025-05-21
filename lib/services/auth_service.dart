@@ -156,7 +156,7 @@ class AuthService {
   static Future<Map<String, dynamic>> getUserInfo(String token, [String? email]) async {
     try {
       // 이메일 정보가 있으면 쿼리 파라미터로 추가
-      final endpoint = email != null ? '/user/get?email=$email' : '/user/getUser/$userId';
+      final endpoint = email != null ? '/user/get?email=$email' : '/user/get';
       print('사용자 정보 요청 시작: $_baseUrl$endpoint, 토큰: ${token.substring(0, 20)}..., 이메일: $email');
       
       final response = await authenticatedGet(endpoint, token);
@@ -287,7 +287,7 @@ class AuthService {
   }
 
   // 회원가입
-  static Future<Map<String, dynamic>> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
+  static Future<Map<String, dynamic>> register(String email, String password, String confirmPassword, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
 
     try {

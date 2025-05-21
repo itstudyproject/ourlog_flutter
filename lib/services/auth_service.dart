@@ -153,7 +153,7 @@ class AuthService {
   }
 
   // 사용자 정보 가져오기 (토큰에서 userId를 추출할 수 없는 경우 사용)
-  static Future<Map<String, dynamic>> getUserInfo(String token, [String? email, int? userId]) async {
+  static Future<Map<String, dynamic>> getUserInfo(String token, [String? email]) async {
     try {
       // 이메일 정보가 있으면 쿼리 파라미터로 추가
       final endpoint = email != null ? '/user/get?email=$email' : '/user/getUser/${userId}';
@@ -200,8 +200,94 @@ class AuthService {
     }
   }
 
+  // 특정 userId의 프로필 정보 가져오기
+  static Future<Map<String, dynamic>> fetchProfile(int userId) async {
+    final url = '$_baseUrl/profile/get/$userId';
+    try {
+      print('프로필 조회 요청 시작: $url');
+      final response = await authenticatedGet(url, null); // 프로필 조회는 토큰 필요 (authenticatedGet 사용)
+
+      print('프로필 조회 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return {'success': false, 'message': '프로필 조회 응답이 비어있습니다.'};
+        }
+        try {
+          final data = jsonDecode(response.body);
+          print('프로필 정보 파싱 성공: $data');
+          return {'success': true, 'profile': data};
+        } catch (parseError) {
+          print('프로필 응답 JSON 파싱 오류: $parseError');
+          return {'success': false, 'message': '프로필 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      } else if (response.statusCode == 404) {
+         print('프로필을 찾을 수 없습니다 (404)');
+         return {'success': false, 'message': '프로필을 찾을 수 없습니다.', 'statusCode': 404};
+      }
+
+      print('프로필 조회 실패: ${response.statusCode}');
+      return {'success': false, 'message': '프로필 조회에 실패했습니다. (상태 코드: ${response.statusCode})'};
+    } catch (e) {
+      print('프로필 조회 요청 오류: $e');
+      return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
+    }
+  }
+
+  // 새로운 사용자 프로필 생성
+  static Future<Map<String, dynamic>> createProfile(int userId, String nickname) async {
+     final url = '$_baseUrl/profile/create';
+     try {
+       print('프로필 생성 요청 시작: $url, userId: $userId, nickname: $nickname');
+       final response = await authenticatedPost(
+         url,
+         null, // create 엔드포인트는 authenticatedPost를 사용하되, body에 userId와 nickname 전달
+         body: jsonEncode({
+           'userId': userId,
+           'nickname': nickname,
+           // 필요에 따라 기본 introduction 등 추가
+           'introduction': '', // 기본값 추가
+         }),
+       );
+
+       print('프로필 생성 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+       if (response.statusCode == 200) {
+         if (response.body.isEmpty) {
+           return {'success': false, 'message': '프로필 생성 응답이 비어있습니다.'};
+         }
+         try {
+           final data = jsonDecode(response.body);
+           print('프로필 생성 응답 파싱 성공: $data');
+           return {'success': true, 'profile': data};
+         } catch (parseError) {
+           print('프로필 생성 응답 JSON 파싱 오류: $parseError');
+           return {'success': false, 'message': '프로필 생성 응답 데이터 파싱에 실패했습니다: $parseError'};
+         }
+       } else {
+         // 오류 응답 본문 디버깅
+         String errorMessage = '프로필 생성에 실패했습니다. (상태 코드: ${response.statusCode})';
+         try {
+           final errorData = jsonDecode(response.body);
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else {
+              errorMessage = '프로필 생성 실패: ${response.body}';
+            }
+         } catch (e) {
+            // JSON 파싱 실패 시 원본 응답 본문 사용
+            errorMessage = '프로필 생성 실패: ${response.body}';
+         }
+         return {'success': false, 'message': errorMessage};
+       }
+     } catch (e) {
+       print('프로필 생성 요청 오류: $e');
+       return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
+     }
+  }
+
   // 회원가입
-  static Future<Map<String, dynamic>> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
+  static Future<Map<String, dynamic>> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
     
     try {
@@ -212,7 +298,6 @@ class AuthService {
         body: jsonEncode({
           'email': email, 
           'password': password,
-          'passwordConfirm': passwordConfirm,
           'name': name,
           'nickname': nickname,
           'mobile': mobile,

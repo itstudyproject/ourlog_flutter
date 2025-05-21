@@ -156,7 +156,7 @@ class AuthService {
   static Future<Map<String, dynamic>> getUserInfo(String token, [String? email]) async {
     try {
       // 이메일 정보가 있으면 쿼리 파라미터로 추가
-      final endpoint = email != null ? '/user/get?email=$email' : '/user/getUser/${userId}';
+      final endpoint = email != null ? '/user/get?email=$email' : '/user/getUser/$userId';
       print('사용자 정보 요청 시작: $_baseUrl$endpoint, 토큰: ${token.substring(0, 20)}..., 이메일: $email');
       
       final response = await authenticatedGet(endpoint, token);
@@ -289,14 +289,14 @@ class AuthService {
   // 회원가입
   static Future<Map<String, dynamic>> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
-    
+
     try {
       print('회원가입 요청 시작: $url');
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email, 
+          'email': email,
           'password': password,
           'name': name,
           'nickname': nickname,
@@ -311,29 +311,41 @@ class AuthService {
           return http.Response('{"message": "서버 응답 시간이 초과되었습니다."}', 408);
         },
       );
-      
+
       print('회원가입 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         // 성공 시 서버에서 반환된 userId 반환
         if (response.body.isEmpty) {
           print('회원가입 응답이 비어있습니다');
           return {'success': false, 'message': '서버 응답이 비어있습니다. 관리자에게 문의하세요.'};
         }
-        
-        final userId = int.tryParse(response.body);
+
+        // userId를 응답 본문에서 직접 파싱
+        final parsedBody = jsonDecode(response.body);
+        final userId = parsedBody['userId']; // 또는 서버에서 반환하는 userId 키
+
         if (userId != null) {
-          return {'success': true, 'userId': userId};
+           // userId가 String으로 올 경우 int로 변환
+           int? intUserId = userId is int ? userId : int.tryParse(userId.toString());
+
+          if (intUserId != null) {
+             print('회원가입 성공, userId: $intUserId');
+             return {'success': true, 'userId': intUserId};
+          } else {
+             print('회원가입 성공 응답에서 userId를 int로 파싱하는데 실패했습니다: $userId');
+             return {'success': false, 'message': '회원가입은 성공했지만 사용자 ID 파싱 오류가 발생했습니다.'};
+          }
         }
       }
-      
+
       // 응답 내용을 디버깅하여 오류 메시지 설정
       try {
         if (response.body.isEmpty) {
           print('회원가입 실패 응답이 비어있습니다');
           return {'success': false, 'message': '서버 응답이 비어있습니다. 서버 관리자에게 문의하세요.'};
         }
-        
+
         final errorData = jsonDecode(response.body);
         return {'success': false, 'message': errorData['message'] ?? '회원가입에 실패했습니다.'};
       } catch (decodeError) {
@@ -413,52 +425,58 @@ class AuthService {
   }
 
   // JWT 토큰을 사용한 API 요청 헬퍼 메서드
-  static Future<http.Response> authenticatedGet(String path, String token) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
+  static Future<http.Response> authenticatedGet(String path, String? token) async {
+    String authToken = '';
+    if (token != null) {
       authToken = 'Bearer $token';
     }
-    
+
     print('API 요청: GET $_baseUrl$path');
     print('인증 헤더: ${authToken.substring(0, authToken.length > 30 ? 30 : authToken.length)}...');
-    
+
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
+       headers['Authorization'] = authToken;
+    }
+
     return http.get(
       Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authToken,
-      },
+      headers: headers,
     );
   }
 
-  static Future<http.Response> authenticatedPost(String path, String token, dynamic body) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
+  static Future<http.Response> authenticatedPost(String path, String? token, {dynamic body}) async {
+    String authToken = '';
+    if (token != null) {
       authToken = 'Bearer $token';
     }
-    
+
+     final headers = <String, String>{'Content-Type': 'application/json'};
+     if (token != null) {
+       headers['Authorization'] = authToken;
+     }
+
     return http.post(
       Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authToken,
-      },
-      body: jsonEncode(body),
+      headers: headers,
+      body: body != null ? jsonEncode(body) : null,
     );
   }
 
-  static Future<http.Response> authenticatedDelete(String path, String token) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
-      authToken = 'Bearer $token';
-    }
-    
+  static Future<http.Response> authenticatedDelete(String path, String? token) async {
+     String authToken = '';
+     if (token != null) {
+       authToken = 'Bearer $token';
+     }
+
+     final headers = <String, String>{'Content-Type': 'application/json'};
+     if (token != null) {
+       headers['Authorization'] = authToken;
+     }
+
     return http.delete(
       Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authToken,
-      },
+      headers: headers,
     );
   }
 }

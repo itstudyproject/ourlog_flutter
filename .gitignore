@@ -45,16 +45,4 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-assets/react/artworkSlider.css
-assets/react/ArtworkSlider.tsx
-assets/react/BulletinBoard.css
-assets/react/BulletinBoard.tsx
-assets/react/Footer.css
-assets/react/Footer.tsx
-assets/react/Header.css
-assets/react/Header.tsx
-assets/react/HomePage.css
-assets/react/HomePage.tsx
-assets/react/MainBanner.css
-assets/react/MainLayout.tsx
-pubspec.yaml/assets/react
+assets/react/

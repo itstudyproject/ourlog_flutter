@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/screens/worker_screen.dart';
 import 'package:provider/provider.dart';
 import 'constants/theme.dart';
 import 'screens/home_screen.dart';
@@ -28,7 +29,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system, // 시스템 테마 설정 따르기
-      home: const HomeScreen(),
+      // home: const HomeScreen(),
+      home: WorkerScreen(userId: 1),
       debugShowCheckedModeBanner: false, // 디버그 배너 제거
       routes: {
         '/login': (context) => const LoginScreen(),

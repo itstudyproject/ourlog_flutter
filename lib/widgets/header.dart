@@ -313,7 +313,17 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
-                              
+
+                              // 고객지원
+                              _buildSidebarSection('고객지원', [
+                                '이용약관',
+                                  '개인정보처리방침',
+                                  '고객센터']),
+
+                              // 앱정보
+                              _buildSidebarSection('앱정보', ['앱정보']),
+
+
                               // 마이페이지 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
                                 _buildSidebarSection('마이페이지', [
@@ -448,7 +458,22 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
             case '설정':
               Navigator.pushNamed(context, '/mypage/settings');
               break;
-            // 다른 메뉴 항목들에 대한 처리 추가
+
+          // 앱정보
+            case '앱정보':
+              Navigator.pushNamed(context, '/appinfo');
+
+          // 고객지원
+            case '이용약관':
+              Navigator.pushNamed(context, '/customer/termscondition');
+            case '개인정보처리방침':
+              Navigator.pushNamed(context, '/customer/privacypolicy');
+            case '고객센터':
+              Navigator.pushNamed(context, '/customer/center');
+
+              break;
+
+          // 다른 메뉴 항목들에 대한 처리 추가
           }
         },
         child: Text(

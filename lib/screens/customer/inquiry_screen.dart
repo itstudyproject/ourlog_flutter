@@ -1,43 +1,154 @@
 import 'package:flutter/material.dart';
 
-class InquiryScreen extends StatelessWidget {
+class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
 
   @override
+  State<InquiryScreen> createState() => _InquiryScreenState();
+}
+
+class _InquiryScreenState extends State<InquiryScreen> {
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+
+  final _titleFocusNode = FocusNode();
+  final _contentFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleFocusNode.addListener(() => setState(() {}));
+    _contentFocusNode.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    _titleFocusNode.dispose();
+    _contentFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final inputStyle = InputDecoration(
-      labelStyle: const TextStyle(color: Colors.white70),
-      enabledBorder: const UnderlineInputBorder(
-        borderSide: BorderSide(color: Colors.white30),
-      ),
-    );
+    Color getBorderColor(FocusNode focusNode) {
+      return focusNode.hasFocus ? const Color(0xFFF8C147) : Colors.white30;
+    }
 
     return Scaffold(
-      backgroundColor: Colors.black, // 배경 색상 지정 (필요시)
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('문의 제목', style: TextStyle(color: Colors.white)),
-            TextField(decoration: inputStyle),
+      backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('1:1 문의하기', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 12),
+              const Text('서비스 이용 중 불편하신 점이나 문의사항을 남겨주시면 신속하게 답변 드리도록 하겠습니다.', style: TextStyle(color: Colors.white70)),
+              const Text('영업일 기준(주말·공휴일 제외) 3일 이내에 답변드리겠습니다. 단, 문의가 집중되는 경우 답변이 지연될 수 있습니다.', style: TextStyle(color: Colors.white70)),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  '산업안전보건법에 따라 폭언, 욕설, 성희롱, 반말, 비하, 반복적인 요구 등에는 회신 없이 상담을 즉시 종료하며 이후 문의에도 회신하지 않습니다. 고객응대 근로자를 보호하기 위해 이같은 이용자의 서비스 이용을 제한하고, 업무방해, 모욕죄 등으로 민형사상 조치를 취할 수 있음을 알려드립니다.',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              const SizedBox(height: 24),
 
-            const SizedBox(height: 24),
-            const Text('문의 내용', style: TextStyle(color: Colors.white)),
-            TextField(decoration: inputStyle, maxLines: 5),
+              // 제목
+              const Text('제목', style: TextStyle(color: Colors.white)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: getBorderColor(_titleFocusNode)),
+                ),
+                child: TextField(
+                  controller: _titleController,
+                  focusNode: _titleFocusNode,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '제목을 입력하세요',
+                    hintStyle: TextStyle(color: Colors.white54),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
 
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // 문의 전송 처리
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('문의가 접수되었습니다.')),
-                );
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-              child: const Text('문의하기'),
-            ),
-          ],
+              const SizedBox(height: 24),
+
+              // 내용
+              const Text('내용', style: TextStyle(color: Colors.white)),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: getBorderColor(_contentFocusNode)),
+                ),
+                child: TextField(
+                  controller: _contentController,
+                  focusNode: _contentFocusNode,
+                  maxLines: null,
+                  keyboardType: TextInputType.multiline,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '내용을 입력하세요',
+                    hintStyle: TextStyle(color: Colors.white54),
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    final title = _titleController.text;
+                    final content = _contentController.text;
+
+                    if (title.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('제목을 입력해주세요.')),
+                      );
+                      return;
+                    }
+
+                    if (content.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('내용을 입력해주세요.')),
+                      );
+                      return;
+                    }
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('문의가 접수되었습니다.')),
+                    );
+
+                    _titleController.clear();
+                    _contentController.clear();
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                  child: const Text('문의하기'),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

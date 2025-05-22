@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/appinfo_screen.dart';
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
-import 'package:ourlog/screens/customer/inquiry_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
 

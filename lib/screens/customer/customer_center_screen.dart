@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'faq_screen.dart';
 import 'inquiry_screen.dart';
-import 'questionlist_screen.dart';
+import 'question_list_screen.dart';
 
 class CustomerCenterScreen extends StatefulWidget {
   const CustomerCenterScreen({super.key});
@@ -29,28 +29,57 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('고객센터', style: TextStyle(color: Colors.white)),
-        iconTheme: const IconThemeData(color: Colors.white),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.white,
-          labelPadding: EdgeInsets.symmetric(horizontal: 12), // 탭 간 좌우 여백 줄이기
-          tabs: const [
-            Tab(text: '자주 묻는 질문'),
-            Tab(text: '1:1 문의 하기'),
-            Tab(text: '1:1 문의 내역'),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ✅ 앱바 대체: 상단 고정 헤더
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.black,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('고객센터', style: TextStyle(color: Colors.white, fontSize: 20)),
+                ],
+              ),
+            ),
+
+            // ✅ 항상 보이는 탭바
+            Container(
+              color: Colors.black,
+              child: TabBar(
+                controller: _tabController,
+                indicatorColor: Colors.deepOrangeAccent[100],
+                labelColor: Colors.deepOrangeAccent[100],
+                unselectedLabelColor: Colors.grey,
+                labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),       // 선택된 탭 글자 스타일
+                unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal), // 선택 안된 탭 글자 스타일
+                isScrollable: false,
+                tabs: const [
+                  Tab(text: '자주 묻는 질문'),
+                  Tab(text: '1:1 문의 하기'),
+                  Tab(text: '1:1 문의 내역'),
+                ],
+              ),
+            ),
+
+            // ✅ 탭 컨텐츠는 스크롤 가능
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [
+                  FaqScreen(),
+                  InquiryScreen(),
+                  QuestionListScreen(),
+                ],
+              ),
+            ),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          FaqScreen(),
-          InquiryScreen(),
-          QuestionlistScreen(),
-        ],
       ),
     );
   }

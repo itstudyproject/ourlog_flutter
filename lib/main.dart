@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/appinfo_screen.dart';
-import 'package:ourlog/screens/customer/customercenter_screen.dart';
+import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/inquiry_screen.dart';
+import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
 
 import 'package:provider/provider.dart';
@@ -42,8 +43,8 @@ class MyApp extends StatelessWidget {
         '/delete': (context) => const DeleteUserScreen(),
         '/appinfo': (context) => const AppinfoScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
-        '/customer/privacypolicy': (context) => const InquiryScreen(),
-        '/customer/center': (context) => const CustomerCenterScreen(),
+        '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
+        '/customer/customercenter': (context) => const CustomerCenterScreen(),
 
       },
     );

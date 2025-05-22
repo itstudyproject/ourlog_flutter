@@ -8,7 +8,7 @@ class UserProfile {
   final String nickname;
 
   /// 팔로워 수
-  final int followCnt;
+  int followCnt;
 
   /// 팔로잉 수
   int followingCnt;

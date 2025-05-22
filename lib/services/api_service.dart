@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile.dart';
 import '../models/post.dart';
 
-const baseUrl = 'http://10.0.2.2:8080/ourlog';
+const baseUrl = 'http://10.100.204.47:8080/ourlog';
 
 // 유저 프로필 불러오기
 Future<UserProfile> fetchUserProfile(int userId) async {
@@ -40,21 +40,6 @@ Future<LikeStatus> fetchLikeStatus(int userId, int postId) async {
     );
   } else {
     throw Exception('좋아요 상태 조회 실패');
-  }
-}
-
-// 좋아요 토글
-Future<bool> toggleLike(int userId, int postId) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/favorites/toggle'),
-    headers: {'Content-Type': 'application/json'},
-    body: json.encode({'userId': userId, 'postId': postId}),
-  );
-
-  if (response.statusCode == 200) {
-    return json.decode(response.body)['liked'];
-  } else {
-    throw Exception('좋아요 실패');
   }
 }
 

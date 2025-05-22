@@ -57,21 +57,6 @@ class _WorkerScreenState extends State<WorkerScreen> {
     }
   }
 
-  void _handleLikeToggle(int index) async {
-    try {
-      final toggledLike = await toggleLike(loggedInUserId, posts[index].id);
-
-      setState(() {
-        likes[index] = LikeStatus(
-          liked: toggledLike,
-          count: toggledLike ? likes[index].count + 1 : likes[index].count - 1,
-        );
-      });
-    } catch (e) {
-      print("❌ 좋아요 토글 실패: $e");
-    }
-  }
-
   void _handleFollowToggle(UserProfile profile) async {
     try {
       final newStatus = await toggleFollow(loggedInUserId, widget.userId);
@@ -218,7 +203,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
                       top: 8,
                       right: 8,
                       child: GestureDetector(
-                        onTap: () => _handleLikeToggle(index + (currentPage - 1) * itemsPerPage),
+                        // onTap: () => _handleLikeToggle(index + (currentPage - 1) * itemsPerPage),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(

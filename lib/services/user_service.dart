@@ -1,3 +1,5 @@
+// lib/services/user_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,7 @@ class UserService {
   static Future<User> fetchUser(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
+
     final resp = await http.get(
       Uri.parse('http://localhost:8080/ourlog/profile/get/$userId'),
       headers: {
@@ -15,10 +18,12 @@ class UserService {
         'Authorization': 'Bearer $token',
       },
     );
+
     if (resp.statusCode != 200) {
       throw Exception('사용자 정보 조회 실패: ${resp.statusCode}');
     }
-    final data = json.decode(resp.body);
+
+    final data = json.decode(resp.body) as Map<String, dynamic>;
     return User.fromJson(data);
   }
 
@@ -30,9 +35,10 @@ class UserService {
       }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
+
     final body = <String, dynamic>{};
     if (password != null) body['password'] = password;
-    if (mobile != null)   body['mobile'] = mobile;
+    if (mobile   != null) body['mobile']   = mobile;
 
     final resp = await http.patch(
       Uri.parse('http://localhost:8080/ourlog/profile/accountEdit/$userId'),
@@ -42,6 +48,7 @@ class UserService {
       },
       body: json.encode(body),
     );
+
     if (resp.statusCode != 200) {
       throw Exception('회원정보 수정 실패: ${resp.statusCode}');
     }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -371,9 +370,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Checkbox(
             value: value,
             onChanged: onChanged,
-            fillColor: MaterialStateProperty.resolveWith<Color>(
-              (Set<MaterialState> states) {
-                if (states.contains(MaterialState.selected)) {
+            fillColor: WidgetStateProperty.resolveWith<Color>(
+              (Set<WidgetState> states) {
+                if (states.contains(WidgetState.selected)) {
                   return const Color(0xFF9BCABF);
                 }
                 return Colors.transparent;

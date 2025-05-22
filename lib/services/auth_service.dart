@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.54:8080/ourlog';
   
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
@@ -304,7 +304,7 @@ class AuthService {
   }
 
   // 회원가입
-  static Future<Map<String, dynamic>> register(String email, String password, String confirmPassword, String name, String nickname, String mobile, bool fromSocial) async {
+  static Future<Map<String, dynamic>> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
 
     try {
@@ -315,6 +315,7 @@ class AuthService {
         body: jsonEncode({
           'email': email,
           'password': password,
+          'passwordConfirm': passwordConfirm,
           'name': name,
           'nickname': nickname,
           'mobile': mobile,
@@ -397,7 +398,7 @@ class AuthService {
       // 전체 헤더 정보 디버깅 출력
       print('요청 헤더:');
       headers.forEach((key, value) {
-        print('  $key: ${value.length > 30 ? value.substring(0, 30) + "..." : value}');
+        print('  $key: ${value.length > 30 ? "${value.substring(0, 30)}..." : value}');
       });
       
       // 모든 응답 내용 로깅하기 위한 세부 요청 과정

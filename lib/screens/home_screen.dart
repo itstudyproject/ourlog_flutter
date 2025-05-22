@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../models/artwork.dart';
 import '../services/artwork_service.dart';
 import '../constants/theme.dart';
@@ -8,7 +7,7 @@ import '../widgets/header.dart';
 import '../widgets/footer.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();

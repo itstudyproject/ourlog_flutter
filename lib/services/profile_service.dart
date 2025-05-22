@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/user_profile.dart';
 
 class ProfileService {
-  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.54:8080/ourlog';
 
   /// 프로필 조회
   Future<UserProfile> fetchProfile(int userId) async {

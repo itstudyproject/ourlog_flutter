@@ -5,6 +5,12 @@ import 'package:ourlog/screens/sale_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/profile_edit_screen.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
+import 'package:ourlog/screens/appinfo_screen.dart';
+import 'package:ourlog/screens/customer/customer_center_screen.dart';
+import 'package:ourlog/screens/customer/inquiry_screen.dart';
+import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
+import 'package:ourlog/screens/customer/terms_condition_screen.dart';
+
 import 'package:provider/provider.dart';
 import 'constants/theme.dart';
 import 'screens/home_screen.dart';
@@ -13,7 +19,6 @@ import 'screens/sale_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/delete_user_screen.dart';
 import 'providers/auth_provider.dart';
-
 
 void main() {
   runApp(
@@ -44,6 +49,10 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
+        '/appinfo': (context) => const AppinfoScreen(),
+        '/customer/termscondition': (context) => const TermsConditionScreen(),
+        '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
+        '/customer/customercenter': (context) => const CustomerCenterScreen(),
 
         // 프로필수정 화면으로 라우팅
         '/mypage/edit': (c) {

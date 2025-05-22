@@ -42,9 +42,7 @@ class AppTheme {
     colorScheme: ColorScheme.fromSwatch().copyWith(
       primary: primaryColor,
       secondary: secondaryColor,
-      background: backgroundColor,
       surface: backgroundColor,
-      onBackground: textColor,
       onSurface: textColor,
     ),
     cardTheme: CardTheme(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 // screens 폴더에 있는 각 스크린을 import
-import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/my_page_screen.dart';

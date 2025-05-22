@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:ourlog/screens/my_page_screen.dart';
-import 'package:ourlog/screens/purchase_bid_screen.dart';
-import 'package:ourlog/screens/sale_screen.dart';
-import 'package:ourlog/screens/bookmark_screen.dart';
-import 'package:ourlog/screens/profile_edit_screen.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/appinfo_screen.dart';
+import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
-import 'package:ourlog/screens/customer/inquiry_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
-
+import 'package:ourlog/screens/my_page_screen.dart';
+import 'package:ourlog/screens/profile_edit_screen.dart';
+import 'package:ourlog/screens/purchase_bid_screen.dart';
+import 'package:ourlog/screens/sale_screen.dart';
 import 'package:provider/provider.dart';
+
 import 'constants/theme.dart';
+import 'providers/auth_provider.dart';
+import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
-import 'screens/sale_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/delete_user_screen.dart';
-import 'providers/auth_provider.dart';
 
 void main() {
   runApp(

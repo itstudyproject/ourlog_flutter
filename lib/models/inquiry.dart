@@ -1,9 +1,9 @@
 class Inquiry {
   final String questionId;
-  final String title;
+  String title;
   final String regDate;
   final bool answered;
-  final String content;
+  String content;
   final String? answer;
 
   Inquiry({

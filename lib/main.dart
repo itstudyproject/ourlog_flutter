@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         '/appinfo': (context) => const AppinfoScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
-        '/customer/customercenter': (context) => const CustomerCenterScreen(),
+        '/customer/customercenter': (context) => const CustomerCenterScreen(initialTabIndex: 0,),
 
       },
     );

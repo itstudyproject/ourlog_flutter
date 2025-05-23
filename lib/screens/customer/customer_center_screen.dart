@@ -4,7 +4,9 @@ import 'inquiry_screen.dart';
 import 'question_list_screen.dart';
 
 class CustomerCenterScreen extends StatefulWidget {
-  const CustomerCenterScreen({super.key});
+  final int initialTabIndex; // ← 추가
+
+  const CustomerCenterScreen({super.key, this.initialTabIndex = 0});
 
   @override
   State<CustomerCenterScreen> createState() => _CustomerCenterScreenState();
@@ -16,7 +18,11 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex, // ← 여기 반영
+    );
   }
 
   @override

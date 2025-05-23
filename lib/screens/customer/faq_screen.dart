@@ -30,10 +30,14 @@ class _FaqScreenState extends State<FaqScreen> {
     },
   ];
 
+  // 각 FAQ가 펼쳐져 있는지 여부를 관리하는 리스트
+  List<bool> expandedList = [];
+
   @override
   void initState() {
     super.initState();
     filteredFaqs = List.from(allFaqs);
+    expandedList = List.filled(filteredFaqs.length, false);
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -45,6 +49,9 @@ class _FaqScreenState extends State<FaqScreen> {
       faq['question']!.toLowerCase().contains(keyword) ||
           faq['answer']!.toLowerCase().contains(keyword))
           .toList();
+
+      // 검색 결과에 맞춰 expandedList도 다시 생성
+      expandedList = List.filled(filteredFaqs.length, false);
     });
   }
 
@@ -63,7 +70,7 @@ class _FaqScreenState extends State<FaqScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // 🔍 검색창
+            // 검색창
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: TextField(
@@ -83,7 +90,32 @@ class _FaqScreenState extends State<FaqScreen> {
               ),
             ),
 
-            // 🔎 검색어 텍스트
+            // 검색창 밑에 "자주 묻는 질문" 텍스트
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '자주 묻는 질문',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10), // 텍스트와 선 사이 간격 조절용
+              Container(
+                height: 2,
+                width: double.infinity,
+                color: Colors.orange,
+
+                  ),
+                ],
+              ),
+            ),
+
+            // 검색어 텍스트 (검색어가 있을 때만 표시)
             if (keyword.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -96,7 +128,7 @@ class _FaqScreenState extends State<FaqScreen> {
                 ),
               ),
 
-            // 📋 FAQ 목록 또는 검색 결과 없음
+            // FAQ 목록 또는 검색 결과 없음
             Expanded(
               child: filteredFaqs.isEmpty
                   ? const Center(
@@ -105,33 +137,67 @@ class _FaqScreenState extends State<FaqScreen> {
                   style: TextStyle(color: Colors.white54, fontSize: 18),
                 ),
               )
-                  : ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: filteredFaqs.map((faq) {
-                  return ExpansionTile(
-                    title: Text(
-                      faq['question']!,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                  : ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: filteredFaqs.length,
+                itemBuilder: (context, index) {
+                  final faq = filteredFaqs[index];
+                  final isExpanded = expandedList[index];
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white54, width: 1.2),
                     ),
-                    iconColor: Colors.white,
-                    collapsedIconColor: Colors.white54,
-                    children: [
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          double maxWidth = constraints.maxWidth * 0.9;
-                          return Container(
-                            width: maxWidth,
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              faq['answer']!,
-                              style: const TextStyle(color: Colors.white70),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        setState(() {
+                          expandedList[index] = !expandedList[index];
+                        });
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    faq['question']!,
+                                    style: const TextStyle(color: Colors.white, fontSize: 16),
+                                  ),
+                                ),
+                                Icon(
+                                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                                  color: Colors.white,
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                            AnimatedCrossFade(
+                              firstChild: Container(),
+                              secondChild: Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Text(
+                                  faq['answer']!,
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                              ),
+                              crossFadeState: isExpanded
+                                  ? CrossFadeState.showSecond
+                                  : CrossFadeState.showFirst,
+                              duration: const Duration(milliseconds: 200),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
+                    ),
                   );
-                }).toList(),
+                },
               ),
             ),
           ],

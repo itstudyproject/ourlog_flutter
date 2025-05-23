@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/screens/customer/customer_center_screen.dart';
+import 'package:ourlog/services/customer/inquiry_service.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 class InquiryScreen extends StatefulWidget {
   const InquiryScreen({super.key});
@@ -8,6 +12,8 @@ class InquiryScreen extends StatefulWidget {
 }
 
 class _InquiryScreenState extends State<InquiryScreen> {
+  final InquiryService inquiryService = InquiryService();
+
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
 
@@ -36,6 +42,9 @@ class _InquiryScreenState extends State<InquiryScreen> {
       return focusNode.hasFocus ? const Color(0xFFF8C147) : Colors.white30;
     }
 
+    // AuthProvider 가져오기 (로그인 상태 확인용)
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     return Scaffold(
       backgroundColor: Colors.black,
       resizeToAvoidBottomInset: true,
@@ -45,10 +54,24 @@ class _InquiryScreenState extends State<InquiryScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('1:1 문의하기', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 12),
-              const Text('서비스 이용 중 불편하신 점이나 문의사항을 남겨주시면 신속하게 답변 드리도록 하겠습니다.', style: TextStyle(color: Colors.white70)),
-              const Text('영업일 기준(주말·공휴일 제외) 3일 이내에 답변드리겠습니다. 단, 문의가 집중되는 경우 답변이 지연될 수 있습니다.', style: TextStyle(color: Colors.white70)),
+              const Text('1:1 문의하기',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              Container(
+                height: 2,
+                width: double.infinity,
+                color: Colors.orange,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                  '서비스 이용 중 불편하신 점이나 문의사항을 남겨주시면 신속하게 답변 드리도록 하겠습니다.',
+                  style: TextStyle(color: Colors.white70)),
+              const Text(
+                  '영업일 기준(주말·공휴일 제외) 3일 이내에 답변드리겠습니다. 단, 문의가 집중되는 경우 답변이 지연될 수 있습니다.',
+                  style: TextStyle(color: Colors.white70)),
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -67,7 +90,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
               const Text('제목', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(8),
@@ -93,7 +116,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
               const Text('내용', style: TextStyle(color: Colors.white)),
               const SizedBox(height: 8),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.white10,
                   borderRadius: BorderRadius.circular(8),
@@ -118,32 +141,78 @@ class _InquiryScreenState extends State<InquiryScreen> {
               const SizedBox(height: 24),
               Center(
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    // 로그인 체크
+                    if (authProvider.token == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('로그인이 필요합니다.')),
+                      );
+                      await Future.delayed(const Duration(seconds: 1));
+                      Navigator.of(context).pushReplacementNamed('/login');
+                      return;
+                    }
+
                     final title = _titleController.text;
                     final content = _contentController.text;
 
                     if (title.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('제목을 입력해주세요.')),
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          content: const Text(
+                            '제목을 입력해주세요.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
                       );
                       return;
                     }
 
                     if (content.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('내용을 입력해주세요.')),
+                        SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          margin: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          content: const Text(
+                            '내용을 입력해주세요.',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
                       );
                       return;
                     }
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('문의가 접수되었습니다.')),
-                    );
+                    // 백엔드에 문의 내용 전송
+                    bool success = await inquiryService.submitInquiry(title, content);
 
-                    _titleController.clear();
-                    _contentController.clear();
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('문의가 접수되었습니다.')),
+                      );
+                      _titleController.clear();
+                      _contentController.clear();
+
+                      // 문의내역 화면으로 이동
+                      await Future.delayed(const Duration(seconds: 1));
+                      Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => const CustomerCenterScreen(initialTabIndex: 2),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('문의 접수에 실패했습니다.')),
+                      );
+                    }
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue),
                   child: const Text('문의하기'),
                 ),
               ),

@@ -6,9 +6,9 @@ class MainLayout extends StatelessWidget {
   final Widget child;
 
   const MainLayout({
-    Key? key,
+    super.key,
     required this.child,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +30,10 @@ class MainLayout extends StatelessWidget {
                 children: [
                   // 헤더
                   const Header(),
-                  
+
                   // 메인 콘텐츠
                   child,
-                  
+
                   // 푸터
                   const Footer(),
                 ],

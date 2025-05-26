@@ -8,7 +8,7 @@ import '../models/user_profile.dart';
 import '../services/profile_service.dart';
 
 class MyPageScreen extends StatefulWidget {
-  const MyPageScreen({Key? key}) : super(key: key);
+  const MyPageScreen({super.key});
 
   @override
   _MyPageScreenState createState() => _MyPageScreenState();
@@ -39,7 +39,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
     print('>> fetching profile for $userId');
     try {
-    print('>> fetching profile for $userId');
+      print('>> fetching profile for $userId');
       final profile = await _service.fetchProfile(userId);
       if (!mounted) return;
       setState(() => _profile = profile);

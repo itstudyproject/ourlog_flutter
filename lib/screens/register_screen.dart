@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -40,10 +39,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // 빈 필드 확인
-    if (emailController.text.isEmpty || 
-        passwordController.text.isEmpty || 
-        passwordConfirmController.text.isEmpty || 
-        nameController.text.isEmpty || 
+    if (emailController.text.isEmpty ||
+        passwordController.text.isEmpty ||
+        passwordConfirmController.text.isEmpty ||
+        nameController.text.isEmpty ||
         nicknameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('모든 필수 정보를 입력해주세요.')),
@@ -54,15 +53,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final success = await authProvider.register(
-      emailController.text,
-      passwordController.text,
-      passwordConfirmController.text,
-      nameController.text,
-      nicknameController.text,
-      mobileController.text,
-      isSocialRegister
+        emailController.text,
+        passwordController.text,
+        passwordConfirmController.text,
+        nameController.text,
+        nicknameController.text,
+        mobileController.text,
+        isSocialRegister
     );
-    
+
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('회원가입 성공!')),
@@ -81,15 +80,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() {
       isSocialRegister = true; // 소셜 로그인으로 설정
     });
-    
+
     // 여기서 실제 소셜 로그인 구현
     // 예: 구글 로그인 후 제공되는 이메일 및 정보로 필드 채우기
-    
+
     // 현재는 소셜 로그인이 구현되지 않았으므로 알림만 표시
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('$provider 로그인으로 진행합니다. 추가 정보를 입력하세요.')),
     );
-    
+
     // 소셜 계정으로부터 받은 이메일 등 정보로 필드 초기화 (예시)
     // emailController.text = socialAccount.email;
     // nameController.text = socialAccount.name;
@@ -98,7 +97,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -118,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 height: 140,
               ),
               const SizedBox(height: 16),
-              
+
               // 소셜 로그인 상태 표시
               if (isSocialRegister)
                 Container(
@@ -134,7 +133,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              
+
               // 에러 메시지
               if (authProvider.errorMessage != null)
                 Container(
@@ -151,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               const SizedBox(height: 24),
-              
+
               // 이메일 입력
               _buildInputField(
                 label: '이메일',
@@ -161,7 +160,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 enabled: !isSocialRegister, // 소셜 로그인일 경우 비활성화
               ),
               const SizedBox(height: 16),
-              
+
               // 이름 입력
               _buildInputField(
                 label: '이름',
@@ -169,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: nameController,
               ),
               const SizedBox(height: 16),
-              
+
               // 닉네임 입력
               _buildInputField(
                 label: '닉네임',
@@ -177,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 controller: nicknameController,
               ),
               const SizedBox(height: 16),
-              
+
               // 비밀번호 입력 (소셜 로그인이 아닐 때만 표시)
               if (!isSocialRegister)
                 _buildInputField(
@@ -188,7 +187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               if (!isSocialRegister)
                 const SizedBox(height: 16),
-              
+
               // 비밀번호 확인 입력 (소셜 로그인이 아닐 때만 표시)
               if (!isSocialRegister)
                 _buildInputField(
@@ -200,7 +199,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               if (!isSocialRegister)
                 const SizedBox(height: 16),
-              
+
               // 전화번호 입력
               _buildInputField(
                 label: '전화번호',
@@ -209,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 24),
-              
+
               // 약관 동의
               Container(
                 padding: const EdgeInsets.all(16),
@@ -249,30 +248,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              
+
               // 가입하기 버튼
               authProvider.isLoading
                   ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
-                      onPressed: _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8BD7B5),
-                        foregroundColor: const Color(0xFF23332C),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                      ),
-                      child: const Text(
-                        '가입하기',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                onPressed: _register,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8BD7B5),
+                  foregroundColor: const Color(0xFF23332C),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  '가입하기',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               const SizedBox(height: 24),
-              
+
               // 소셜 로그인 버튼
               OutlinedButton.icon(
                 onPressed: () {
@@ -312,7 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-  
+
   Widget _buildInputField({
     required String label,
     required String hintText,
@@ -356,7 +355,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ],
     );
   }
-  
+
   Widget _buildCheckbox({
     required bool value,
     required ValueChanged<bool?> onChanged,
@@ -371,9 +370,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           child: Checkbox(
             value: value,
             onChanged: onChanged,
-            fillColor: MaterialStateProperty.resolveWith<Color>(
-              (Set<MaterialState> states) {
-                if (states.contains(MaterialState.selected)) {
+            fillColor: WidgetStateProperty.resolveWith<Color>(
+                  (Set<WidgetState> states) {
+                if (states.contains(WidgetState.selected)) {
                   return const Color(0xFF9BCABF);
                 }
                 return Colors.transparent;

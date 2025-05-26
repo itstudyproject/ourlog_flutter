@@ -1,8 +1,7 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class InquiryScreen extends StatelessWidget {
-  const InquiryScreen({Key? key}) : super(key: key);
+  const InquiryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

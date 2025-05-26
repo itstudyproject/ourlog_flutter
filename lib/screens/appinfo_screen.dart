@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 const String appVersion = '1.0.0';
 
 class AppinfoScreen extends StatelessWidget {
-  const AppinfoScreen({Key? key}) : super(key: key);
+  const AppinfoScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import '../services/user_service.dart'; // updateUserInfo 등 API 호출 정의
-import '../models/user.dart';          // UserDTO 대응 모델
+// UserDTO 대응 모델
 
 class AccountEditScreen extends StatefulWidget {
   final int userId;
-  const AccountEditScreen({Key? key, required this.userId}) : super(key: key);
+  const AccountEditScreen({super.key, required this.userId});
 
   @override
   _AccountEditScreenState createState() => _AccountEditScreenState();

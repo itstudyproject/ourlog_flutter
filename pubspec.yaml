@@ -38,6 +38,9 @@ dependencies:
   intl: ^0.18.1
   shared_preferences: ^2.5.3
   provider: ^6.1.5
+  file_picker: ^10.1.9
+  flutter_riverpod: ^2.6.1
+
 
 dev_dependencies:
   flutter_test:

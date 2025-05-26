@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/widgets/bulletin_board.dart';
 import '../models/artwork.dart';
 import '../services/artwork_service.dart';
 import '../constants/theme.dart';
@@ -135,9 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             children: [
                               _buildMainBanner(),
                               _buildArtworkSlider(),
-                              _buildBulletinBoard(),
-
-                              // 푸터
+                              const BulletinBoard(),
                               const Footer(),
                             ],
                           ),
@@ -437,53 +436,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBulletinBoard() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 60),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('공지사항', style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: 30),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 15),
-                decoration: BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.grey[800]!, width: 1),
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 5),
-                  title: Text(
-                    '공지사항 제목 ${index + 1}',
-                    style: const TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                  subtitle: Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: Text(
-                      '2023-05-${10 + index}',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.grey,
-                    size: 16,
-                  ),
-                  onTap: () {
-                    // 공지사항 상세 페이지로 이동
-                  },
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
@@ -508,4 +509,31 @@ class AuthService {
       headers: headers,
     );
   }
+  Future<bool> checkIsAdmin() async {
+    print('checkIsAdmin 호출됨');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) return false;
+
+    final response = await http.get(
+      Uri.parse('http://10.100.204.54:8080/ourlog/user/check-admin'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print("Check Admin Response: $data"); // 👈 추가
+
+      return data['isAdmin'] == true;
+    } else {
+      print("Admin check failed: ${response.statusCode}, ${response.body}"); // 👈 추가
+
+      return false;
+    }
+  }
+
 }

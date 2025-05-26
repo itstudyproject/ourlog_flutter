@@ -47,8 +47,10 @@ class _AnswerScreenState extends State<AnswerScreen> {
       inquiries = await _questionService.fetchAllInquiries();
 
       for (var inquiry in inquiries) {
-        _isEditing[inquiry.questionId] = true; // 모두 편집 모드 시작
-        _answerControllers[inquiry.questionId] = TextEditingController(text: inquiry.answer?.contents ?? "");
+        final needsAnswer = inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true);
+        _isEditing[inquiry.questionId] = needsAnswer; // 답변이 없으면 자동 편집 모드
+        _answerControllers[inquiry.questionId] =
+            TextEditingController(text: inquiry.answer?.contents ?? "");
       }
     } catch (e) {
       errorMessage = e.toString();
@@ -60,7 +62,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
   }
 
   Widget _buildInquiryItem(Inquiry inquiry) {
-    final isEditing = _isEditing[inquiry.questionId] ?? false;
+    final isEditing =
+        _isEditing[inquiry.questionId] ?? (inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true));
     final answerController = _answerControllers[inquiry.questionId]!;
 
     return Container(
@@ -128,7 +131,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                             regDate: inquiry.regDate,
                             content: inquiry.content,
                             answered: true,
-                            answer: answerDTO, // AnswerDTO 객체로 저장
+                            answer: answerDTO,
                           );
                         }
                         _isEditing[inquiry.questionId] = false;
@@ -151,7 +154,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
                   onPressed: () {
                     setState(() {
                       _isEditing[inquiry.questionId] = false;
-                      answerController.text = inquiries.firstWhere((item) => item.questionId == inquiry.questionId).answer?.contents ?? "";
+                      answerController.text = inquiries
+                          .firstWhere((item) => item.questionId == inquiry.questionId)
+                          .answer
+                          ?.contents ??
+                          "";
                     });
                   },
                   child: const Text('취소', style: TextStyle(color: Colors.white54)),
@@ -193,7 +200,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     );
 
                     if (confirm == true) {
-                      // 답변 삭제 시 answerId 필요함
                       final answerId = inquiry.answer?.answerId.toString();
                       if (answerId == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -216,7 +222,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                               answer: null,
                             );
                           }
-                          _isEditing[inquiry.questionId] = true; // 삭제 후 편집 모드 활성화
+                          _isEditing[inquiry.questionId] = true;
                           _answerControllers[inquiry.questionId]?.text = "";
                         });
                         ScaffoldMessenger.of(context).showSnackBar(

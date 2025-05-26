@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../models/user_profile.dart';
 import '../services/profile_service.dart';
+import '../widgets/main_layout.dart';
+import '../widgets/header.dart';
+
 
 class MyPageScreen extends StatefulWidget {
   const MyPageScreen({super.key});
@@ -27,7 +30,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   Future<void> _load() async {
     if (mounted) setState(() => _loading = true);
-
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final userId = auth.userId;
     if (userId == null) {
@@ -37,14 +39,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
       return;
     }
 
-    print('>> fetching profile for $userId');
     try {
-      print('>> fetching profile for $userId');
       final profile = await _service.fetchProfile(userId);
       if (!mounted) return;
       setState(() => _profile = profile);
-    } catch (e) {
-      // TODO: 에러 처리 (예: SnackBar)
+    } catch (_) {
+      // error handling 생략
     } finally {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -53,205 +53,207 @@ class _MyPageScreenState extends State<MyPageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 로딩
     if (_loading) {
       return const Scaffold(
+        backgroundColor: Color(0xFF1A1A1A),
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    // 프로필 없음
     if (_profile == null) {
       return Scaffold(
+        backgroundColor: const Color(0xFF1A1A1A),
         body: Center(
           child: Text(
             '프로필을 불러올 수 없습니다.',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.grey, fontSize: 16),
           ),
         ),
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: const Text('OurLog'),
-        backgroundColor: Colors.black,
-        elevation: 0,
+    // Use the same header+footer as HomeScreen via MainLayout :contentReference[oaicite:1]{index=1}
+        return MainLayout(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildProfileCard(),
+                const SizedBox(height: 30),
+                const _SectionTitle('메뉴'),
+                const SizedBox(height: 10),
+               _menuButton('구매/입찰목록', '/mypage/purchase-bid'),
+                _menuButton('판매목록/현황', '/mypage/sale'),
+                _menuButton('북마크', '/mypage/bookmark'),
+              ],
+            ),
+          ),
+        );
+  }
+
+  Widget _buildProfileCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF232323),
+        borderRadius: BorderRadius.circular(8),
       ),
-      drawer: _buildDrawer(context),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 프로필 카드
-            Card(
-              color: Colors.grey[900],
-              margin: const EdgeInsets.all(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: const Color(0xFF333333),
+            backgroundImage: NetworkImage(_profile!.thumbnailImagePath),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _profile!.nickname,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '팔로워: ${_profile!.followCnt}   팔로잉: ${_profile!.followingCnt}',
+                  style: const TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundImage: NetworkImage(
-                        _profile!.thumbnailImagePath,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _profile!.nickname,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '팔로워: ${_profile!.followCnt}  팔로잉: ${_profile!.followingCnt}',
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () => Navigator.pushNamed(
-                                    context, '/mypage/edit'),
-                                child: const Text('프로필수정'),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pushNamed(
-                                    context, '/mypage/account/edit'),
-                                child: const Text('회원정보수정'),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.red),
-                                onPressed: () => Navigator.pushNamed(
-                                    context, '/mypage/account/delete'),
-                                child: const Text('회원탈퇴'),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                    _actionButton('프로필수정', '/mypage/edit'),
+                    const SizedBox(width: 8),
+                    _actionButton('회원정보수정', '/mypage/account/edit'),
+                    const SizedBox(width: 8),
+                    _actionButton('회원탈퇴', '/mypage/account/delete',
+                        backgroundColor: Colors.red),
                   ],
                 ),
-              ),
+              ],
             ),
-
-            // 메뉴
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
-              child: Text('메뉴',
-                  style: TextStyle(color: Colors.white, fontSize: 24)),
-            ),
-            _menuButton(context, '구매/입찰목록',
-                '/mypage/purchase-bid'),
-            _menuButton(context, '판매목록/현황', '/mypage/sale'),
-            _menuButton(context, '북마크', '/mypage/bookmark'),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _menuButton(BuildContext ctx, String label, String route) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+  Widget _actionButton(String label, String route,
+      {Color backgroundColor = const Color(0xFF333333)}) {
+    return Expanded(
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: backgroundColor,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        ),
+        onPressed: () => Navigator.pushNamed(context, route),
+        child: Text(label, style: const TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _menuButton(String label, String route) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 6),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.grey[850],
+          backgroundColor: const Color(0xFF232323),
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 16),
+          side: const BorderSide(color: Color(0xFF333333)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
-        onPressed: () => Navigator.pushNamed(ctx, route),
-        child: Align(alignment: Alignment.centerLeft, child: Text(label)),
+        onPressed: () => Navigator.pushNamed(context, route),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(label, style: const TextStyle(fontSize: 16)),
+        ),
       ),
     );
   }
 
   Widget _buildDrawer(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<AuthProvider>(context, listen: false);
     return Drawer(
+      backgroundColor: const Color(0xFF1A1A1A),
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(color: Colors.black),
+            decoration: const BoxDecoration(color: Color(0xFF232323)),
             child: Text(
-              auth.isLoggedIn
-                  ? '${auth.userEmail}님'
-                  : '로그인이 필요합니다',
+              auth.isLoggedIn ? '${auth.userEmail}님' : '로그인이 필요합니다',
               style: const TextStyle(color: Colors.white, fontSize: 20),
             ),
           ),
-
-          // 마이페이지
-          ListTile(
-            leading: const Icon(Icons.person, color: Colors.white),
-            title:
-            const Text('마이페이지', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/mypage');
-            },
-          ),
-          const Divider(color: Colors.white24),
-
-          // 구매/입찰목록
-          ListTile(
-            leading: const Icon(Icons.shopping_cart, color: Colors.white),
-            title: const Text('구매/입찰목록',
-                style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/mypage/purchase-bid');
-            },
-          ),
-
-          // 판매목록/현황
-          ListTile(
-            leading: const Icon(Icons.store, color: Colors.white),
-            title: const Text('판매목록/현황',
-                style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/mypage/sale');
-            },
-          ),
-
-          // 북마크
-          ListTile(
-            leading: const Icon(Icons.bookmark, color: Colors.white),
-            title:
-            const Text('북마크', style: TextStyle(color: Colors.white)),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/mypage/bookmark');
-            },
-          ),
-
+          _drawerItem(Icons.person, '마이페이지', '/mypage'),
+          const Divider(color: Color(0xFF333333)),
+          _drawerItem(Icons.shopping_cart, '구매/입찰목록', '/mypage/purchase-bid'),
+          _drawerItem(Icons.store, '판매목록/현황', '/mypage/sale'),
+          _drawerItem(Icons.bookmark, '북마크', '/mypage/bookmark'),
           if (auth.isLoggedIn) ...[
-            const Divider(color: Colors.white24),
+            const Divider(color: Color(0xFF333333)),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.redAccent),
               title: const Text('로그아웃',
                   style: TextStyle(color: Colors.redAccent)),
               onTap: () {
-                Navigator.pop(context);
                 auth.logout();
                 Navigator.pushReplacementNamed(context, '/login');
               },
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _drawerItem(IconData icon, String title, String route) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.pushNamed(context, route);
+      },
+    );
+  }
+}
+
+/// 웹 CSS의 h2 스타일을 흉내낸 위젯
+class _SectionTitle extends StatelessWidget {
+  final String text;
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 4),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFF8C147), width: 2),
+        ),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }

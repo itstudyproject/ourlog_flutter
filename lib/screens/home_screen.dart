@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _currentSlideIndex =
           (_currentSlideIndex + 1) %
-              (_artworks.length > 3 ? 3 : _artworks.length);
+          (_artworks.length > 3 ? 3 : _artworks.length);
       if (_pageController.hasClients) {
         _pageController.animateToPage(
           _currentSlideIndex,
@@ -105,48 +105,48 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _isLoading
               ? const Center(
-            child: CircularProgressIndicator(color: AppTheme.primaryColor),
-          )
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              )
               : SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 헤더
-                SizedBox(
-                  width: MediaQuery.of(context).size.width,
-                  child: const Header(key: Key('header')),
-                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // 헤더
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width,
+                      child: const Header(key: Key('header')),
+                    ),
 
-                // 메인 컨텐츠
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      _loadArtworks();
-                    },
-                    color: AppTheme.primaryColor,
-                    backgroundColor: Colors.black,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(
-                        parent: ClampingScrollPhysics(),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _buildMainBanner(),
-                          _buildArtworkSlider(),
-                          _buildBulletinBoard(),
+                    // 메인 컨텐츠
+                    Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: () async {
+                          _loadArtworks();
+                        },
+                        color: AppTheme.primaryColor,
+                        backgroundColor: Colors.black,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(
+                            parent: ClampingScrollPhysics(),
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              _buildMainBanner(),
+                              _buildArtworkSlider(),
+                              _buildBulletinBoard(),
 
-                          // 푸터
-                          const Footer(),
-                        ],
+                              // 푸터
+                              const Footer(),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
         ],
       ),
     );
@@ -252,16 +252,16 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               popularArtworks.length,
-                  (index) => Container(
+              (index) => Container(
                 margin: const EdgeInsets.symmetric(horizontal: 5),
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color:
-                  _currentSlideIndex == index
-                      ? AppTheme.primaryColor
-                      : Colors.grey[700],
+                      _currentSlideIndex == index
+                          ? AppTheme.primaryColor
+                          : Colors.grey[700],
                 ),
               ),
             ),
@@ -358,12 +358,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildArtistGrid() {
     // 아티스트 목록을 위한 데이터 (실제로는 별도 모델이 필요할 수 있음)
     final artists =
-    _artworks
-        .take(6)
-        .map((artwork) => artwork.artist)
-        .toSet()
-        .take(3)
-        .toList();
+        _artworks
+            .take(6)
+            .map((artwork) => artwork.artist)
+            .toSet()
+            .take(3)
+            .toList();
 
     // 화면 너비에 따라 그리드 열 수 조정
     int crossAxisCount = 3;
@@ -388,7 +388,7 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: artists.length,
         itemBuilder: (context, index) {
           final artwork = _artworks.firstWhere(
-                (a) => a.artist == artists[index],
+            (a) => a.artist == artists[index],
           );
           return Container(
             decoration: BoxDecoration(

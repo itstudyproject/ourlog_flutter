@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 
 class Header extends StatefulWidget {
-  const Header({super.key});
+  const Header({Key? key}) : super(key: key);
 
   @override
   State<Header> createState() => _HeaderState();
@@ -76,113 +77,113 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
           // 중앙: 로고
           GestureDetector(
-              onTap: () {
-                // 홈으로 이동
-                Navigator.pushReplacementNamed(context, '/');
-              },
-              child: Image.asset('assets/images/OurLog.png', height: 55,)
+            onTap: () {
+              // 홈으로 이동
+              Navigator.pushReplacementNamed(context, '/');
+            },
+            child: Image.asset('assets/images/OurLog.png', height: 55,)
           ),
 
           // 오른쪽: 검색 및 사용자 메뉴
           Flexible(
             child: LayoutBuilder(
-                builder: (context, constraints) {
-                  // 화면이 좁으면 검색창 숨기기
-                  final bool showSearch = constraints.maxWidth > 300;
+              builder: (context, constraints) {
+                // 화면이 좁으면 검색창 숨기기
+                final bool showSearch = constraints.maxWidth > 300;
 
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (showSearch) ...[
-                        // 검색 레이블
-                        const Text(
-                          'SEARCH',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-
-                        // 검색창
-                        Container(
-                          width: 160,
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.white,
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                                  decoration: const InputDecoration(
-                                    hintText: '검색',
-                                    hintStyle: TextStyle(color: Colors.white70),
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                  ),
-                                ),
-                              ),
-                              const Icon(
-                                Icons.search,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 24),
-                      ],
-
-                      // MyPage 아이콘: 로그인 시에만 표시
-                      if (authProvider.isLoggedIn) ...[
-                        IconButton(
-                          icon: Image.asset('assets/images/mypage.png'),
-                          onPressed: () => Navigator.pushNamed(context, '/mypage'),
-                        ),
-                      ] else ...[
-                        IconButton(
-                          icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
-                          onPressed: () => Navigator.pushNamed(context, '/login'),
-                        ),
-                      ],
-
-
-                      // 로그인/로그아웃 버튼
-                      GestureDetector(
-                        onTap: () {
-                          if (authProvider.isLoggedIn) {
-                            authProvider.logout().then((_) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('로그아웃 되었습니다')),
-                              );
-                            });
-                          } else {
-                            Navigator.pushNamed(context, '/login');
-                          }
-                        },
-                        child: Text(
-                          authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (showSearch) ...[
+                      // 검색 레이블
+                      const Text(
+                        'SEARCH',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
+                      const SizedBox(width: 10),
+
+                      // 검색창
+                      Container(
+                        width: 160,
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.white,
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                decoration: const InputDecoration(
+                                  hintText: '검색',
+                                  hintStyle: TextStyle(color: Colors.white70),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 24),
                     ],
-                  );
-                }
+
+                    // MyPage 아이콘: 로그인 시에만 표시
+                    if (authProvider.isLoggedIn) ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png'),
+                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                      ),
+                    ] else ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
+                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                      ),
+                    ],
+
+
+                    // 로그인/로그아웃 버튼
+                    GestureDetector(
+                      onTap: () {
+                        if (authProvider.isLoggedIn) {
+                          authProvider.logout().then((_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('로그아웃 되었습니다')),
+                            );
+                          });
+                        } else {
+                          Navigator.pushNamed(context, '/login');
+                        }
+                      },
+                      child: Text(
+                        authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
             ),
           ),
         ],
@@ -313,7 +314,6 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
 
-
                               // 마이페이지 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
                                 _buildSidebarSection('마이페이지', [
@@ -390,13 +390,10 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     _animationController.forward();
   }
 
-  void _closeSidebar() {
-    _animationController.reverse().then((_) {
-      _removeOverlay();
-      setState(() {
-        _isSidebarOpen = false;
-      });
-    });
+  Future<void> _closeSidebar() async {
+    await _animationController.reverse();
+    _removeOverlay();
+    setState(() => _isSidebarOpen = false);
   }
 
   void _removeOverlay() {
@@ -448,8 +445,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
             case '설정':
               Navigator.pushNamed(context, '/mypage/settings');
               break;
-
-          // 다른 메뉴 항목들에 대한 처리 추가
+            // 다른 메뉴 항목들에 대한 처리 추가
           }
         },
         child: Text(
@@ -462,4 +458,4 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       ),
     );
   }
-} 
+}

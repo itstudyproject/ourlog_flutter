@@ -76,7 +76,7 @@ class ArtworkService {
       final DateTime createdAt = DateTime.now().subtract(Duration(days: _random.nextInt(10)));
       final DateTime auctionEndDate = DateTime.now().add(Duration(days: _random.nextInt(30) + 1));
       final int index = i % sampleTitles.length;
-
+      
       final artwork = Artwork(
         id: 'artwork_${DateTime.now().millisecondsSinceEpoch}_$i',
         title: sampleTitles[index],
@@ -89,23 +89,23 @@ class ArtworkService {
         categories: sampleCategories[index],
         ownerUserId: 'user_${_random.nextInt(100)}',
       );
-
+      
       // 일부 아트워크에만 입찰 내역 추가
       if (_random.nextBool()) {
         final numBids = _random.nextInt(5) + 1;
         double currentBid = artwork.startingPrice;
-
+        
         for (int j = 0; j < numBids; j++) {
           // 이전 입찰가보다 5~20% 높게 설정
           currentBid += currentBid * (0.05 + _random.nextDouble() * 0.15);
-
+          
           final bid = Bid(
             userId: 'user_${_random.nextInt(100)}',
             userName: '입찰자_${_random.nextInt(1000)}',
             amount: currentBid,
             bidTime: createdAt.add(Duration(hours: _random.nextInt(24 * 10))),
           );
-
+          
           // 입찰 추가
           _artworks.add(artwork.addBid(bid));
         }
@@ -113,7 +113,7 @@ class ArtworkService {
         _artworks.add(artwork);
       }
     }
-
+    
     // 경매 종료일 기준 정렬 (가까운 종료일 순)
     _artworks.sort((a, b) => a.auctionEndDate.compareTo(b.auctionEndDate));
   }

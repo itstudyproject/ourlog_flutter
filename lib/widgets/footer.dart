@@ -175,7 +175,7 @@ class Footer extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon) {
+   Widget _buildSocialIcon(IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: GestureDetector(

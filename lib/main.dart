@@ -9,6 +9,7 @@ import 'package:ourlog/screens/my_page_screen.dart';
 import 'package:ourlog/screens/profile_edit_screen.dart';
 import 'package:ourlog/screens/purchase_bid_screen.dart';
 import 'package:ourlog/screens/sale_screen.dart';
+import 'package:ourlog/screens/work_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/theme.dart';
@@ -70,12 +71,12 @@ class MyApp extends StatelessWidget {
           final uid  = auth.userId;
           if (uid == null) return const LoginScreen();
           return AccountEditScreen(userId: uid);
-        },
+          },
 
-        '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
-        '/mypage/sale':             (context) => const SaleScreen(),
-        '/mypage/bookmark':         (context) => const BookmarkScreen(),
-        '/mypage/account/delete':   (context) => const DeleteUserScreen(),
+    '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
+    '/mypage/sale':             (context) => const SaleScreen(),
+    '/mypage/bookmark':         (context) => const BookmarkScreen(),
+    '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
     );
   }

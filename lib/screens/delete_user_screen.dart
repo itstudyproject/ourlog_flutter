@@ -25,7 +25,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
   // 사용자 정보 확인
   void _checkUserInfo() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
+    
     if (!authProvider.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 정보가 없습니다. 로그인 화면으로 이동합니다.')),
@@ -33,7 +33,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
-
+    
     // userId가 null인 경우 경고 표시
     if (authProvider.userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,13 +47,13 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
 
   void _deleteUser() async {
     if (_isDeleting) return; // 중복 요청 방지
-
+    
     setState(() {
       _isDeleting = true;
     });
-
+    
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
+    
     if (!authProvider.isLoggedIn) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('로그인 정보가 없습니다.')),
@@ -63,7 +63,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
       });
       return;
     }
-
+    
     // 사용자에게 최종 확인
     final confirm = await showDialog<bool>(
       context: context,
@@ -83,18 +83,18 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
         ],
       ),
     );
-
+    
     if (confirm != true) {
       setState(() {
         _isDeleting = false;
       });
       return;
     }
-
+    
     // 버튼 상태 업데이트
     try {
       final success = await authProvider.deleteAccount();
-
+      
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('회원탈퇴가 완료되었습니다.')),
@@ -129,7 +129,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final bool isProcessing = authProvider.isLoading || _isDeleting;
-
+    
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -151,7 +151,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
               const Text(
                 '정말 탈퇴하시겠습니까?',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 24, 
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
@@ -162,7 +162,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
                 style: TextStyle(color: Colors.red),
               ),
               const SizedBox(height: 20),
-
+              
               // 계정 정보 표시
               Container(
                 padding: const EdgeInsets.all(16),
@@ -201,7 +201,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
+              
               // 에러 메시지
               if (authProvider.errorMessage != null)
                 Container(
@@ -218,7 +218,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
                   ),
                 ),
               const SizedBox(height: 20),
-
+              
               // 비밀번호 확인 필드
               Container(
                 decoration: BoxDecoration(
@@ -239,30 +239,30 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-
+              
               // 회원탈퇴 버튼
               isProcessing
                   ? const Center(child: CircularProgressIndicator(color: Colors.red))
                   : ElevatedButton(
-                onPressed: authProvider.userId == null ? null : _deleteUser,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  disabledBackgroundColor: Colors.grey,
-                ),
-                child: const Text(
-                  '회원탈퇴',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-
+                      onPressed: authProvider.userId == null ? null : _deleteUser,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        disabledBackgroundColor: Colors.grey,
+                      ),
+                      child: const Text(
+                        '회원탈퇴',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    
               // 사용자 ID가 없는 경우 안내 메시지
               if (authProvider.userId == null && !isProcessing)
                 Padding(
@@ -273,7 +273,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-
+                
               // 키보드가 올라올 때 추가 여백 확보
               SizedBox(height: MediaQuery.of(context).viewInsets.bottom > 0 ? 120 : 0),
             ],
@@ -284,7 +284,7 @@ class _DeleteUserScreenState extends State<DeleteUserScreen> {
       resizeToAvoidBottomInset: false,
     );
   }
-
+  
   @override
   void dispose() {
     passwordController.dispose();

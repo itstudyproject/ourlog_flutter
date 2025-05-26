@@ -8,15 +8,13 @@ class UserProfile {
   final String nickname;
 
   /// 팔로워 수
-  int followCnt;
+  final int followCnt;
 
   /// 팔로잉 수
-  int followingCnt;
+  final int followingCnt;
 
   /// 자기소개
   final String introduction;
-
-  bool isFollowing;
 
   UserProfile({
     required this.thumbnailImagePath,
@@ -24,7 +22,6 @@ class UserProfile {
     required this.followCnt,
     required this.followingCnt,
     required this.introduction,
-    required this.isFollowing,  // 팔로우 여부
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -34,7 +31,6 @@ class UserProfile {
       followCnt:    (json['followCnt']    as num?)?.toInt() ?? 0,
       followingCnt: (json['followingCnt'] as num?)?.toInt() ?? 0,
       introduction:       json['introduction'] as String? ?? '',
-      isFollowing: json['isFollowing'] ?? false, // 'isFollowing' 필드 추가
     );
   }
 }

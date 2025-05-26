@@ -30,10 +30,10 @@ class MainLayout extends StatelessWidget {
                 children: [
                   // 헤더
                   const Header(),
-
+                  
                   // 메인 콘텐츠
                   child,
-
+                  
                   // 푸터
                   const Footer(),
                 ],

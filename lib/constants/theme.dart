@@ -7,13 +7,13 @@ class AppTheme {
   static const Color backgroundColor = Colors.black;
   static const Color textColor = Color(0xFFE7DED9); // 연한 베이지 색상
   static const Color accentColor = Color(0xFFFF69B4); // pink 색상
-
+  
   // 버튼 색상
   static const Color buttonMint = Color(0xFF2DE1C2);
   static const Color buttonOrange = Color(0xFFFF9800);
   static const Color buttonBlue = Color(0xFF2196F3);
   static const Color buttonPurple = Color(0xFF9C27B0);
-
+  
   // 앱의 라이트 테마 설정
   static ThemeData lightTheme = ThemeData(
     primarySwatch: Colors.blue,
@@ -53,7 +53,7 @@ class AppTheme {
       ),
     ),
   );
-
+  
   // 앱의 다크 테마 설정 - 기본 테마와 동일하게 설정
   static ThemeData darkTheme = lightTheme;
 } 

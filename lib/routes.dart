@@ -44,14 +44,19 @@ class AppRoutes {
 
       /// ✅ WorkScreen은 arguments로 동적 파라미터를 받아야 하므로 const로 생성 못함
       worker: (context) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, String>?;
-        if (args == null || !args.containsKey('userId') || !args.containsKey('currentUserId')) {
+        final args = ModalRoute
+            .of(context)
+            ?.settings
+            .arguments as Map<String, String>?;
+        if (args == null || !args.containsKey('userId') ||
+            !args.containsKey('currentUserId')) {
           return const Scaffold(body: Center(child: Text('잘못된 접근입니다')));
         }
         return WorkScreen( // ✅ 수정됨
-          writerId: args['userId']!,          // ✅ 매개변수 이름도 맞춤
+          writerId: args['userId']!, // ✅ 매개변수 이름도 맞춤
           currentUserId: args['currentUserId']!,
         );
       },
     };
   }
+}

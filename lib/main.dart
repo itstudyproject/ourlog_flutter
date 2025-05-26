@@ -17,6 +17,9 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'screens/my_page_screen.dart';
+import 'screens/profile_edit_screen.dart';
+import 'screens/account_edit_screen.dart';
 
 void main() {
   runApp(
@@ -52,25 +55,48 @@ class MyApp extends StatelessWidget {
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => const CustomerCenterScreen(),
 
-        // 프로필수정 화면으로 라우팅
-        '/mypage/edit': (c) {
-          final auth = Provider.of<AuthProvider>(c, listen: false);
-          final uid = auth.userId;
-          if (uid == null) {
-            // 로그인 안 된 상태면 로그인 화면으로
-            return const LoginScreen();
-          }
-          // ❌ const 제거! 런타임 uid 넣어야 하므로
-          return ProfileEditScreen(userId: uid);
+
+
+        '/mypage/edit': (context) {
+          final userId = ModalRoute.of(context)!.settings.arguments as int;
+          return ProfileEditScreen(userId: userId);
         },
+        '/mypage/account/edit':  (ctx) {
+          final id = ModalRoute.of(ctx)!.settings.arguments as int;
+          return AccountEditScreen(userId: id);
+        },
+        // '/mypage/purchase-bid': (ctx) {
+        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
+        //   return PurchaseBidScreen(userId: userId);
+        // },
+        // '/mypage/sale': (ctx) {
+        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
+        //   return SaleScreen(userId: userId);
+        // },
+        // '/mypage/bookmark': (ctx) {
+        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
+        //   return BookmarkScreen(userId: userId);
+        // },
+
+
+    //     // 프로필수정 화면으로 라우팅
+    // '/mypage/edit': (ctx) {
+    // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
+    // if (userId == null) {
+    // // 로그인 안 된 상태면 로그인 페이지로
+    // return const LoginScreen();
+    // }
+    // return ProfileEditScreen(userId: userId);
+    // },
 
         // 회원정보수정
-        '/mypage/account/edit': (c) {
-          final auth = Provider.of<AuthProvider>(c, listen: false);
-          final uid  = auth.userId;
-          if (uid == null) return const LoginScreen();
-          return AccountEditScreen(userId: uid);
-          },
+        // '/mypage/account/edit': (c) {
+        //   final auth = Provider.of<AuthProvider>(c, listen: false);
+        //   final uid  = auth.userId;
+        //   if (uid == null) return const LoginScreen();
+        //   return AccountEditScreen(userId: uid);
+        //   },
+
 
     '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
     '/mypage/sale':             (context) => const SaleScreen(),

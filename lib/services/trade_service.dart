@@ -11,8 +11,7 @@ class TradeService {
   // which was "/profile" + "/purchases/{userId}" etc.
   static const String _baseUrl = 'http://10.100.204.189:8080/ourlog/profile';
 
-
-  /// 구매/입찰 목록 조회
+  /// 구매
   Future<PurchaseResponse> fetchPurchases(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
@@ -37,7 +36,7 @@ class TradeService {
     return PurchaseResponse.fromJson(jsonMap);
   }
 
-  /// 판매 목록 조회
+  /// 판매
   Future<List<Trade>> fetchSales(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
@@ -59,6 +58,6 @@ class TradeService {
     }
 
     final List<dynamic> list = jsonDecode(resp.body);
-    return list.map((e) => Trade.fromJson(e)).toList();
+    return list.map((json) => Trade.fromJson(json)).toList();
   }
 }

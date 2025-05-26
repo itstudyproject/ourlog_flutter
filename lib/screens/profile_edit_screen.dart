@@ -3,7 +3,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/user_profile.dart';
 import '../services/profile_service.dart';
 
 class ProfileEditScreen extends StatefulWidget {
@@ -34,24 +33,21 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Future<void> _loadProfile() async {
     try {
-      final profile = await _service.fetchProfile(widget.userId);
-      _nickController.text = profile.nickname;
-      _introController.text = profile.introduction;
-      _initialImageUrl = profile.thumbnailImagePath;
-    } catch (e) {
-      // TODO: 에러 처리 (예: SnackBar)
+      final prof = await _service.fetchProfile(widget.userId);
+      _nickController.text = prof.nickname;
+      _introController.text = prof.introduction;
+      _initialImageUrl = prof.thumbnailImagePath;
+    } catch (_) {
+      // 에러 처리
     } finally {
       setState(() => _loading = false);
     }
   }
 
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final XFile? file =
-    await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
-    if (file != null) {
-      setState(() => _pickedImage = File(file.path));
-    }
+    final file = await ImagePicker()
+        .pickImage(source: ImageSource.gallery, imageQuality: 80);
+    if (file != null) setState(() => _pickedImage = File(file.path));
   }
 
   Future<void> _onSave() async {
@@ -59,15 +55,25 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     setState(() => _loading = true);
 
     try {
+      String? uploaded;
+      if (_pickedImage != null) {
+        uploaded = await _service.uploadProfileImage(
+          widget.userId,
+          _pickedImage!,
+        );
+      }
+
+      // <-- 여기가 updateProfile 호출부
       await _service.updateProfile(
         widget.userId,
         nickname: _nickController.text,
         introduction: _introController.text,
-        originImagePath: _pickedImage?.path,
+        originImagePath: uploaded,
       );
+
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('프로필이 저장되었습니다.')));
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);  // <-- true를 넘깁니다!
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('저장에 실패했습니다.')));
@@ -91,12 +97,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         body: Center(child: CircularProgressIndicator()),
       );
     }
-
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A1A),
       appBar: AppBar(
         backgroundColor: Colors.black,
-        elevation: 0,
         title: const Text('프로필수정'),
       ),
       body: SingleChildScrollView(
@@ -114,16 +118,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     height: 150,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border:
-                      Border.all(color: const Color(0xFF333333), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFF333333),
+                        width: 2,
+                      ),
                       color: const Color(0xFF232323),
                     ),
                     child: ClipOval(
                       child: _pickedImage != null
                           ? Image.file(_pickedImage!, fit: BoxFit.cover)
                           : (_initialImageUrl != null
-                          ? Image.network(_initialImageUrl!,
-                          fit: BoxFit.cover)
+                          ? Image.network(
+                        _initialImageUrl!,
+                        fit: BoxFit.cover,
+                      )
                           : const SizedBox()),
                     ),
                   ),
@@ -131,8 +139,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     mini: true,
                     backgroundColor: const Color(0xFF333333),
                     onPressed: _pickImage,
-                    child: const Icon(Icons.camera_alt,
-                        color: Color(0xFFCCCCCC)),
+                    child: const Icon(
+                      Icons.camera_alt,
+                      color: Color(0xFFCCCCCC),
+                    ),
                   ),
                 ],
               ),
@@ -149,11 +159,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('기본 정보',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white)),
+                    const Text(
+                      '기본 정보',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
                     const SizedBox(height: 24),
 
                     // 닉네임
@@ -169,18 +182,17 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         fillColor: const Color(0xFF232323),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                          const BorderSide(color: Color(0xFF333333)),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF333333)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                          const BorderSide(color: Color(0xFFF8C147)),
+                          borderSide: const BorderSide(
+                              color: Color(0xFFF8C147)),
                         ),
                       ),
-                      validator: (v) => (v == null || v.isEmpty)
-                          ? '닉네임을 입력하세요'
-                          : null,
+                      validator: (v) =>
+                      (v == null || v.isEmpty) ? '닉네임을 입력하세요' : null,
                     ),
                     const SizedBox(height: 20),
 
@@ -198,13 +210,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         fillColor: const Color(0xFF232323),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                          const BorderSide(color: Color(0xFF333333)),
+                          borderSide: const BorderSide(
+                              color: Color(0xFF333333)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide:
-                          const BorderSide(color: Color(0xFFF8C147)),
+                          borderSide: const BorderSide(
+                              color: Color(0xFFF8C147)),
                         ),
                       ),
                     ),
@@ -226,7 +238,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => Navigator.of(context).pop(false),
                     child: const Text('취소'),
                   ),
                   const SizedBox(width: 12),

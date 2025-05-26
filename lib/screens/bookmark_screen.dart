@@ -165,7 +165,7 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                 borderRadius: BorderRadius.circular(4),
                 color: Colors.grey[800],
                 image: DecorationImage(
-                  image: NetworkImage(post.imagePath),
+                  image: AssetImage("assets/images/mypage.png"),
                   fit: BoxFit.cover,
                 ),
               ),

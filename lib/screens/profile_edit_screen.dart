@@ -1,5 +1,3 @@
-// lib/screens/profile_edit_screen.dart
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -63,20 +61,20 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         );
       }
 
-      // <-- 여기가 updateProfile 호출부
       await _service.updateProfile(
         widget.userId,
         nickname: _nickController.text,
         introduction: _introController.text,
         originImagePath: uploaded,
+        thumbnailImagePath: uploaded,
       );
 
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('프로필이 저장되었습니다.')));
-      Navigator.of(context).pop(true);  // <-- true를 넘깁니다!
+          .showSnackBar(SnackBar(content: Text('프로필이 저장되었습니다.')));
+      Navigator.of(context).pop(true);
     } catch (e) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('저장에 실패했습니다.')));
+          .showSnackBar(SnackBar(content: Text('저장에 실패했습니다.')));
     } finally {
       setState(() => _loading = false);
     }
@@ -92,19 +90,19 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Color(0xFF1A1A1A),
         body: Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
+      backgroundColor: Color(0xFF1A1A1A),
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: const Text('프로필수정'),
+        title: Text('프로필수정'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Form(
           key: _formKey,
           child: Column(
@@ -119,47 +117,51 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF333333),
+                        color: Color(0xFF333333),
                         width: 2,
                       ),
-                      color: const Color(0xFF232323),
+                      color: Color(0xFF232323),
                     ),
                     child: ClipOval(
                       child: _pickedImage != null
                           ? Image.file(_pickedImage!, fit: BoxFit.cover)
-                          : (_initialImageUrl != null
-                          ? Image.network(
-                        _initialImageUrl!,
+                          : (_initialImageUrl == null ||
+                          _initialImageUrl == '/images/mypage.png'
+                          ? Image.asset(
+                        'assets/images/mypage.png',
                         fit: BoxFit.cover,
                       )
-                          : const SizedBox()),
+                          : Image.network(
+                        'http://10.100.204.189:8080/ourlog$_initialImageUrl',
+                        fit: BoxFit.cover,
+                      )),
                     ),
                   ),
                   FloatingActionButton(
                     mini: true,
-                    backgroundColor: const Color(0xFF333333),
+                    backgroundColor: Color(0xFF333333),
                     onPressed: _pickImage,
-                    child: const Icon(
+                    child: Icon(
                       Icons.camera_alt,
                       color: Color(0xFFCCCCCC),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30),
 
               // 기본 정보 섹션
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF232323),
+                  color: Color(0xFF232323),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       '기본 정보',
                       style: TextStyle(
                         fontSize: 20,
@@ -167,56 +169,48 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // 닉네임
                     TextFormField(
                       controller: _nickController,
-                      style:
-                      const TextStyle(color: Color(0xFFCCCCCC)),
+                      style: TextStyle(color: Color(0xFFCCCCCC)),
                       decoration: InputDecoration(
                         labelText: '닉네임',
-                        labelStyle:
-                        const TextStyle(color: Color(0xFF999999)),
+                        labelStyle: TextStyle(color: Color(0xFF999999)),
                         filled: true,
-                        fillColor: const Color(0xFF232323),
+                        fillColor: Color(0xFF232323),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF333333)),
+                          borderSide: BorderSide(color: Color(0xFF333333)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                              color: Color(0xFFF8C147)),
+                          borderSide: BorderSide(color: Color(0xFFF8C147)),
                         ),
                       ),
                       validator: (v) =>
                       (v == null || v.isEmpty) ? '닉네임을 입력하세요' : null,
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
 
                     // 소개
                     TextFormField(
                       controller: _introController,
                       maxLines: 4,
-                      style:
-                      const TextStyle(color: Color(0xFFCCCCCC)),
+                      style: TextStyle(color: Color(0xFFCCCCCC)),
                       decoration: InputDecoration(
                         labelText: '소개',
-                        labelStyle:
-                        const TextStyle(color: Color(0xFF999999)),
+                        labelStyle: TextStyle(color: Color(0xFF999999)),
                         filled: true,
-                        fillColor: const Color(0xFF232323),
+                        fillColor: Color(0xFF232323),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                              color: Color(0xFF333333)),
+                          borderSide: BorderSide(color: Color(0xFF333333)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
-                          borderSide: const BorderSide(
-                              color: Color(0xFFF8C147)),
+                          borderSide: BorderSide(color: Color(0xFFF8C147)),
                         ),
                       ),
                     ),
@@ -225,34 +219,34 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
               ),
 
               // 액션 버튼
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFF333333),
-                      foregroundColor: const Color(0xFFCCCCCC),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                      backgroundColor: Color(0xFF333333),
+                      foregroundColor: Color(0xFFCCCCCC),
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('취소'),
+                    child: Text('취소'),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFF8C147),
-                      foregroundColor: const Color(0xFF111111),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
+                      backgroundColor: Color(0xFFF8C147),
+                      foregroundColor: Color(0xFF111111),
+                      padding:
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: _onSave,
-                    child: const Text('변경사항 저장'),
+                    child: Text('변경사항 저장'),
                   ),
                 ],
               ),

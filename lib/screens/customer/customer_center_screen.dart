@@ -4,15 +4,21 @@ import 'inquiry_screen.dart';
 import 'question_list_screen.dart';
 
 class CustomerCenterScreen extends StatefulWidget {
-  final int initialTabIndex; // ← 추가
+  final int initialTabIndex;
+  final bool isAdmin;
 
-  const CustomerCenterScreen({super.key, this.initialTabIndex = 0});
+  CustomerCenterScreen({
+    super.key,
+    this.initialTabIndex = 0,
+    required this.isAdmin, // ✅ 여기를 추가해야 오류가 사라집니다.
+  });
 
   @override
   State<CustomerCenterScreen> createState() => _CustomerCenterScreenState();
 }
 
-class _CustomerCenterScreenState extends State<CustomerCenterScreen> with SingleTickerProviderStateMixin {
+class _CustomerCenterScreenState extends State<CustomerCenterScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -21,7 +27,7 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
     _tabController = TabController(
       length: 3,
       vsync: this,
-      initialIndex: widget.initialTabIndex, // ← 여기 반영
+      initialIndex: widget.initialTabIndex,
     );
   }
 
@@ -38,7 +44,7 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
       body: SafeArea(
         child: Column(
           children: [
-            // ✅ 앱바 대체: 상단 고정 헤더
+            // 상단 헤더
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               color: Colors.black,
@@ -49,12 +55,13 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
                     onPressed: () => Navigator.pop(context),
                   ),
                   const SizedBox(width: 8),
-                  const Text('고객센터', style: TextStyle(color: Colors.white, fontSize: 20)),
+                  const Text('고객센터',
+                      style: TextStyle(color: Colors.white, fontSize: 20)),
                 ],
               ),
             ),
 
-            // ✅ 항상 보이는 탭바
+            // 탭바
             Container(
               color: Colors.black,
               child: TabBar(
@@ -62,8 +69,10 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
                 indicatorColor: Colors.deepOrangeAccent[100],
                 labelColor: Colors.deepOrangeAccent[100],
                 unselectedLabelColor: Colors.grey,
-                labelStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),       // 선택된 탭 글자 스타일
-                unselectedLabelStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.normal), // 선택 안된 탭 글자 스타일
+                labelStyle: const TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold),
+                unselectedLabelStyle: const TextStyle(
+                    fontSize: 14, fontWeight: FontWeight.normal),
                 isScrollable: false,
                 tabs: const [
                   Tab(text: '자주 묻는 질문'),
@@ -73,14 +82,14 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen> with Single
               ),
             ),
 
-            // ✅ 탭 컨텐츠는 스크롤 가능
+            // 탭바 뷰
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: const [
-                  FaqScreen(),
-                  InquiryScreen(),
-                  QuestionListScreen(),
+                children: [
+                  const FaqScreen(),
+                  const InquiryScreen(),
+                  QuestionListScreen(isAdmin: widget.isAdmin),  // 탭 3은 항상 질문 목록
                 ],
               ),
             ),

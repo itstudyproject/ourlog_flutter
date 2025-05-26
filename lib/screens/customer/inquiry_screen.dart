@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
-import 'package:ourlog/services/customer/inquiry_service.dart';
+import 'package:ourlog/services/customer/question_service.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 
@@ -12,7 +12,7 @@ class InquiryScreen extends StatefulWidget {
 }
 
 class _InquiryScreenState extends State<InquiryScreen> {
-  final InquiryService inquiryService = InquiryService();
+  final QuestionService questionService = QuestionService();
 
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
@@ -190,7 +190,7 @@ class _InquiryScreenState extends State<InquiryScreen> {
                     }
 
                     // 백엔드에 문의 내용 전송
-                    bool success = await inquiryService.submitInquiry(title, content);
+                    bool success = await questionService.submitInquiry(title, content);
 
                     if (success) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -203,8 +203,10 @@ class _InquiryScreenState extends State<InquiryScreen> {
                       await Future.delayed(const Duration(seconds: 1));
                       Navigator.of(context).pushReplacement(
                         MaterialPageRoute(
-                          builder: (context) => const CustomerCenterScreen(initialTabIndex: 2),
-                        ),
+                          builder: (context) => CustomerCenterScreen(
+                            initialTabIndex: 2,
+                            isAdmin: false, // 또는 true (로그인 사용자에 따라 달라질 수 있음)
+                          ),                        ),
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(

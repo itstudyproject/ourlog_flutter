@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import 'package:http/http.dart' as http;
+
 
 class AuthProvider extends ChangeNotifier {
   bool _isLoggedIn = false;
@@ -398,4 +402,26 @@ class AuthProvider extends ChangeNotifier {
        notifyListeners();
      }
   }
+
+  Future<bool> checkIsAdmin() async {
+    final token = _token; // 또는 FlutterSecureStorage 등에서 가져오는 방식 사용
+    if (token == null) return false;
+
+    final response = await http.get(
+      Uri.parse('http://10.100.204.54:8080/ourlog/user/check-admin'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['isAdmin'] == true;
+    } else {
+      return false;
+    }
+  }
+
+
 }

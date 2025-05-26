@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/controller/question_controller.dart';
 import 'package:ourlog/models/inquiry.dart';
-import 'package:ourlog/services/customer/inquiry_service.dart';
-
+import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/services/customer/question_service.dart';
 
 class QuestionListScreen extends StatefulWidget {
-  const QuestionListScreen({super.key});
+  final bool isAdmin;
+  const QuestionListScreen({super.key, required this.isAdmin});
 
   @override
   State<QuestionListScreen> createState() => _QuestionListScreenState();
 }
 
 class _QuestionListScreenState extends State<QuestionListScreen> {
-
-  final InquiryService _inquiryService = InquiryService();
+  final QuestionController _questionController = QuestionController();
+  final QuestionService _questionService = QuestionService();
 
   List<Inquiry> inquiries = [];
   List<bool> expandedList = [];
@@ -23,8 +25,8 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
   void initState() {
     super.initState();
     _loadInquiries();
-    //expandedList = List.filled(inquiries.length, false);
   }
+
   Future<void> _loadInquiries() async {
     setState(() {
       isLoading = true;
@@ -32,7 +34,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
     });
 
     try {
-      inquiries = (await _inquiryService.fetchInquiries()).cast<Inquiry>();
+      inquiries = await _questionController.getInquiriesByRole();
       expandedList = List.filled(inquiries.length, false);
     } catch (e) {
       errorMessage = e.toString();
@@ -65,7 +67,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
             const SizedBox(height: 8),
             Container(
               height: 2,
-              width: double.infinity,
+              width: MediaQuery.of(context).size.width * 0.8, // 화면의 80% 폭으로 설정
               color: Colors.orange,
             ),
           ],
@@ -82,6 +84,10 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                 filled: true,
                 fillColor: Colors.white12,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.orange),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               style: const TextStyle(color: Colors.white, fontSize: 14),
@@ -95,6 +101,10 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                 filled: true,
                 fillColor: Colors.white12,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.orange),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               ),
               maxLines: null,
@@ -147,8 +157,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
     );
 
     if (confirm == true) {
-      // 서버에 수정 요청 보내기
-      final success = await _inquiryService.editInquiry(
+      final success = await _questionService.editInquiry(
         inquiry.questionId,
         titleController.text,
         contentController.text,
@@ -156,7 +165,6 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
 
       if (success) {
         setState(() {
-          // inquiries 리스트에서 해당 문의 찾아서 업데이트
           final index = inquiries.indexWhere((item) => item.questionId == inquiry.questionId);
           if (index != -1) {
             inquiries[index] = Inquiry(
@@ -186,23 +194,47 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.grey[900],
-        title: const Text('삭제하시겠습니까?', style: TextStyle(color: Colors.white)),
+        title: const Text('삭제하시겠습니까?', style: TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소', style: TextStyle(color: Colors.white)),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.grey, // 취소 버튼 배경색
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: Size.zero,
+              ),
+              child: const Text('취소', style: TextStyle(fontSize: 12)),
+            ),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.white)),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.redAccent, // 삭제 버튼 배경색
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: Size.zero,
+              ),
+              child: const Text('삭제', style: TextStyle(fontSize: 12)),
+            ),
           ),
         ],
       ),
     );
 
     if (confirm == true) {
-      // 서버에 삭제 요청 보내기
-      final success = await _inquiryService.deleteInquiry(id);
+      final success = await _questionService.deleteInquiry(id);
 
       if (success) {
         setState(() {
@@ -243,7 +275,11 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: inquiries.isEmpty
+                child: isLoading
+                    ? const Center(child: CircularProgressIndicator(color: Colors.orange))
+                    : errorMessage != null
+                    ? Center(child: Text(errorMessage!, style: const TextStyle(color: Colors.redAccent)))
+                    : inquiries.isEmpty
                     ? const Center(
                   child: Text('문의 내역이 없습니다.', style: TextStyle(color: Colors.white70)),
                 )
@@ -282,7 +318,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                                         Text(inquiry.title,
                                             style: const TextStyle(
                                                 color: Colors.white, fontSize: 16)),
-                                        Text('작성일: ${inquiry.regDate}',
+                                        Text('작성일: ${DateTime.parse(inquiry.regDate).toLocal().toString().split(' ')[0]}',
                                             style: const TextStyle(
                                                 color: Colors.white54, fontSize: 14)),
                                       ],
@@ -321,22 +357,22 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                                         Container(
                                           width: double.infinity,
                                           padding: const EdgeInsets.all(12),
-                                          margin: const EdgeInsets.only(top: 8),
+                                          margin: const EdgeInsets.only(top: 12),
                                           decoration: BoxDecoration(
-                                            color: Colors.white12,
+                                            color: Colors.white10,
                                             borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.black54),
                                           ),
                                           child: Text(
-                                            '답변\n${inquiry.answer ?? '답변이 없습니다.'}',
-                                            style: const TextStyle(color: Colors.white),
+                                            inquiry.answer?.contents ?? '',
+                                            style: const TextStyle(
+                                                color: Colors.orangeAccent, fontSize: 14),
                                           ),
                                         ),
-                                      const SizedBox(height: 16),
-                                      if (!inquiry.answered)
-                                        Row(
-                                          mainAxisAlignment: MainAxisAlignment.end,
-                                          children: [
+                                      const SizedBox(height: 12),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.end,
+                                        children: [
+                                          if (!widget.isAdmin) ...[
                                             Container(
                                               decoration: BoxDecoration(
                                                 color: Colors.blue[400],
@@ -350,8 +386,7 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                                   minimumSize: Size.zero,
                                                 ),
-                                                child: const Text('수정',
-                                                    style: TextStyle(fontSize: 12)),
+                                                child: const Text('수정', style: TextStyle(fontSize: 12)),
                                               ),
                                             ),
                                             const SizedBox(width: 8),
@@ -368,19 +403,36 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                                                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                                   minimumSize: Size.zero,
                                                 ),
-                                                child: const Text('삭제',
-                                                    style: TextStyle(fontSize: 12)),
+                                                child: const Text('삭제', style: TextStyle(fontSize: 12)),
                                               ),
                                             ),
                                           ],
-                                        ),
+                                          if (widget.isAdmin && !inquiry.answered) ...[
+                                            const SizedBox(width: 12),
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => AnswerScreen(inquiry: inquiry),
+                                                  ),
+                                                ).then((_) => _loadInquiries());
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: Colors.orange,
+                                              ),
+                                              child: const Text('답변하기'),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
                                 crossFadeState: isExpanded
                                     ? CrossFadeState.showSecond
                                     : CrossFadeState.showFirst,
-                                duration: const Duration(milliseconds: 200),
+                                duration: const Duration(milliseconds: 300),
                               ),
                             ],
                           ),

@@ -5,10 +5,10 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/my_page_screen.dart';
 // import 'screens/purchase_bid_screen.dart';
-// import 'screens/sale_screen.dart';
-// import 'screens/bookmark_screen.dart';
-// import 'screens/profile_edit_screen.dart';
-// import 'screens/account_edit_screen.dart';
+import 'screens/sale_screen.dart';
+import 'screens/bookmark_screen.dart';
+import 'screens/profile_edit_screen.dart';
+import 'screens/account_edit_screen.dart';
 import 'screens/delete_user_screen.dart';
 
 // 앱의 모든 경로를 관리하는 클래스
@@ -34,11 +34,10 @@ class AppRoutes {
       register:        (context) => const RegisterScreen(),
       myPage:          (context) => const MyPageScreen(),
       // purchaseBid:     (context) => const PurchaseBidScreen(),
-      // sale:            (context) => const SaleScreen(),
-      // bookmark:        (context) => const BookmarkScreen(),
-      // profileEdit:     (context) => const ProfileEditScreen(),
+      sale:            (context) => const SaleScreen(),
+      bookmark:        (context) => const BookmarkScreen(),
       // accountEdit:     (context) => const AccountEditScreen(),
-      accountDelete:   (context) => const DeleteUserScreen(),
+      accountDelete: (context) => const DeleteUserScreen(),
       // 여기에 추가 경로 추가
     };
   }

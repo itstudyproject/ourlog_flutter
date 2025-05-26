@@ -2,9 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-class AuthService {
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
-  
+  static const String _baseUrl = 'http://10.100.204.157:8080:8080/ourlog';
+
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
     final url = '$_baseUrl/auth/login?email=$email&password=$password';
@@ -535,5 +534,26 @@ class AuthService {
       return false;
     }
   }
+}
 
+
+
+Future<String?> getToken() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('token');
+}
+
+Future<Map<String, dynamic>> getUser() async {
+  final prefs = await SharedPreferences.getInstance();
+  final userString = prefs.getString('user');
+  if (userString == null) return {};
+  return Map<String, dynamic>.from(jsonDecode(userString));
+}
+
+Future<Map<String, String>> getAuthHeaders() async {
+  final token = await getToken();
+  return {
+    'Content-Type': 'application/json',
+    if (token != null) 'Authorization': 'Bearer $token',
+  };
 }

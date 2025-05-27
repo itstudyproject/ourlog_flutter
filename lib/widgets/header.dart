@@ -58,9 +58,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       height: 130,
       color: Colors.black.withOpacity(0.9),
       padding: const EdgeInsets.symmetric(horizontal: 50),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
           // 왼쪽: 햄버거 메뉴
           IconButton(
@@ -69,7 +67,9 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               color: Colors.white,
               size: 32,
             ),
-            onPressed: _showSidebar,
+            onPressed: () {
+              _showSidebar();
+            },
           ),
 
           // 중앙: 로고
@@ -78,110 +78,110 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               // 홈으로 이동
               Navigator.pushReplacementNamed(context, '/');
             },
-            child: Image.asset(
-              'assets/images/OurLog.png',
-              height: 55,
-            ),
+            child: Image.asset('assets/images/OurLog.png', height: 55,)
           ),
 
           // 오른쪽: 검색 및 사용자 메뉴
           Flexible(
-            child: LayoutBuilder(builder: (context, constraints) {
-              final bool showSearch = constraints.maxWidth > 300;
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // 화면이 좁으면 검색창 숨기기
+                final bool showSearch = constraints.maxWidth > 300;
 
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (showSearch) ...[
-                    const Text(
-                      'SEARCH',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Container(
-                      width: 160,
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Colors.white,
-                            width: 1,
-                          ),
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (showSearch) ...[
+                      // 검색 레이블
+                      const Text(
+                        'SEARCH',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                              decoration: const InputDecoration(
-                                hintText: '검색',
-                                hintStyle: TextStyle(color: Colors.white70),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding:
-                                EdgeInsets.symmetric(vertical: 8),
-                              ),
+                      const SizedBox(width: 10),
+
+                      // 검색창
+                      Container(
+                        width: 160,
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.white,
+                              width: 1,
                             ),
                           ),
-                          const Icon(
-                            Icons.search,
-                            color: Colors.white,
-                            size: 18,
-                          ),
-                        ],
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: TextField(
+                                style: const TextStyle(color: Colors.white, fontSize: 14),
+                                decoration: const InputDecoration(
+                                  hintText: '검색',
+                                  hintStyle: TextStyle(color: Colors.white70),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                    ],
+
+                    // MyPage 아이콘: 로그인 시에만 표시
+                    if (authProvider.isLoggedIn) ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png'),
+                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                      ),
+                    ] else ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
+                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                      ),
+                    ],
+
+
+                    // 로그인/로그아웃 버튼
+                    GestureDetector(
+                      onTap: () {
+                        if (authProvider.isLoggedIn) {
+                          authProvider.logout().then((_) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('로그아웃 되었습니다')),
+                            );
+                          });
+                        } else {
+                          Navigator.pushNamed(context, '/login');
+                        }
+                      },
+                      child: Text(
+                        authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 24),
                   ],
-
-                  // MyPage 아이콘: 로그인 여부에 따라 색상 및 이동 경로 변경
-                  IconButton(
-                    icon: authProvider.isLoggedIn
-                        ? Image.asset('assets/images/mypage.png')
-                        : Image.asset(
-                      'assets/images/mypage.png',
-                      color: Colors.white24,
-                    ),
-                    onPressed: () => Navigator.pushNamed(
-                        context, authProvider.isLoggedIn ? '/mypage' : '/login'),
-                  ),
-
-                  // 로그인 / 로그아웃 버튼
-                  GestureDetector(
-                    onTap: () {
-                      if (authProvider.isLoggedIn) {
-                        authProvider.logout().then((_) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('로그아웃 되었습니다')),
-                          );
-                        });
-                      } else {
-                        Navigator.pushNamed(context, '/login');
-                      }
-                    },
-                    child: Text(
-                      authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                ],
-              );
-            }),
+                );
+              }
+            ),
           ),
         ],
       ),
@@ -254,6 +254,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               if (authProvider.isLoggedIn) ...[
                                 Row(
                                   children: [
+                                    // 프로필 이미지
                                     const CircleAvatar(
                                       backgroundColor: Colors.grey,
                                       radius: 30,
@@ -261,12 +262,14 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                           size: 40, color: Colors.white),
                                     ),
                                     const SizedBox(width: 16),
+
+                                    // 사용자 정보 (닉네임, 마이페이지 링크)
                                     Column(
                                       crossAxisAlignment:
                                       CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          authProvider.userEmail ?? '사용자',
+                                          authProvider.userNickname ?? authProvider.userEmail ?? '사용자', // 닉네임 또는 이메일 표시
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 18,
@@ -293,6 +296,32 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                       ],
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 16), // 사용자 정보 아래 간격
+
+                                // 채팅 버튼 추가
+                                GestureDetector(
+                                  onTap: () {
+                                    _closeSidebar(); // 사이드바 닫기
+                                    Navigator.pushNamed(context, '/chatList'); // 채팅 목록 페이지로 이동 (새로운 라우트 사용)
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1), // 배경색
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 20), // 채팅 아이콘
+                                        SizedBox(width: 10),
+                                        Text(
+                                          '채팅',
+                                          style: TextStyle(color: Colors.white, fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                                 const SizedBox(height: 32),
                                 const Divider(color: Colors.white24),

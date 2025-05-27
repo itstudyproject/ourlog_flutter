@@ -1,20 +1,41 @@
 class User {
   final int userId;
+  final String email;
+  final String nickname;
   final String? mobile;
-  final List<String> roles; // 역할 리스트 추가
+  final bool isAdmin;
 
   User({
     required this.userId,
+    required this.email,
+    required this.nickname,
     this.mobile,
-    required this.roles, // 생성자에 필수로 추가
+    required this.isAdmin,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final roles = (json['roleSet'] as List<dynamic>?)
+        ?.map((e) => e.toString())
+        .toList();
+
+    final isAdmin = roles?.contains('ADMIN') ?? false;
+
     return User(
       userId: json['userId'] as int,
+      email: json['email'] as String,
+      nickname: json['nickname'] as String,
       mobile: json['mobile'] as String?,
-      roles: List<String>.from(json['roleSet'] ?? []), // roleSet 파싱
+      isAdmin: isAdmin,
     );
   }
-  bool get isAdmin => roles.contains('ROLE_ADMIN'); // 관리자 여부 체크용 getter
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'email': email,
+      'nickname': nickname,
+      if (mobile != null) 'mobile': mobile,
+      'isAdmin': isAdmin,
+    };
+  }
 }

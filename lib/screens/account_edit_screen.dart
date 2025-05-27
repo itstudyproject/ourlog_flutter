@@ -104,7 +104,7 @@ class _AccountEditScreenState extends State<AccountEditScreen> {
         backgroundColor: Colors.black,
         elevation: 0,
         title: const Text('회원정보수정'),
-        leading: BackButton(color: Colors.amber),
+        leading: BackButton(color: Colors.white),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())

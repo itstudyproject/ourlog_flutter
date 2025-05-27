@@ -8,7 +8,7 @@ class TermsConditionScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black, // 배경색 (예: 검정)
       appBar: AppBar(
-        title: const Text('이용약관'),
+        title: const Text('이용약관', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),

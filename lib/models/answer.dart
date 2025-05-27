@@ -1,11 +1,11 @@
-class AnswerDTO {
+class Answer {
   final int answerId;
-  final int questionId;  // 질문 ID 추가
+  final int? questionId; // 🔸 nullable로 변경
   final String contents;
   final String regDate;
   final String modDate;
 
-  AnswerDTO({
+  Answer({
     required this.answerId,
     required this.questionId,
     required this.contents,
@@ -13,10 +13,10 @@ class AnswerDTO {
     required this.modDate,
   });
 
-  factory AnswerDTO.fromJson(Map<String, dynamic> json) {
-    return AnswerDTO(
+  factory Answer.fromJson(Map<String, dynamic> json) {
+    return Answer(
       answerId: json['answerId'],
-      questionId: json['questionId'],  // JSON에서 받아오도록
+      questionId: json['questionId'],
       contents: json['contents'] ?? '',
       regDate: json['regDate'] ?? '',
       modDate: json['modDate'] ?? '',

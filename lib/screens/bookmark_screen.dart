@@ -178,12 +178,12 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    post.title,
+                    post.title ?? '제목 없음',
                     style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '작가: ${post.artist}',
+                    '작가: ${post.nickname ?? '알 수 없음'}',
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 2),

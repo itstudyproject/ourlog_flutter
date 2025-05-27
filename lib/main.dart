@@ -5,6 +5,8 @@ import 'package:ourlog/screens/appinfo_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/ranking_screen.dart';
+
 
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
@@ -58,7 +60,11 @@ class MyApp extends StatelessWidget {
           initialTabIndex: 0,
           isAdmin: false, // 로그인하지 않은 사용자의 기본값
         ),
-        '/admin/answer': (context) => AnswerScreen(), // ✅ 추가
+        '/admin/answer': (context) => AnswerScreen(),
+
+        '/ranking': (context) => const RankingScreen(),
+
+
 
 
 

@@ -128,7 +128,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding:
+<<<<<<< Updated upstream
                                     EdgeInsets.symmetric(vertical: 8),
+=======
+                                EdgeInsets.symmetric(vertical: 8),
+>>>>>>> Stashed changes
                               ),
                             ),
                           ),
@@ -148,9 +152,15 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                     icon: authProvider.isLoggedIn
                         ? Image.asset('assets/images/mypage.png')
                         : Image.asset(
+<<<<<<< Updated upstream
                             'assets/images/mypage.png',
                             color: Colors.white24,
                           ),
+=======
+                      'assets/images/mypage.png',
+                      color: Colors.white24,
+                    ),
+>>>>>>> Stashed changes
                     onPressed: () => Navigator.pushNamed(
                         context, authProvider.isLoggedIn ? '/mypage' : '/login'),
                   ),
@@ -236,7 +246,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 사이드바 헤더
                               Row(
                                 mainAxisAlignment:
+<<<<<<< Updated upstream
                                     MainAxisAlignment.spaceBetween,
+=======
+                                MainAxisAlignment.spaceBetween,
+>>>>>>> Stashed changes
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -263,7 +277,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     const SizedBox(width: 16),
                                     Column(
                                       crossAxisAlignment:
+<<<<<<< Updated upstream
                                           CrossAxisAlignment.start,
+=======
+                                      CrossAxisAlignment.start,
+>>>>>>> Stashed changes
                                       children: [
                                         Text(
                                           authProvider.userEmail ?? '사용자',
@@ -286,7 +304,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                               color: Color(0xFF9BCABF),
                                               fontSize: 14,
                                               decoration:
+<<<<<<< Updated upstream
                                                   TextDecoration.underline,
+=======
+                                              TextDecoration.underline,
+>>>>>>> Stashed changes
                                             ),
                                           ),
                                         ),
@@ -352,7 +374,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 하단 로고
                               Padding(
                                 padding:
+<<<<<<< Updated upstream
                                     const EdgeInsets.only(top: 40, bottom: 70),
+=======
+                                const EdgeInsets.only(top: 40, bottom: 70),
+>>>>>>> Stashed changes
                                 child: Opacity(
                                   opacity: 0.7,
                                   child: Text(
@@ -361,8 +387,13 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                         .textTheme
                                         .headlineLarge
                                         ?.copyWith(
+<<<<<<< Updated upstream
                                           fontSize: 40,
                                         ),
+=======
+                                      fontSize: 40,
+                                    ),
+>>>>>>> Stashed changes
                                   ),
                                 ),
                               ),
@@ -420,6 +451,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         ),
         const SizedBox(height: 10),
         ...items.map((item) => GestureDetector(
+<<<<<<< Updated upstream
               onTap: () async {
                 await _closeSidebar();
                 if (item == '아트 등록') {
@@ -448,6 +480,36 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                 ),
               ),
             )),
+=======
+          onTap: () async {
+            await _closeSidebar();
+            if (item == '아트 등록') {
+              Navigator.pushNamed(context, '/postUpload');
+            } else if (item == '아트 게시판') {
+              Navigator.pushNamed(context, '/artWork');
+            } else if (item == '새소식') {
+              Navigator.pushNamed(context, '/news');
+            } else if (item == '자유게시판') {
+              Navigator.pushNamed(context, '/free');
+            } else if (item == '홍보 게시판') {
+              Navigator.pushNamed(context, '/advertise');
+            } else if (item == '요청 게시판') {
+              Navigator.pushNamed(context, '/request');
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12, bottom: 6),
+            child: Text(
+              item,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        )),
+>>>>>>> Stashed changes
         const SizedBox(height: 20),
       ],
     );

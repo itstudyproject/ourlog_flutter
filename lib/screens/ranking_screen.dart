@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:ourlog/models/post.dart';
 import 'package:ourlog/services/ranking_service.dart';
 
-class RankingPage extends StatefulWidget {
-  const RankingPage({Key? key}) : super(key: key);
+class RankingScreen extends StatefulWidget {
+  const RankingScreen({Key? key}) : super(key: key);
 
   @override
-  State<RankingPage> createState() => _RankingPageState();
+  State<RankingScreen> createState() => _RankingScreenState();
 }
 
 enum RankingKey { views, followers, downloads }
@@ -17,7 +17,7 @@ const badgeColors = [
   Color(0xFFA67C52),
 ];
 
-class _RankingPageState extends State<RankingPage> {
+class _RankingScreenState extends State<RankingScreen> {
   RankingKey rankingType = RankingKey.views;
   List<Post> artworks = [];
   int visibleCount = 12;

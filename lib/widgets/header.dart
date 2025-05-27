@@ -76,114 +76,115 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
           // 중앙: 로고
           GestureDetector(
-            onTap: () {
-              // 홈으로 이동
-              Navigator.pushReplacementNamed(context, '/');
-            },
-            child: Image.asset('assets/images/OurLog.png', height: 55,)
-          ),
+              onTap: () {
+                // 홈으로 이동
+                Navigator.pushReplacementNamed(context, '/');
+              },
+              child: Image.asset(
+                'assets/images/OurLog.png',
+                height: 55,
+              )),
 
           // 오른쪽: 검색 및 사용자 메뉴
           Flexible(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // 화면이 좁으면 검색창 숨기기
-                final bool showSearch = constraints.maxWidth > 300;
+            child: LayoutBuilder(builder: (context, constraints) {
+              // 화면이 좁으면 검색창 숨기기
+              final bool showSearch = constraints.maxWidth > 300;
 
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (showSearch) ...[
-                      // 검색 레이블
-                      const Text(
-                        'SEARCH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // 검색창
-                      Container(
-                        width: 160,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                                decoration: const InputDecoration(
-                                  hintText: '검색',
-                                  hintStyle: TextStyle(color: Colors.white70),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.search,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                    ],
-
-                    // MyPage 아이콘: 로그인 시에만 표시
-                    if (authProvider.isLoggedIn) ...[
-                      IconButton(
-                        icon: Image.asset('assets/images/mypage.png'),
-                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
-                      ),
-                    ] else ...[
-                      IconButton(
-                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
-                        onPressed: () => Navigator.pushNamed(context, '/login'),
-                      ),
-                    ],
-
-
-                    // 로그인/로그아웃 버튼
-                    GestureDetector(
-                      onTap: () {
-                        if (authProvider.isLoggedIn) {
-                          authProvider.logout().then((_) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('로그아웃 되었습니다')),
-                            );
-                          });
-                        } else {
-                          Navigator.pushNamed(context, '/login');
-                        }
-                      },
-                      child: Text(
-                        authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (showSearch) ...[
+                    // 검색 레이블
+                    const Text(
+                      'SEARCH',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
                       ),
                     ),
+                    const SizedBox(width: 10),
+
+                    // 검색창
+                    Container(
+                      width: 160,
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.white,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              style:
+                              const TextStyle(color: Colors.white, fontSize: 14),
+                              decoration: const InputDecoration(
+                                hintText: '검색',
+                                hintStyle: TextStyle(color: Colors.white70),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.symmetric(vertical: 8),
+                              ),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 24),
                   ],
-                );
-              }
-            ),
+
+                  // MyPage 아이콘: 로그인 시에만 표시
+                  if (authProvider.isLoggedIn) ...[
+                    IconButton(
+                      icon: Image.asset('assets/images/mypage.png'),
+                      onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                    ),
+                  ] else ...[
+                    IconButton(
+                      icon:
+                      Image.asset('assets/images/mypage.png', color: Colors.white24),
+                      onPressed: () => Navigator.pushNamed(context, '/login'),
+                    ),
+                  ],
+
+                  // 로그인/로그아웃 버튼
+                  GestureDetector(
+                    onTap: () {
+                      if (authProvider.isLoggedIn) {
+                        authProvider.logout().then((_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('로그아웃 되었습니다')),
+                          );
+                        });
+                      } else {
+                        Navigator.pushNamed(context, '/login');
+                      }
+                    },
+                    child: Text(
+                      authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ],
       ),
@@ -258,7 +259,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     const CircleAvatar(
                                       backgroundColor: Colors.grey,
                                       radius: 30,
-                                      child: Icon(Icons.person, size: 40, color: Colors.white),
+                                      child:
+                                      Icon(Icons.person, size: 40, color: Colors.white),
                                     ),
                                     const SizedBox(width: 16),
                                     Column(
@@ -310,7 +312,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 '요청 게시판',
                               ]),
 
-                              // 랭킹 섹션
+                              // 랭킹 섹션 (클릭 시 /ranking 으로 이동하도록 처리)
                               _buildSidebarSection('랭킹', []),
 
                               // 마이페이지 섹션 (로그인 시에만 표시)
@@ -404,12 +406,21 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
+        GestureDetector(
+          onTap: () {
+            _closeSidebar();
+            if (title == '랭킹') {
+              Navigator.pushNamed(context, '/ranking');
+            }
+            // 필요한 다른 섹션도 여기서 처리 가능
+          },
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 30,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 10),
@@ -444,7 +455,25 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
             case '설정':
               Navigator.pushNamed(context, '/mypage/settings');
               break;
-            // 다른 메뉴 항목들에 대한 처리 추가
+            case '아트 등록':
+              Navigator.pushNamed(context, '/art/register');
+              break;
+            case '아트 게시판':
+              Navigator.pushNamed(context, '/art/board');
+              break;
+            case '새소식':
+              Navigator.pushNamed(context, '/community/news');
+              break;
+            case '자유게시판':
+              Navigator.pushNamed(context, '/community/freeboard');
+              break;
+            case '홍보 게시판':
+              Navigator.pushNamed(context, '/community/promotion');
+              break;
+            case '요청 게시판':
+              Navigator.pushNamed(context, '/community/request');
+              break;
+          // 필요시 추가 메뉴 처리
           }
         },
         child: Text(

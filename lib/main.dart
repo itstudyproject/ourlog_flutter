@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
-import 'package:ourlog/screens/appinfo_screen.dart';
-
 import 'package:ourlog/screens/bookmark_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
@@ -53,7 +51,6 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
-        '/appinfo': (context) => const AppinfoScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(

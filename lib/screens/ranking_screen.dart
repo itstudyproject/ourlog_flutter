@@ -122,7 +122,8 @@ class _RankingScreenState extends State<RankingScreen> {
 
   Widget buildRankingButton(RankingKey key, String label) {
     final isActive = rankingType == key;
-    return Expanded(
+    return SizedBox(
+      width: 100, // 버튼 너비 제한
       child: ElevatedButton(
         onPressed: () {
           setState(() {
@@ -131,9 +132,10 @@ class _RankingScreenState extends State<RankingScreen> {
           fetchRankings();
         },
         style: ElevatedButton.styleFrom(
-          backgroundColor: isActive ? Colors.blue : Colors.grey[300],
+          backgroundColor: isActive ? Colors.orange : Colors.white70,
           foregroundColor: isActive ? Colors.white : Colors.black,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 10), // 버튼 높이 조절
+          textStyle: const TextStyle(fontSize: 14), // 글자 크기 조절
         ),
         child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
@@ -147,119 +149,137 @@ class _RankingScreenState extends State<RankingScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ranking Page"),
+        title: const Text("Ranking", style: TextStyle(color: Colors.white)),
       ),
-      body: Column(
-        children: [
-          Image.asset('assets/images/topranking.png', height: 100, fit: BoxFit.cover),
-          Row(
-            children: [
-              buildRankingButton(RankingKey.views, "조회수"),
-              buildRankingButton(RankingKey.followers, "팔로우"),
-              buildRankingButton(RankingKey.downloads, "다운로드"),
-            ],
-          ),
-          Expanded(
-            child: ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(8),
+      body: Center(   // 전체를 화면 가운데 정렬하는 Center 위젯으로 감싸기
+        child: Column(
+          mainAxisSize: MainAxisSize.min, // 높이는 내용만큼만
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/images/topranking.png',
+              width: MediaQuery.of(context).size.width * 0.8,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Podium Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: List.generate(3, (idx) {
-                    if (idx >= podium.length) return const SizedBox.shrink();
-                    final post = podium[idx];
-                    final badgeColor = badgeColors[idx];
-                    return GestureDetector(
-                      onTap: () {
-                        final path = rankingType == RankingKey.followers
-                            ? '/worker/${post.userId}'
-                            : '/Art/${post.postId}';
-                        Navigator.pushNamed(context, path);
-                      },
-                      child: Card(
-                        color: idx == 0 ? Colors.amber[300] : idx == 1 ? Colors.grey[400] : Colors.brown[300],
-                        child: SizedBox(
-                          width: 110,
-                          child: Column(
-                            children: [
-                              Stack(
-                                children: [
-                                  Image.network(
-                                    getImageUrl(post, rankingType == RankingKey.followers),
-                                    width: 110,
-                                    height: 110,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset('assets/default-image.jpg', width: 110, height: 110);
-                                    },
-                                  ),
-                                  Positioned(
-                                    top: 8,
-                                    left: 8,
-                                    child: CircleAvatar(
-                                      backgroundColor: badgeColor,
-                                      child: Text("${idx + 1}", style: TextStyle(color: idx == 2 ? Colors.white : Colors.black)),
+                const SizedBox(width: 20),
+                buildRankingButton(RankingKey.views, "조회수"),
+                const SizedBox(width: 10),
+                buildRankingButton(RankingKey.followers, "팔로우"),
+                const SizedBox(width: 10),
+                buildRankingButton(RankingKey.downloads, "다운로드"),
+                const SizedBox(width: 20),
+              ],
+            ),
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(8),
+                children: [
+                  // Podium Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: List.generate(3, (idx) {
+                      if (idx >= podium.length) return const SizedBox.shrink();
+                      final post = podium[idx];
+                      final badgeColor = badgeColors[idx];
+                      return GestureDetector(
+                        onTap: () {
+                          final path = rankingType == RankingKey.followers
+                              ? '/worker/${post.userId}'
+                              : '/Art/${post.postId}';
+                          Navigator.pushNamed(context, path);
+                        },
+                        child: Card(
+                          color: idx == 0
+                              ? Colors.amber[300]
+                              : idx == 1
+                              ? Colors.grey[400]
+                              : Colors.brown[300],
+                          child: SizedBox(
+                            width: 110,
+                            child: Column(
+                              children: [
+                                Stack(
+                                  children: [
+                                    Image.network(
+                                      getImageUrl(post, rankingType == RankingKey.followers),
+                                      width: 110,
+                                      height: 110,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return Image.asset('assets/default-image.jpg', width: 110, height: 110);
+                                      },
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                rankingType == RankingKey.followers ? post.nickname ?? "" : post.title ?? "",
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                rankingType == RankingKey.views
-                                    ? "👁️ ${formatNumber(post.views)}"
-                                    : rankingType == RankingKey.followers
-                                    ? "👥 ${formatNumber(post.followers)}"
-                                    : "⬇️ ${formatNumber(post.downloads)}",
-                                style: const TextStyle(fontSize: 12),
-                              ),
-                            ],
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: CircleAvatar(
+                                        backgroundColor: badgeColor,
+                                        child: Text("${idx + 1}", style: TextStyle(color: idx == 2 ? Colors.white : Colors.black)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  rankingType == RankingKey.followers ? post.nickname ?? "" : post.title ?? "",
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Text(
+                                  rankingType == RankingKey.views
+                                      ? "👁️ ${formatNumber(post.views)}"
+                                      : rankingType == RankingKey.followers
+                                      ? "👥 ${formatNumber(post.followers)}"
+                                      : "⬇️ ${formatNumber(post.downloads)}",
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  // 나머지 리스트
+                  ...rest.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final post = entry.value;
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      child: ListTile(
+                        onTap: () {
+                          final path = rankingType == RankingKey.followers
+                              ? '/worker/${post.userId}'
+                              : '/Art/${post.postId}';
+                          Navigator.pushNamed(context, path);
+                        },
+                        leading: CircleAvatar(
+                          backgroundImage: NetworkImage(getImageUrl(post, rankingType == RankingKey.followers)),
+                          onBackgroundImageError: (_, __) {},
+                        ),
+                        title: Text(rankingType == RankingKey.followers ? post.nickname ?? "" : post.title ?? ""),
+                        subtitle: Text(
+                          rankingType == RankingKey.views
+                              ? "조회수: ${formatNumber(post.views)}"
+                              : rankingType == RankingKey.followers
+                              ? "팔로워: ${formatNumber(post.followers)}"
+                              : "다운로드: ${formatNumber(post.downloads)}",
+                        ),
+                        trailing: Text("#${idx + 4}"),
                       ),
                     );
                   }),
-                ),
-                const SizedBox(height: 12),
-                // Rest List
-                ...rest.asMap().entries.map((entry) {
-                  final idx = entry.key;
-                  final post = entry.value;
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    child: ListTile(
-                      onTap: () {
-                        final path = rankingType == RankingKey.followers
-                            ? '/worker/${post.userId}'
-                            : '/Art/${post.postId}';
-                        Navigator.pushNamed(context, path);
-                      },
-                      leading: CircleAvatar(
-                        backgroundImage: NetworkImage(getImageUrl(post, rankingType == RankingKey.followers)),
-                        onBackgroundImageError: (_, __) {},
-                      ),
-                      title: Text(rankingType == RankingKey.followers ? post.nickname ?? "" : post.title ?? ""),
-                      subtitle: Text(
-                        rankingType == RankingKey.views
-                            ? "조회수: ${formatNumber(post.views)}"
-                            : rankingType == RankingKey.followers
-                            ? "팔로워: ${formatNumber(post.followers)}"
-                            : "다운로드: ${formatNumber(post.downloads)}",
-                      ),
-                      trailing: Text("#${idx + 4}"),
-                    ),
-                  );
-                }),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

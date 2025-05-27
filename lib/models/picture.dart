@@ -1,4 +1,4 @@
-class Artwork {
+class Picture {
   final int picId;
   final String uuid; // 파일 UUID
   final String picName; // 원본 파일명
@@ -12,7 +12,7 @@ class Artwork {
   final int? ownerId; // 이미지 소유자 ID
   final int? postId; // 이미지가 연결된 게시물 ID
 
-  Artwork({
+  Picture({
     required this.picId,
     required this.uuid,
     required this.picName,
@@ -27,8 +27,8 @@ class Artwork {
     this.postId,
   });
 
-  factory Artwork.fromJson(Map<String, dynamic> json) {
-    return Artwork(
+  factory Picture.fromJson(Map<String, dynamic> json) {
+    return Picture(
       picId: json['picId'],
       uuid: json['uuid'],
       picName: json['picName'],

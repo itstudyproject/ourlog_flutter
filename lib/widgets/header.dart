@@ -423,7 +423,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
           onTap: () async {
             await _closeSidebar();
             if (item == '아트 등록') {
-              Navigator.pushNamed(context, '/postUpload');
+              Navigator.pushNamed(context, '/art/register');
             } else if (item == '아트 게시판') {
               Navigator.pushNamed(context, '/artWork');
             } else if (item == '새소식') {

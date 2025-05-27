@@ -97,7 +97,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2), // 포커스 시 오렌지색 테두리
+                  borderSide: const BorderSide(color: Colors.orange, width: 2),
                 ),
                 hintText: '답변을 입력하세요',
                 hintStyle: const TextStyle(color: Colors.white54),
@@ -133,20 +133,18 @@ class _AnswerScreenState extends State<AnswerScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (isEditing)
-                TextButton(
-                  onPressed: () async {
+                GestureDetector(
+                  onTap: () async {
                     final existingAnswer = inquiry.answer;
                     final newContents = answerController.text;
                     bool success;
 
                     if (existingAnswer != null) {
-                      // 수정
                       success = await _answerService.modifyAnswer(
                         existingAnswer.answerId.toString(),
                         newContents,
                       );
                     } else {
-                      // 작성
                       final answer = await _answerService.createAnswer(
                         inquiry.questionId,
                         newContents,
@@ -155,7 +153,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                     }
 
                     if (success) {
-                      await _loadInquiries(); // 새로고침
+                      await _loadInquiries();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('답변이 저장되었습니다.')),
                       );
@@ -165,12 +163,20 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       );
                     }
                   },
-                  child: const Text('저장', style: TextStyle(color: Colors.white)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('저장',  textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
+                  ),
                 ),
 
               if (isEditing)
-                TextButton(
-                  onPressed: () {
+                GestureDetector(
+                  onTap: () {
                     setState(() {
                       _isEditing[inquiry.questionId] = false;
                       answerController.text = inquiries
@@ -179,53 +185,73 @@ class _AnswerScreenState extends State<AnswerScreen> {
                           ?.contents ?? "";
                     });
                   },
-                  child: const Text('취소', style: TextStyle(color: Colors.white54)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white24,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('취소',  textAlign: TextAlign.center, style: TextStyle(color: Colors.white54)),
+                  ),
                 ),
 
               if (!isEditing)
-                TextButton.icon(
-                  onPressed: () {
+                GestureDetector(
+                  onTap: () {
                     setState(() {
                       _isEditing[inquiry.questionId] = true;
                     });
                   },
-                  icon: const Icon(Icons.edit, size: 18, color: Colors.white),
-                  label: Text(
-                    '답변 ${inquiry.answered ? "수정" : "작성"}',
-                    style: const TextStyle(color: Colors.white),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 6),
+                        Text(
+                          '${inquiry.answered ? "수정" : "작성"}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
 
               if (!isEditing && inquiry.answered)
-                TextButton.icon(
-                  onPressed: () async {
+                GestureDetector(
+                  onTap: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
                         backgroundColor: Colors.grey[900],
-                        title: const Text('답변을 삭제하시겠습니까?',   textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontSize: 16)),
+                        title: const Text('답변을 삭제하시겠습니까?', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                         content: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             GestureDetector(
                               onTap: () => Navigator.pop(context, false),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                                 margin: const EdgeInsets.only(right: 10),
                                 decoration: BoxDecoration(
                                   color: Colors.white24,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                child: const Text('취소', style: TextStyle(color: Colors.white)),
+                                child: const Text('취소', textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
                               ),
                             ),
                             GestureDetector(
                               onTap: () => Navigator.pop(context, true),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent,
+                                  color: Colors.red,
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Text('삭제', style: TextStyle(color: Colors.white)),
@@ -273,8 +299,14 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       }
                     }
                   },
-                  icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
-                  label: const Text('답변 삭제', style: TextStyle(color: Colors.redAccent)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text('삭제', style: TextStyle(color: Colors.white)),
+                  ),
                 ),
             ],
           ),

@@ -7,7 +7,7 @@ import '../services/profile_service.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   final int userId;
-  const ProfileEditScreen({Key? key, required this.userId}) : super(key: key);
+  const ProfileEditScreen({super.key, required this.userId});
 
   @override
   _ProfileEditScreenState createState() => _ProfileEditScreenState();

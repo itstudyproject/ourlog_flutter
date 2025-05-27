@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
-import 'package:ourlog/screens/appinfo_screen.dart';
-
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/ranking_screen.dart';
+
 
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
@@ -24,7 +24,10 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+<<<<<<< HEAD
 import 'providers/chat_provider.dart';
+=======
+>>>>>>> 829351845c9f2b98dc0b5d1684dc68682a9c8a8a
 
 void main() {
   runApp(
@@ -56,7 +59,6 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
-        '/appinfo': (context) => const AppinfoScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(
@@ -64,7 +66,7 @@ class MyApp extends StatelessWidget {
           isAdmin: false, // 로그인하지 않은 사용자의 기본값
         ),
         '/admin/answer': (context) => AnswerScreen(), // ✅ 추가
-        
+        '/ranking': (context) => const RankingScreen(),
         '/chatList': (context) => const ChatListScreen(), // <-- ChatListScreen 라우트 추가
         
         '/chat': (context) {
@@ -81,7 +83,6 @@ class MyApp extends StatelessWidget {
     );
   }
 },
-
 
         '/mypage/edit': (context) {
           final userId = ModalRoute.of(context)!.settings.arguments as int;

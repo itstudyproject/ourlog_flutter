@@ -100,6 +100,12 @@ class AuthProvider extends ChangeNotifier {
         // 사용자 정보 및 프로필 로드/생성 메서드 호출
         await loadUserInfoAndProfile(_token!, _userEmail!);
 
+        // React 코드처럼 로그인 성공 시 사용자 정보 출력
+        print('✅ OurLog 로그인 성공:');
+        print('   Email: $_userEmail');
+        print('   UserId: $_userId');
+        print('   Nickname: $_userNickname');
+
         _isLoading = false;
         // loadUserInfoAndProfile에서 notifyListeners를 호출하므로 여기서 다시 호출할 필요 없음
         // notifyListeners();
@@ -409,10 +415,17 @@ class AuthProvider extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
 
+    final response = await http.get(
+      Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
       if (token == null) return false;
 
       final response = await http.get(
-        Uri.parse('http://10.100.204.54:8080/ourlog/user/check-admin'),
+        Uri.parse('http://10.100.204.171:8080/ourlog/user/check-admin'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

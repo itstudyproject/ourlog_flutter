@@ -29,17 +29,17 @@ class Artwork {
     String getImageUrl(Map<String, dynamic> item) {
       if (item['pictureDTOList'] != null && item['pictureDTOList'].isNotEmpty) {
         final picData = item['pictureDTOList'][0];
-        if (picData['resizedImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${picData['resizedImagePath']}";
-        if (picData['thumbnailImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${picData['thumbnailImagePath']}";
-        if (picData['originImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${picData['originImagePath']}";
-        if (picData['fileName'] != null) return "http://localhost:8080/ourlog/picture/display/${picData['fileName']}";
+        if (picData['resizedImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['resizedImagePath']}";
+        if (picData['thumbnailImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['thumbnailImagePath']}";
+        if (picData['originImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['originImagePath']}";
+        if (picData['fileName'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['fileName']}";
       } else {
-        if (item['resizedImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${item['resizedImagePath']}";
-        if (item['thumbnailImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${item['thumbnailImagePath']}";
-        if (item['originImagePath'] != null) return "http://localhost:8080/ourlog/picture/display/${item['originImagePath']}";
-        if (item['fileName'] != null) return "http://localhost:8080/ourlog/picture/display/${item['fileName']}";
+        if (item['resizedImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['resizedImagePath']}";
+        if (item['thumbnailImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['thumbnailImagePath']}";
+        if (item['originImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['originImagePath']}";
+        if (item['fileName'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['fileName']}";
       }
-      return "/default-image.jpg";
+      return "http://10.100.204.171:8080/ourlog/picture/display/default-image.jpg";
     }
 
     String highestBidFormatted = "";
@@ -72,8 +72,8 @@ class ArtworkSlider extends StatefulWidget {
 }
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
-  static const String viewsApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=views";
-  static const String followersApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=followers";
+  static const String viewsApiUrl = "http://10.100.204.171:8080/ourlog/ranking?type=views";
+  static const String followersApiUrl = "http://10.100.204.171:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];

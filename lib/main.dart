@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
-
+import 'package:ourlog/screens/chat_list_screen.dart';
+import 'package:ourlog/screens/chat_screen.dart';
+import 'package:ourlog/screens/art/artlist_screen.dart';
+import 'package:ourlog/screens/art/artRegister_screen.dart';
 import 'package:ourlog/screens/customer/answer_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
 
@@ -14,6 +17,7 @@ import 'package:ourlog/screens/profile_edit_screen.dart';
 import 'package:ourlog/screens/purchase_bid_screen.dart';
 import 'package:ourlog/screens/sale_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
 
 import 'constants/theme.dart';
 import 'providers/auth_provider.dart';
@@ -21,12 +25,14 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
+import 'providers/chat_provider.dart';
 
 void main() {
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MyApp(),
     ),
@@ -51,19 +57,32 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
+        '/artWork': (context) => const ArtListScreen(),
+        '/art/register': (context) => const ArtRegisterScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(
           initialTabIndex: 0,
           isAdmin: false, // 로그인하지 않은 사용자의 기본값
         ),
-        '/admin/answer': (context) => AnswerScreen(),
-
+        '/admin/answer': (context) => AnswerScreen(), // ✅ 추가
         '/ranking': (context) => const RankingScreen(),
-
-
-
-
+        '/chatList': (context) => const ChatListScreen(), // <-- ChatListScreen 라우트 추가
+        
+        '/chat': (context) {
+  // 라우트 인자(arguments)로 전달된 GroupChannel 객체를 가져옴
+  final Object? args = ModalRoute.of(context)!.settings.arguments;
+  if (args is GroupChannel) {
+    return ChatScreen(channel: args);
+  } else {
+    // 인자가 null이거나 GroupChannel 타입이 아닐 경우 오류 처리
+    debugPrint('Error: Navigated to /chat with invalid arguments: $args');
+    return Scaffold(
+      appBar: AppBar(title: const Text('오류')),
+      body: const Center(child: Text('잘못된 채팅 채널 정보입니다.')),
+    );
+  }
+},
 
         '/mypage/edit': (context) {
           final userId = ModalRoute.of(context)!.settings.arguments as int;

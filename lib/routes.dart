@@ -7,8 +7,6 @@ import 'screens/my_page_screen.dart';
 // import 'screens/purchase_bid_screen.dart';
 import 'screens/sale_screen.dart';
 import 'screens/bookmark_screen.dart';
-import 'screens/profile_edit_screen.dart';
-import 'screens/account_edit_screen.dart';
 import 'screens/delete_user_screen.dart';
 
 // 앱의 모든 경로를 관리하는 클래스

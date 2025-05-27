@@ -150,12 +150,12 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                         icon: Image.asset('assets/images/mypage.png'),
                         onPressed: () => Navigator.pushNamed(context, '/mypage'),
                       ),
-                    ] else ...[
+                    ], /* else ...[
                       IconButton(
                         icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
                         onPressed: () => Navigator.pushNamed(context, '/login'),
                       ),
-                    ],
+                    ],*/
 
 
                     // 로그인/로그아웃 버튼
@@ -444,6 +444,16 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               break;
             case '설정':
               Navigator.pushNamed(context, '/mypage/settings');
+              break;
+            case '아트 등록':
+              Navigator.pushNamed(context, '/post/register');
+              break;
+            case '새소식':
+            case '자유게시판':
+            case '홍보 게시판':
+            case '요청 게시판':
+            case '아트 게시판': // 아트 게시판도 일단 게시글 목록으로 연결
+              Navigator.pushNamed(context, '/');
               break;
             // 다른 메뉴 항목들에 대한 처리 추가
           }

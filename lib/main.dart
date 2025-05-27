@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/appinfo_screen.dart';
-
 import 'package:ourlog/screens/bookmark_screen.dart';
-
 import 'package:ourlog/screens/customer/answer_screen.dart';
-
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
@@ -21,19 +18,10 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/my_page_screen.dart';
-import 'screens/profile_edit_screen.dart';
-import 'screens/account_edit_screen.dart';
+
 
 void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -111,6 +99,23 @@ class MyApp extends StatelessWidget {
     '/mypage/bookmark':         (context) => const BookmarkScreen(),
     '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
+
+      title: 'OurLog 게시판',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF1a1a1a),
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.black),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+      initialRoute: '/',
+      onGenerateRoute: generateRoute,
+
     );
   }
 }

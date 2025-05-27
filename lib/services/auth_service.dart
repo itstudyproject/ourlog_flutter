@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://10.100.204.54:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.171:8080/ourlog';
   
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
@@ -517,7 +517,7 @@ class AuthService {
     if (token == null) return false;
 
     final response = await http.get(
-      Uri.parse('http://10.100.204.54:8080/ourlog/user/check-admin'),
+      Uri.parse('http://10.100.204.171:8080/ourlog/user/check-admin'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

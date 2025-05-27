@@ -25,10 +25,10 @@ class Inquiry {
       questionId: json['questionId'].toString(),
       title: json['title'] ?? '',
       regDate: json['regDate'] ?? '',
-      answered: json['answer'] != null,
+      answered: json['answerDTO'] != null,
       content: json['content'] ?? '',
-      answer: json['answer'] != null
-          ? Answer.fromJson(json['answer'])
+      answer: json['answerDTO'] != null
+          ? Answer.fromJson(json['answerDTO'])
           : null,
       user: json['userDTO'] != null
           ? User.fromJson(json['userDTO'])

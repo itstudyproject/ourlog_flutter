@@ -1,6 +1,6 @@
 class Answer {
   final int answerId;
-  final int questionId;  // 질문 ID 추가
+  final int? questionId; // 🔸 nullable로 변경
   final String contents;
   final String regDate;
   final String modDate;

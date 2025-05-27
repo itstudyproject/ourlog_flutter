@@ -89,7 +89,7 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen>
                 children: [
                   const FaqScreen(),
                   const InquiryScreen(),
-                  QuestionListScreen(isAdmin: widget.isAdmin),  // 탭 3은 항상 질문 목록
+                  QuestionListScreen(),  // 탭 3은 항상 질문 목록
                 ],
               ),
             ),

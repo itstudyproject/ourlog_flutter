@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 
 class Header extends StatefulWidget {
-  const Header({Key? key}) : super(key: key);
+  const Header({super.key});
 
   @override
   State<Header> createState() => _HeaderState();
@@ -54,7 +53,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
   Widget _buildHeader() {
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     return Container(
       height: 130,
       color: Colors.black.withOpacity(0.9),
@@ -74,7 +73,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               _showSidebar();
             },
           ),
-          
+
           // 중앙: 로고
           GestureDetector(
             onTap: () {
@@ -83,14 +82,14 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
             },
             child: Image.asset('assets/images/OurLog.png', height: 55,)
           ),
-          
+
           // 오른쪽: 검색 및 사용자 메뉴
           Flexible(
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // 화면이 좁으면 검색창 숨기기
                 final bool showSearch = constraints.maxWidth > 300;
-                
+
                 return Row(
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -107,7 +106,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                         ),
                       ),
                       const SizedBox(width: 10),
-                      
+
                       // 검색창
                       Container(
                         width: 160,
@@ -143,7 +142,21 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                       ),
                       const SizedBox(width: 24),
                     ],
-                    
+
+                    // MyPage 아이콘: 로그인 시에만 표시
+                    if (authProvider.isLoggedIn) ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png'),
+                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                      ),
+                    ] else ...[
+                      IconButton(
+                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
+                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                      ),
+                    ],
+
+
                     // 로그인/로그아웃 버튼
                     GestureDetector(
                       onTap: () {
@@ -179,13 +192,13 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
   void _showSidebar() {
     _removeOverlay(); // 기존 오버레이 제거
-    
+
     setState(() {
       _isSidebarOpen = true;
     });
-    
+
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     _overlayEntry = OverlayEntry(
       builder: (context) {
         return Material(
@@ -201,7 +214,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                   ),
                 ),
               ),
-              
+
               // 사이드바 내용
               Positioned(
                 top: 0,
@@ -237,7 +250,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 ],
                               ),
                               const SizedBox(height: 40),
-                              
+
                               // 로그인 상태에 따른 사용자 정보 표시
                               if (authProvider.isLoggedIn) ...[
                                 Row(
@@ -282,13 +295,13 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 const Divider(color: Colors.white24),
                                 const SizedBox(height: 16),
                               ],
-                              
+
                               // 아트 섹션
                               _buildSidebarSection('아트', [
                                 '아트 등록',
                                 '아트 게시판',
                               ]),
-                              
+
                               // 커뮤니티 섹션
                               _buildSidebarSection('커뮤니티', [
                                 '새소식',
@@ -296,10 +309,10 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 '홍보 게시판',
                                 '요청 게시판',
                               ]),
-                              
+
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
-                              
+
                               // 마이페이지 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
                                 _buildSidebarSection('마이페이지', [
@@ -344,7 +357,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     ),
                                   ),
                                 ),
-                              
+
                               // 하단 로고
                               Padding(
                                 padding: const EdgeInsets.only(top: 40, bottom: 70),
@@ -371,20 +384,17 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         );
       },
     );
-    
+
     Overlay.of(context).insert(_overlayEntry!);
     _animationController.forward();
   }
 
-  void _closeSidebar() {
-    _animationController.reverse().then((_) {
-      _removeOverlay();
-      setState(() {
-        _isSidebarOpen = false;
-      });
-    });
+  Future<void> _closeSidebar() async {
+    await _animationController.reverse();
+    _removeOverlay();
+    setState(() => _isSidebarOpen = false);
   }
-  
+
   void _removeOverlay() {
     _overlayEntry?.remove();
     _overlayEntry = null;
@@ -422,7 +432,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         onTap: () {
           // 해당 메뉴로 이동
           _closeSidebar();
-          
+
           // 메뉴 항목에 따른 라우팅 처리
           switch (title) {
             case '프로필 관리':
@@ -447,4 +457,4 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       ),
     );
   }
-} 
+}

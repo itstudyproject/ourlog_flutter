@@ -3,7 +3,7 @@ import '../models/artwork.dart';
 
 class ArtworkService {
   static final Random _random = Random();
-  static List<Artwork> _artworks = [];
+  static final List<Artwork> _artworks = [];
 
   // 샘플 아트워크 데이터 가져오기
   static List<Artwork> getArtworks() {

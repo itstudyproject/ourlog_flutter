@@ -3,7 +3,8 @@ import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
-
+import 'package:ourlog/screens/art/artlist_screen.dart';
+import 'package:ourlog/screens/art/artRegister_screen.dart';
 import 'package:ourlog/screens/customer/answer_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
 
@@ -24,10 +25,7 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-<<<<<<< HEAD
 import 'providers/chat_provider.dart';
-=======
->>>>>>> 829351845c9f2b98dc0b5d1684dc68682a9c8a8a
 
 void main() {
   runApp(
@@ -59,6 +57,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
+        '/artWork': (context) => const ArtListScreen(),
+        '/art/register': (context) => const ArtRegisterScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
-import 'package:ourlog/screens/appinfo_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
+
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/ranking_screen.dart';
+
+
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
@@ -19,9 +22,15 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 
-
 void main() {
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -42,14 +51,17 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
-        '/appinfo': (context) => const AppinfoScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(
           initialTabIndex: 0,
           isAdmin: false, // 로그인하지 않은 사용자의 기본값
         ),
-        '/admin/answer': (context) => AnswerScreen(), // ✅ 추가
+        '/admin/answer': (context) => AnswerScreen(),
+
+        '/ranking': (context) => const RankingScreen(),
+
+
 
 
 
@@ -99,23 +111,6 @@ class MyApp extends StatelessWidget {
     '/mypage/bookmark':         (context) => const BookmarkScreen(),
     '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
-
-      title: 'OurLog 게시판',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF1a1a1a),
-        appBarTheme: const AppBarTheme(backgroundColor: Colors.black),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            textStyle: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ),
-      initialRoute: '/',
-      onGenerateRoute: generateRoute,
-
     );
   }
 }

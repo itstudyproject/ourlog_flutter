@@ -316,14 +316,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               _buildSidebarSection('랭킹', []),
 
                               // 마이페이지 섹션 (로그인 시에만 표시)
-                              if (authProvider.isLoggedIn)
-                                _buildSidebarSection('마이페이지', [
-                                  '프로필 관리',
-                                  '나의 작품',
-                                  '좋아요 목록',
-                                  '구매 내역',
-                                  '설정',
-                                ]),
+                              _buildSidebarSection('마이페이지', []),
+
 
                               // 회원탈퇴 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
@@ -411,8 +405,9 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
             _closeSidebar();
             if (title == '랭킹') {
               Navigator.pushNamed(context, '/ranking');
+            } else if (title == '마이페이지') {
+              Navigator.pushNamed(context, '/mypage');
             }
-            // 필요한 다른 섹션도 여기서 처리 가능
           },
           child: Text(
             title,

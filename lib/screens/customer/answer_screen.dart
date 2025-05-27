@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/models/inquiry.dart';
-import 'package:ourlog/dto/answer_dto.dart';
 import 'package:ourlog/services/customer/answer_service.dart';
 import 'package:ourlog/services/customer/question_service.dart';
 
 class AnswerScreen extends StatefulWidget {
   final Inquiry? inquiry;
-  const AnswerScreen({Key? key, this.inquiry}) : super(key: key);
+  const AnswerScreen({super.key, this.inquiry});
 
   @override
   State<AnswerScreen> createState() => _AnswerScreenState();
@@ -47,7 +46,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
       inquiries = await _questionService.fetchAllInquiries();
 
       for (var inquiry in inquiries) {
-        final needsAnswer = inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true);
+        final needsAnswer = inquiry.answer == null || (inquiry.answer!.contents.trim().isEmpty ?? true);
         _isEditing[inquiry.questionId] = needsAnswer; // 답변이 없으면 자동 편집 모드
         _answerControllers[inquiry.questionId] =
             TextEditingController(text: inquiry.answer?.contents ?? "");
@@ -63,7 +62,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   Widget _buildInquiryItem(Inquiry inquiry) {
     final isEditing =
-        _isEditing[inquiry.questionId] ?? (inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true));
+        _isEditing[inquiry.questionId] ?? (inquiry.answer == null || (inquiry.answer!.contents.trim().isEmpty ?? true));
     final answerController = _answerControllers[inquiry.questionId]!;
 
     return Container(
@@ -116,12 +115,12 @@ class _AnswerScreenState extends State<AnswerScreen> {
               if (isEditing)
                 TextButton(
                   onPressed: () async {
-                    final answerDTO = await _answerService.answerInquiry(
+                    final answer = await _answerService.answerInquiry(
                       inquiry.questionId,
                       answerController.text,
                     );
 
-                    if (answerDTO != null) {
+                    if (answer != null) {
                       setState(() {
                         final index = inquiries.indexWhere((item) => item.questionId == inquiry.questionId);
                         if (index != -1) {
@@ -131,7 +130,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
                             regDate: inquiry.regDate,
                             content: inquiry.content,
                             answered: true,
-                            answer: answerDTO,
+                            answer: answer,
+                            user: inquiry.user, // 기존 user 유지
                           );
                         }
                         _isEditing[inquiry.questionId] = false;

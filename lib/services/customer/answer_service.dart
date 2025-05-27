@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:ourlog/dto/answer_dto.dart';
+import 'package:ourlog/models/answer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AnswerService {
   static const String _baseUrl = 'http://10.100.204.54:8080/ourlog';
 
   // 🔹 답변 작성 또는 수정
-  Future<AnswerDTO?> answerInquiry(String questionId, String contents) async {
+  Future<Answer?> answerInquiry(String questionId, String contents) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
 
@@ -24,7 +24,7 @@ class AnswerService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return AnswerDTO.fromJson(data);
+      return Answer.fromJson(data);
     } else {
       return null;
     }
@@ -36,7 +36,7 @@ class AnswerService {
     final token = prefs.getString('token') ?? '';
 
     final response = await http.put(
-      Uri.parse('$_baseUrl/question-answer/${answerId}'),
+      Uri.parse('$_baseUrl/question-answer/$answerId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -53,7 +53,7 @@ class AnswerService {
     final token = prefs.getString('token') ?? '';
 
     final response = await http.delete(
-      Uri.parse('$_baseUrl/question-answer/${answerId}'),
+      Uri.parse('$_baseUrl/question-answer/$answerId'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

@@ -7,7 +7,7 @@ import '../services/favorite_service.dart';
 import '../models/favorite.dart';
 
 class BookmarkScreen extends StatefulWidget {
-  const BookmarkScreen({Key? key}) : super(key: key);
+  const BookmarkScreen({super.key});
 
   @override
   _BookmarkScreenState createState() => _BookmarkScreenState();
@@ -202,11 +202,11 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                   onPressed: () {
                     Navigator.pushNamed(context, '/art/${post.postId}');
                   },
-                  child: const Text('자세히 보기'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
                     side: const BorderSide(color: Colors.white),
                   ),
+                  child: const Text('자세히 보기'),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
@@ -216,11 +216,11 @@ class _BookmarkScreenState extends State<BookmarkScreen> {
                     // 다시 로드
                     _loadFavorites();
                   },
-                  child: const Text('북마크 해제'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF8C147),
                     foregroundColor: Colors.black,
                   ),
+                  child: const Text('북마크 해제'),
                 ),
               ],
             ),

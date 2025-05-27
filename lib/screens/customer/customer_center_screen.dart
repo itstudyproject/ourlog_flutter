@@ -7,7 +7,7 @@ class CustomerCenterScreen extends StatefulWidget {
   final int initialTabIndex;
   final bool isAdmin;
 
-  CustomerCenterScreen({
+  const CustomerCenterScreen({
     super.key,
     this.initialTabIndex = 0,
     required this.isAdmin, // ✅ 여기를 추가해야 오류가 사라집니다.

@@ -164,7 +164,7 @@ class BulletinBoard extends StatelessWidget {
                   ),
               ],
             );
-          }).toList(),
+          }),
         ],
       ),
     );

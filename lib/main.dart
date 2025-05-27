@@ -21,9 +21,6 @@ import 'screens/delete_user_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
-import 'screens/my_page_screen.dart';
-import 'screens/profile_edit_screen.dart';
-import 'screens/account_edit_screen.dart';
 
 void main() {
   runApp(

@@ -8,7 +8,7 @@ import '../models/purchase_response.dart';
 import '../models/trade.dart';
 
 class PurchaseBidScreen extends StatefulWidget {
-  const PurchaseBidScreen({Key? key}) : super(key: key);
+  const PurchaseBidScreen({super.key});
 
   @override
   _PurchaseBidScreenState createState() => _PurchaseBidScreenState();

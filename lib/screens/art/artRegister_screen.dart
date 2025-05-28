@@ -383,233 +383,233 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
           : ListView(
-              padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(32.0),
+        children: [
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Form(
-                  key: _formKey,
+                if (!widget.isReregister) ...[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (_imageFiles.isNotEmpty) ...[
+                          AspectRatio(
+                            aspectRatio: 16 / 9,
+                            child: Container(
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _selectedThumbnailId == _imageFiles[0].path
+                                      ? const Color(0xFFFFD700)
+                                      : Colors.grey,
+                                  width: 2,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.file(
+                                      _imageFiles[0],
+                                      fit: BoxFit.cover,
+                                    ),
+                                    if (_selectedThumbnailId == _imageFiles[0].path)
+                                      Positioned(
+                                        bottom: 8,
+                                        right: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFD700),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            '대표 이미지',
+                                            style: TextStyle(
+                                              color: Colors.black,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 200,
+                            child: GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                childAspectRatio: 1,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 16,
+                              ),
+                              itemCount: _imageFiles.length + 1,
+                              itemBuilder: (context, index) {
+                                if (index == _imageFiles.length) {
+                                  return GestureDetector(
+                                    onTap: _pickImages,
+                                    child: DashedBorderContainer(
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(
+                                                Icons.add_photo_alternate,
+                                                color: Color(0xFF888888),
+                                                size: 48,
+                                              ),
+                                              SizedBox(height: 16),
+                                              Text(
+                                                '이미지 추가',
+                                                style: TextStyle(
+                                                  color: Color(0xFF888888),
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () => _setThumbnail(_imageFiles[index].path),
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: _selectedThumbnailId == _imageFiles[index].path
+                                                  ? const Color(0xFFFFD700)
+                                                  : Colors.transparent,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: Image.file(
+                                            _imageFiles[index],
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () => _removeImage(index),
+                                          child: Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFFF0000),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              color: Colors.white,
+                                              size: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ] else
+                          GestureDetector(
+                            onTap: _pickImages,
+                            child: DashedBorderContainer(
+                              child: Container(
+                                height: 300,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_photo_alternate,
+                                        color: Color(0xFF888888),
+                                        size: 48,
+                                      ),
+                                      SizedBox(height: 16),
+                                      Text(
+                                        '이미지를 추가해주세요',
+                                        style: TextStyle(
+                                          color: Color(0xFF888888),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                ],
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (!widget.isReregister) ...[
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1A1A1A),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_imageFiles.isNotEmpty) ...[
-                                AspectRatio(
-                                  aspectRatio: 16 / 9,
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: _selectedThumbnailId == _imageFiles[0].path
-                                            ? const Color(0xFFFFD700)
-                                            : Colors.grey,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Stack(
-                                        fit: StackFit.expand,
-                                        children: [
-                                          Image.file(
-                                            _imageFiles[0],
-                                            fit: BoxFit.cover,
-                                          ),
-                                          if (_selectedThumbnailId == _imageFiles[0].path)
-                                            Positioned(
-                                              bottom: 8,
-                                              right: 8,
-                                              child: Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFFFD700),
-                                                  borderRadius: BorderRadius.circular(4),
-                                                ),
-                                                child: const Text(
-                                                  '대표 이미지',
-                                                  style: TextStyle(
-                                                    color: Colors.black,
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  height: 200,
-                                  child: GridView.builder(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 4,
-                                      childAspectRatio: 1,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                    ),
-                                    itemCount: _imageFiles.length + 1,
-                                    itemBuilder: (context, index) {
-                                      if (index == _imageFiles.length) {
-                                        return GestureDetector(
-                                          onTap: _pickImages,
-                                          child: DashedBorderContainer(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                              ),
-                                              child: const Center(
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.add_photo_alternate,
-                                                      color: Color(0xFF888888),
-                                                      size: 48,
-                                                    ),
-                                                    SizedBox(height: 16),
-                                                    Text(
-                                                      '이미지 추가',
-                                                      style: TextStyle(
-                                                        color: Color(0xFF888888),
-                                                        fontSize: 16,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                      return ClipRRect(
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: Stack(
-                                          fit: StackFit.expand,
-                                          children: [
-                                            GestureDetector(
-                                              onTap: () => _setThumbnail(_imageFiles[index].path),
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                    color: _selectedThumbnailId == _imageFiles[index].path
-                                                        ? const Color(0xFFFFD700)
-                                                        : Colors.transparent,
-                                                    width: 2,
-                                                  ),
-                                                ),
-                                                child: Image.file(
-                                                  _imageFiles[index],
-                                                  fit: BoxFit.cover,
-                                                ),
-                                              ),
-                                            ),
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: GestureDetector(
-                                                onTap: () => _removeImage(index),
-                                                child: Container(
-                                                  width: 24,
-                                                  height: 24,
-                                                  decoration: const BoxDecoration(
-                                                    color: Color(0xFFFF0000),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                  child: const Icon(
-                                                    Icons.close,
-                                                    color: Colors.white,
-                                                    size: 16,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ] else
-                                GestureDetector(
-                                  onTap: _pickImages,
-                                  child: DashedBorderContainer(
-                                    child: Container(
-                                      height: 300,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Center(
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.add_photo_alternate,
-                                              color: Color(0xFF888888),
-                                              size: 48,
-                                            ),
-                                            SizedBox(height: 16),
-                                            Text(
-                                              '이미지를 추가해주세요',
-                                              style: TextStyle(
-                                                color: Color(0xFF888888),
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                      ],
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1A1A1A),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildTagSection(),
-                            const SizedBox(height: 24),
-                            _buildTitleField(),
-                            const SizedBox(height: 16),
-                            _buildContentField(),
-                            const SizedBox(height: 24),
-                            _buildPriceFields(),
-                            const SizedBox(height: 24),
-                            _buildAuctionTimeSection(),
-                            const SizedBox(height: 24),
-                            _buildActionButtons(),
-                          ],
-                        ),
-                      ),
+                      _buildTagSection(),
+                      const SizedBox(height: 24),
+                      _buildTitleField(),
+                      const SizedBox(height: 16),
+                      _buildContentField(),
+                      const SizedBox(height: 24),
+                      _buildPriceFields(),
+                      const SizedBox(height: 24),
+                      _buildAuctionTimeSection(),
+                      const SizedBox(height: 24),
+                      _buildActionButtons(),
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+        ],
+      ),
     );
   }
 

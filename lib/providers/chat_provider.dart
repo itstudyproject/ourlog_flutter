@@ -67,10 +67,10 @@ class ChatProvider with ChangeNotifier {
   String? get messagesErrorMessage => _messagesErrorMessage;
 
   Future<void> initializeAndConnect(
-    String userId,
-    String accessToken,
-    String jwtToken,
-  ) async {
+      String userId,
+      String accessToken,
+      String jwtToken,
+      ) async {
     if (_isSendbirdInitialized) {
       if (_channels.isEmpty && _currentUser != null) {
         fetchMyGroupChannels(jwtToken);
@@ -124,28 +124,28 @@ class ChatProvider with ChangeNotifier {
       _channels = fetchedChannels;
 
       final profileTasks =
-          fetchedChannels.map((channel) async {
-            if (channel.memberCount == 2 && _currentUser != null) {
-              final otherUser = channel.members.firstWhere(
+      fetchedChannels.map((channel) async {
+        if (channel.memberCount == 2 && _currentUser != null) {
+          final otherUser = channel.members.firstWhere(
                 (m) => m.userId != _currentUser!.userId,
-                orElse: () => channel.members.first,
+            orElse: () => channel.members.first,
+          );
+          final backendUserId = int.tryParse(otherUser.userId);
+          if (backendUserId != null) {
+            final profileResult = await AuthService.fetchProfile(
+              backendUserId,
+              jwtToken,
+            );
+            if (profileResult['success'] &&
+                profileResult['profile'] != null) {
+              final userProfile = UserProfile.fromJson(
+                profileResult['profile'],
               );
-              final backendUserId = int.tryParse(otherUser.userId);
-              if (backendUserId != null) {
-                final profileResult = await AuthService.fetchProfile(
-                  backendUserId,
-                  jwtToken,
-                );
-                if (profileResult['success'] &&
-                    profileResult['profile'] != null) {
-                  final userProfile = UserProfile.fromJson(
-                    profileResult['profile'],
-                  );
-                  _userProfiles[otherUser.userId] = userProfile;
-                }
-              }
+              _userProfiles[otherUser.userId] = userProfile;
             }
-          }).toList();
+          }
+        }
+      }).toList();
 
       await Future.wait(profileTasks);
     } catch (e) {
@@ -180,9 +180,9 @@ class ChatProvider with ChangeNotifier {
       debugPrint('Loading messages for channel: ${channel.channelUrl}');
 
       _messageCollection = MessageCollection(
-        channel: channel,
-        handler: MyMessageCollectionHandler(),
-        params: MessageListParams()
+          channel: channel,
+          handler: MyMessageCollectionHandler(),
+          params: MessageListParams()
       );
 
       await _messageCollection!.initialize();
@@ -241,7 +241,7 @@ class ChatProvider with ChangeNotifier {
       // ChatListScreen에서 이 함수를 호출하고 있으므로, ChatListScreen에서 AuthProvider에 접근하여 userId를 가져와 전달하는 것이 더 적절합니다.
       // TODO: ChatListScreen에서 userId를 가져와 fetchSendbirdAuthInfo 함수 인자로 전달하도록 수정 필요
       // 현재는 수정된 fetchSendbirdToken의 두 번째 인자가 null이 될 수 있습니다.
-      
+
       // 임시 방편으로 JWT 토큰에서 다시 userId를 추출 시도 (이상적으로는 이미 가지고 있어야 함)
 
       final authInfo = await AuthService.fetchSendbirdToken(jwtToken, backendUserId); // <-- userId 인자 전달
@@ -355,7 +355,7 @@ class MyMessageCollectionHandler extends MessageCollectionHandler {
       // 예: 채널 이름이나 멤버 변경을 UI에 반영
       _refreshChannelInfo(channel);
     } else {
-       print('Channel updated event received, but channel is null.');
+      print('Channel updated event received, but channel is null.');
     }
   }
 
@@ -401,4 +401,3 @@ class MyMessageCollectionHandler extends MessageCollectionHandler {
     print('Requested message sync to fill gap.');
   }
 }
-

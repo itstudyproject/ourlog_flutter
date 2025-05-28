@@ -69,21 +69,21 @@ class MyApp extends StatelessWidget {
         '/admin/answer': (context) => AnswerScreen(), // ✅ 추가
         '/ranking': (context) => const RankingScreen(),
         '/chatList': (context) => const ChatListScreen(), // <-- ChatListScreen 라우트 추가
-        
+
         '/chat': (context) {
-  // 라우트 인자(arguments)로 전달된 GroupChannel 객체를 가져옴
-  final Object? args = ModalRoute.of(context)!.settings.arguments;
-  if (args is GroupChannel) {
-    return ChatScreen(channel: args);
-  } else {
-    // 인자가 null이거나 GroupChannel 타입이 아닐 경우 오류 처리
-    debugPrint('Error: Navigated to /chat with invalid arguments: $args');
-    return Scaffold(
-      appBar: AppBar(title: const Text('오류')),
-      body: const Center(child: Text('잘못된 채팅 채널 정보입니다.')),
-    );
-  }
-},
+          // 라우트 인자(arguments)로 전달된 GroupChannel 객체를 가져옴
+          final Object? args = ModalRoute.of(context)!.settings.arguments;
+          if (args is GroupChannel) {
+            return ChatScreen(channel: args);
+          } else {
+            // 인자가 null이거나 GroupChannel 타입이 아닐 경우 오류 처리
+            debugPrint('Error: Navigated to /chat with invalid arguments: $args');
+            return Scaffold(
+              appBar: AppBar(title: const Text('오류')),
+              body: const Center(child: Text('잘못된 채팅 채널 정보입니다.')),
+            );
+          }
+        },
 
         '/mypage/edit': (context) {
           final userId = ModalRoute.of(context)!.settings.arguments as int;
@@ -107,15 +107,15 @@ class MyApp extends StatelessWidget {
         // },
 
 
-    //     // 프로필수정 화면으로 라우팅
-    // '/mypage/edit': (ctx) {
-    // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
-    // if (userId == null) {
-    // // 로그인 안 된 상태면 로그인 페이지로
-    // return const LoginScreen();
-    // }
-    // return ProfileEditScreen(userId: userId);
-    // },
+        //     // 프로필수정 화면으로 라우팅
+        // '/mypage/edit': (ctx) {
+        // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
+        // if (userId == null) {
+        // // 로그인 안 된 상태면 로그인 페이지로
+        // return const LoginScreen();
+        // }
+        // return ProfileEditScreen(userId: userId);
+        // },
 
         // 회원정보수정
         // '/mypage/account/edit': (c) {
@@ -126,10 +126,10 @@ class MyApp extends StatelessWidget {
         //   },
 
 
-    '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
-    '/mypage/sale':             (context) => const SaleScreen(),
-    '/mypage/bookmark':         (context) => const BookmarkScreen(),
-    '/mypage/account/delete':   (context) => const DeleteUserScreen(),
+        '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
+        '/mypage/sale':             (context) => const SaleScreen(),
+        '/mypage/bookmark':         (context) => const BookmarkScreen(),
+        '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
     );
   }

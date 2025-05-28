@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/favorite.dart';
 
 class FavoriteService {
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.47:8080/ourlog';
 
   /// 1) 북마크 목록 조회
   ///

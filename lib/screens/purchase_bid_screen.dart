@@ -20,7 +20,7 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
   String? _error;
   PurchaseResponse? _data;
 
-  // true → “구매”, false → “입찰목록”
+  // true → "구매", false → "입찰목록"
   bool _showCurrent = true;
 
   @override
@@ -137,6 +137,12 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 15),
       itemBuilder: (_, i) {
         final t = items[i];
+
+        // '구매' 탭일 때는 최고 입찰가 또는 시작가, '입찰목록' 탭일 때는 낙찰가 또는 즉시 구매가 표시
+        final displayPrice = _showCurrent
+            ? (t.highestBid ?? t.startPrice) // 구매 (입찰 중): 최고 입찰가 또는 시작가
+            : (t.highestBid ?? t.nowBuy); // 입찰목록 (낙찰/구매 완료): 낙찰가 또는 즉시 구매가
+
         return Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
@@ -146,13 +152,14 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
           child: Row(
             children: [
               Expanded(
+                // 임시로 Trade ID와 Post ID를 표시합니다. 실제 게시글 제목을 표시하려면 Post 데이터를 가져와야 합니다.
                 child: Text(
-                  t.title,
+                  'Trade ID: ${t.tradeId}, Post ID: ${t.postId}', // 게시글 제목 대신 ID 표시
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
               Text(
-                '₩${t.price.toString().replaceAllMapped(
+                '₩${displayPrice.toString().replaceAllMapped(
                   RegExp(r'\B(?=(\d{3})+(?!\d))'),
                       (m) => ',',
                 )}',

@@ -9,7 +9,7 @@ import '../models/trade.dart';
 class TradeService {
   // NOTE: make sure this matches your @RequestMapping on the backend,
   // which was "/profile" + "/purchases/{userId}" etc.
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog/profile';
+  static const String _baseUrl = 'http://10.100.204.47:8080/ourlog/profile';
 
   /// 구매
   Future<PurchaseResponse> fetchPurchases(int userId) async {

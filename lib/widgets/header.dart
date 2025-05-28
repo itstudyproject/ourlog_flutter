@@ -228,7 +228,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 사이드바 헤더
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -261,7 +261,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     // 사용자 정보 (닉네임, 마이페이지 링크)
                                     Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           authProvider.userNickname ??
@@ -289,7 +289,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                               color: Color(0xFF9BCABF),
                                               fontSize: 14,
                                               decoration:
-                                                  TextDecoration.underline,
+                                              TextDecoration.underline,
                                             ),
                                           ),
                                         ),
@@ -377,7 +377,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     margin: const EdgeInsets.only(top: 20),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [

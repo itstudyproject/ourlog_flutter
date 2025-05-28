@@ -23,6 +23,9 @@ class AuthProvider extends ChangeNotifier {
   String? get userNickname => _userNickname;
   String? get token => _token;
 
+  // 문자열 형태로 바로 꺼낼 수 있게 currentUserId alias를 하나 더 만듭니다.
+  String? get currentUserId => _userId?.toString();
+
   AuthProvider() {
     // 초기화 시 자동 로그인 체크
     checkAutoLogin();

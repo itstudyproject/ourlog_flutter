@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:ourlog/services/worker_service.dart';
 
 class WorkerScreen extends StatefulWidget {
   final String userId;
@@ -42,23 +41,15 @@ class _WorkerScreenState extends State<WorkerScreen> {
   }
 
   Future<void> fetchProfile() async {
-    final response = await http.get(
-      Uri.parse('http://localhost:8080/ourlog/profile/get/${widget.userId}'),
-    );
-
-    print('응답 상태: ${response.statusCode}');
-    print('응답 바디: ${response.body}');
-
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
+    try {
+      final data = await WorkerService.fetchUserProfile(widget.userId);
       setState(() {
         nickname = data['nickname'] ?? '';
         profileImageUrl = data['thumbnailImagePath'] ?? '';
         isFollowing = data['isFollowing'] ?? false;
       });
-    } else {
-      print("프로필 정보를 불러오는데 실패했습니다. 상태 코드: ${response.statusCode}");
+    } catch (e) {
+      print('프로필 로딩 에러: $e');
     }
   }
 
@@ -66,28 +57,17 @@ class _WorkerScreenState extends State<WorkerScreen> {
     if (isLoading || !hasMore) return;
     setState(() => isLoading = true);
 
-    final response = await http.get(
-      Uri.parse(
-          'http://localhost:8080/api/posts/user/${widget.userId}?page=$page&size=$size'),
-    );
-
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final newPosts = data['content'];
+    try {
+      final data = await WorkerService.fetchUserPosts(widget.userId, page, size);
+      final newPosts = data['content'] ?? [];
       setState(() {
         posts.addAll(newPosts);
         page++;
-        hasMore = !data['last'];
+        hasMore = !(data['last'] ?? true);
       });
-
-
-
-    // ✅ 여기에 출력
-    print('불러온 포스트 수: ${posts.length}');
-  } else {
-  print('포스트 로딩 실패: ${response.statusCode}');
-  }
-
+    } catch (e) {
+      print('포스트 로딩 에러: $e');
+    }
 
     setState(() => isLoading = false);
   }
@@ -100,30 +80,23 @@ class _WorkerScreenState extends State<WorkerScreen> {
   }
 
   Future<void> toggleFollow() async {
-    final url = isFollowing
-        ? 'http://localhost:8080/api/unfollow'
-        : 'http://localhost:8080/api/follow';
-
-    final response = await http.post(
-      Uri.parse(url),
-      body: jsonEncode({'followingUserId': widget.userId}),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    if (response.statusCode == 200) {
+    try {
+      await WorkerService.toggleFollow(widget.userId, isFollowing);
       setState(() => isFollowing = !isFollowing);
+    } catch (e) {
+      print('팔로우 토글 에러: $e');
     }
   }
 
   Future<void> toggleLike(int postId, int index) async {
-    final response = await http.post(
-      Uri.parse('http://localhost:8080/api/like/$postId'),
-    );
-    if (response.statusCode == 200) {
+    try {
+      final liked = await WorkerService.toggleLike(postId);
       setState(() {
-        posts[index]['liked'] = !posts[index]['liked'];
-        posts[index]['favoriteCnt'] += posts[index]['liked'] ? 1 : -1;
+        posts[index]['liked'] = liked;
+        posts[index]['favoriteCnt'] += liked ? 1 : -1;
       });
+    } catch (e) {
+      print('좋아요 토글 에러: $e');
     }
   }
 

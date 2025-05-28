@@ -365,14 +365,20 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 ),
 
                               // 여기에 Divider와 '작가 페이지' 메뉴 추가
-                              const Divider(color: Colors.white54),
+                              // _buildSidebar() 안의 GestureDetector 부분만 발췌
                               GestureDetector(
                                 onTap: () async {
                                   await _closeSidebar();
-                                  Navigator.pushNamed(context, '/worker', arguments: {
-                                    'userId': userId,
-                                    'currentUserId': currentUserId,
-                                  });
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/worker',
+                                    arguments: {
+                                      // 조회할 작가 ID를 3로 고정
+                                      'userId': '3',
+                                      // 현재 로그인한 사용자 ID는 authProvider 에서 꺼내 쓰세요
+                                      'currentUserId': Provider.of<AuthProvider>(context, listen: false).currentUserId!,
+                                    },
+                                  );
                                 },
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 5),
@@ -385,6 +391,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                   ),
                                 ),
                               ),
+
 
                               // 하단 로고
                               Padding(

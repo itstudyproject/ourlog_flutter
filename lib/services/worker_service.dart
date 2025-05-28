@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class ApiService {
+class WorkerService {
   static const String baseUrl = 'http://10.100.204.47:8080/';
   static String? authToken;  // 로그인 후 받아서 저장할 토큰
 
@@ -81,6 +81,8 @@ class ApiService {
     if (contentType) {
       headers['Content-Type'] = 'application/json';
     }
+
+    print('[DEBUG] 보낼 헤더: $headers'); // ✅ 추가!
 
     return headers;
   }

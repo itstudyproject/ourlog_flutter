@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ourlog/services/worker_service.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -51,6 +52,12 @@ class _LoginScreenState extends State<LoginScreen> {
     
     if (success && mounted) {
       print('로그인 성공! 메인 화면으로 이동합니다.');
+
+      final token = authProvider.token;
+      if (token != null) {
+        WorkerService.setAuthToken(token);
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

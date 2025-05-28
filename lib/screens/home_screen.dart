@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ourlog/widgets/artwork_slider.dart';
 import 'package:ourlog/widgets/bulletin_board.dart';
 import 'package:ourlog/widgets/main_banner.dart';
-import '../services/artwork_service.dart';
 import '../constants/theme.dart';
 import '../widgets/header.dart';
 import '../widgets/footer.dart';
@@ -64,11 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     color: AppTheme.primaryColor,
                     backgroundColor: Colors.black,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
+                    child: const SingleChildScrollView(
+                      physics: AlwaysScrollableScrollPhysics(parent: ClampingScrollPhysics()),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: const [
+                        children: [
                           MainBanner(),
                           ArtworkSlider(),
                           BulletinBoard(),

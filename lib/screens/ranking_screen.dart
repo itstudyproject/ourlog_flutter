@@ -3,7 +3,7 @@ import 'package:ourlog/models/post.dart';
 import 'package:ourlog/services/ranking_service.dart';
 
 class RankingScreen extends StatefulWidget {
-  const RankingScreen({Key? key}) : super(key: key);
+  const RankingScreen({super.key});
 
   @override
   State<RankingScreen> createState() => _RankingScreenState();
@@ -64,11 +64,11 @@ class _RankingScreenState extends State<RankingScreen> {
     if (num == null) return "0";
     if (num >= 1000000) {
       final val = (num / 1000000);
-      return val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 1) + "M";
+      return "${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 1)}M";
     }
     if (num >= 1000) {
       final val = (num / 1000);
-      return val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 1) + "K";
+      return "${val.toStringAsFixed(val.truncateToDouble() == val ? 0 : 1)}K";
     }
     return num.toString();
   }

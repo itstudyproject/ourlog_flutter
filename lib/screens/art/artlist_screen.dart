@@ -5,14 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/post.dart';
 
 class ArtListScreen extends StatefulWidget {
-  const ArtListScreen({Key? key}) : super(key: key);
+  const ArtListScreen({super.key});
 
   @override
   State<ArtListScreen> createState() => _ArtListScreenState();
 }
 
 class _ArtListScreenState extends State<ArtListScreen> {
-  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.54:8080/ourlog";
   static const int artworksPerPage = 15;
 
   List<Post> artworks = [];
@@ -101,7 +101,7 @@ class _ArtListScreenState extends State<ArtListScreen> {
       final uri = Uri.parse('$baseUrl/post/list').replace(queryParameters: params);
       debugPrint('API 요청 URL: $uri');
       debugPrint('API 요청 헤더: $headers');
-      
+
       final response = await http.get(uri, headers: headers);
       debugPrint('API 응답 상태 코드: ${response.statusCode}');
       debugPrint('API 응답 본문: ${response.body}');
@@ -128,12 +128,12 @@ class _ArtListScreenState extends State<ArtListScreen> {
       final pageResultDTO = data['pageResultDTO'];
       final List<dynamic> dtoList = pageResultDTO['dtoList'] ?? [];
       debugPrint('불러온 게시글 수: ${dtoList.length}');
-      
+
       // 각 게시글의 최신 좋아요 수와 사용자의 좋아요 상태를 가져옵니다
       final updatedArtworks = await Future.wait(
         dtoList.map((item) async {
           final post = Post.fromJson(item);
-          
+
           // 최신 좋아요 수 가져오기
           try {
             final countResponse = await http.get(
@@ -352,11 +352,11 @@ class _ArtListScreenState extends State<ArtListScreen> {
       return [...artworks]..sort((a, b) => (b.favoriteCnt ?? 0) - (a.favoriteCnt ?? 0));
     }
     return [...artworks]..sort((a, b) {
-      final timeA = a.tradeDTO?['startBidTime'] != null 
-          ? DateTime.parse(a.tradeDTO!['startBidTime']).millisecondsSinceEpoch 
+      final timeA = a.tradeDTO?['startBidTime'] != null
+          ? DateTime.parse(a.tradeDTO!['startBidTime']).millisecondsSinceEpoch
           : 0;
-      final timeB = b.tradeDTO?['startBidTime'] != null 
-          ? DateTime.parse(b.tradeDTO!['startBidTime']).millisecondsSinceEpoch 
+      final timeB = b.tradeDTO?['startBidTime'] != null
+          ? DateTime.parse(b.tradeDTO!['startBidTime']).millisecondsSinceEpoch
           : 0;
       return timeB - timeA;
     });
@@ -367,8 +367,8 @@ class _ArtListScreenState extends State<ArtListScreen> {
     final onlyArt = sorted.where((art) => art.boardNo == 5).toList();
     if (searchTerm.isEmpty) return onlyArt;
     return onlyArt.where((art) =>
-      (art.title?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false) ||
-      (art.nickname?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false)
+    (art.title?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false) ||
+        (art.nickname?.toLowerCase().contains(searchTerm.toLowerCase()) ?? false)
     ).toList();
   }
 
@@ -408,41 +408,41 @@ class _ArtListScreenState extends State<ArtListScreen> {
       appBar: AppBar(
         title: _isSearching
             ? TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: '검색어를 입력하세요...',
-                  hintStyle: const TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.white),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() {
-                        searchInput = "";
-                        searchTerm = "";
-                      });
-                      if (!_isSearching) {
-                        fetchArtworks();
-                      } else {
-                         setState(() {
-                           _isSearching = true;
-                           searchTerm = "";
-                           currentPage = 1;
-                         });
-                         fetchArtworks();
-                      }
-                    },
-                  ),
-                ),
-                onSubmitted: (_) {
+          controller: _searchController,
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            hintText: '검색어를 입력하세요...',
+            hintStyle: const TextStyle(color: Colors.grey),
+            border: InputBorder.none,
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.clear, color: Colors.white),
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  searchInput = "";
+                  searchTerm = "";
+                });
+                if (!_isSearching) {
+                  fetchArtworks();
+                } else {
                   setState(() {
-                    searchInput = _searchController.text;
-                    _isSearching = false;
+                    _isSearching = true;
+                    searchTerm = "";
+                    currentPage = 1;
                   });
-                  handleSearchSubmit();
-                },
-              )
+                  fetchArtworks();
+                }
+              },
+            ),
+          ),
+          onSubmitted: (_) {
+            setState(() {
+              searchInput = _searchController.text;
+              _isSearching = false;
+            });
+            handleSearchSubmit();
+          },
+        )
             : const Text('아트 게시판'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,

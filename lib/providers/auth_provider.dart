@@ -100,12 +100,6 @@ class AuthProvider extends ChangeNotifier {
         // 사용자 정보 및 프로필 로드/생성 메서드 호출
         await loadUserInfoAndProfile(_token!, _userEmail!);
 
-        // React 코드처럼 로그인 성공 시 사용자 정보 출력
-        print('✅ OurLog 로그인 성공:');
-        print('   Email: $_userEmail');
-        print('   UserId: $_userId');
-        print('   Nickname: $_userNickname');
-
         _isLoading = false;
         // loadUserInfoAndProfile에서 notifyListeners를 호출하므로 여기서 다시 호출할 필요 없음
         // notifyListeners();
@@ -409,45 +403,25 @@ class AuthProvider extends ChangeNotifier {
      }
   }
 
-  static Future<bool> checkIsAdmin() async {
-    try {
-      print('checkIsAdmin 호출됨');
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
+  Future<bool> checkIsAdmin() async {
+    final token = _token; // 또는 FlutterSecureStorage 등에서 가져오는 방식 사용
+    if (token == null) return false;
 
     final response = await http.get(
-      Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
+      Uri.parse('http://10.100.204.54:8080/ourlog/user/check-admin'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
       },
     );
-      if (token == null) return false;
 
-      final response = await http.get(
-        Uri.parse('http://10.100.204.171:8080/ourlog/user/check-admin'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        print("Check Admin Response: $data"); // 👈 추가
-
-        return data['isAdmin'] == true;
-      } else {
-        print("Admin check failed: ${response.statusCode}, ${response.body}"); // 👈 추가
-
-        return false;
-      }
-    } catch (e, st) {
-      print('checkIsAdmin 예외 발생: $e\n$st');
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return json['isAdmin'] == true;
+    } else {
       return false;
     }
   }
-
 
 
 }

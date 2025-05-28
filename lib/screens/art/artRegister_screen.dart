@@ -63,14 +63,14 @@ class DashedBorderContainer extends StatelessWidget {
   final double borderRadius;
 
   const DashedBorderContainer({
-    Key? key,
+    super.key,
     required this.child,
     this.color = const Color(0xFF333333),
     this.strokeWidth = 2.0,
     this.dashWidth = 5.0,
     this.dashSpace = 3.0,
     this.borderRadius = 8.0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -103,17 +103,17 @@ class ArtRegisterScreen extends StatefulWidget {
   final bool isReregister;
 
   const ArtRegisterScreen({
-    Key? key,
+    super.key,
     this.postData,
     this.isReregister = false,
-  }) : super(key: key);
+  });
 
   @override
   State<ArtRegisterScreen> createState() => _ArtRegisterScreenState();
 }
 
 class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
-  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.54:8080/ourlog";
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
@@ -121,7 +121,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
   final _nowBuyController = TextEditingController();
   final _tagController = TextEditingController();
 
-  List<File> _imageFiles = [];
+  final List<File> _imageFiles = [];
   List<String> _tags = [];
   String? _selectedThumbnailId;
   DateTime? _startTime;

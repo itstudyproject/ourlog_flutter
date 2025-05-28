@@ -102,7 +102,7 @@ class Post {
 
   String getImageUrl() {
     const String baseUrl = "http://10.100.204.171:8080/ourlog";
-    
+
     if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
       final picData = pictureDTOList![0];
       if (picData['resizedImagePath'] != null) {

@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/post.dart';
-import '../models/trade.dart';
+import 'package:ourlog/models/post.dart';
 
 class PostService {
   static const String baseUrl = 'http://your-api-domain.com/api'; // API 도메인으로 변경 필요
-  
+
   // 게시글 목록 가져오기
   static Future<List<Post>> getPosts({int page = 0, int size = 10}) async {
     try {

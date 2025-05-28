@@ -29,17 +29,17 @@ class Artwork {
     String getImageUrl(Map<String, dynamic> item) {
       if (item['pictureDTOList'] != null && item['pictureDTOList'].isNotEmpty) {
         final picData = item['pictureDTOList'][0];
-        if (picData['resizedImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['resizedImagePath']}";
-        if (picData['thumbnailImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['thumbnailImagePath']}";
-        if (picData['originImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['originImagePath']}";
-        if (picData['fileName'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${picData['fileName']}";
+        if (picData['resizedImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${picData['resizedImagePath']}";
+        if (picData['thumbnailImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${picData['thumbnailImagePath']}";
+        if (picData['originImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${picData['originImagePath']}";
+        if (picData['fileName'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${picData['fileName']}";
       } else {
-        if (item['resizedImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['resizedImagePath']}";
-        if (item['thumbnailImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['thumbnailImagePath']}";
-        if (item['originImagePath'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['originImagePath']}";
-        if (item['fileName'] != null) return "http://10.100.204.171:8080/ourlog/picture/display/${item['fileName']}";
+        if (item['resizedImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${item['resizedImagePath']}";
+        if (item['thumbnailImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${item['thumbnailImagePath']}";
+        if (item['originImagePath'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${item['originImagePath']}";
+        if (item['fileName'] != null) return "http://10.100.204.54:8080/ourlog/picture/display/${item['fileName']}";
       }
-      return "http://10.100.204.171:8080/ourlog/picture/display/default-image.jpg";
+      return "http://10.100.204.54:8080/ourlog/picture/display/default-image.jpg";
     }
 
     String highestBidFormatted = "";
@@ -65,15 +65,15 @@ class Artwork {
 }
 
 class ArtworkSlider extends StatefulWidget {
-  const ArtworkSlider({Key? key}) : super(key: key);
+  const ArtworkSlider({super.key});
 
   @override
   State<ArtworkSlider> createState() => _ArtworkSliderState();
 }
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
-  static const String viewsApiUrl = "http://10.100.204.171:8080/ourlog/ranking?type=views";
-  static const String followersApiUrl = "http://10.100.204.171:8080/ourlog/ranking?type=followers";
+  static const String viewsApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=views";
+  static const String followersApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];
@@ -82,6 +82,8 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
   List<int> artistIndexes = [];
 
   Timer? _timer;
+
+  int hoveredIndex = -1; // 마우스 오버 인덱스 상태 저장용
 
   @override
   void initState() {
@@ -152,8 +154,7 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
       children: [
         GestureDetector(
           onTap: () {
-            // 예: 랭킹 페이지로 이동 (Navigator 사용 가능)
-            debugPrint("Go to /ranking");
+            Navigator.pushNamed(context, '/ranking'); // 랭킹 페이지로 이동
           },
           child: Text(
             title,
@@ -176,7 +177,7 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           ),
         )
             : SizedBox(
-          height: 280,
+          height: 400,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: indexes.length,
@@ -188,79 +189,93 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: GestureDetector(
-                  child: Container(
-                    width: 180,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 8,
-                          offset: const Offset(2, 4),
-                        ),
-                      ],
-                      color: Colors.white,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                  onTap: () {
+                    // 필요시 상세 이동 등 동작
+                    // Navigator.pushNamed(context, item.link);
+                  },
+                  child: MouseRegion(
+                    onEnter: (_) => setState(() => hoveredIndex = index),
+                    onExit: (_) => setState(() => hoveredIndex = -1),
+                    child: Stack(
                       children: [
-                        ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                          child: Image.network(
-                            item.imageUrl,
-                            height: 140,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              height: 140,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.broken_image, size: 40),
+                        Container(
+                          width: 400,
+                          height: 400,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(2, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              item.imageUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.broken_image, size: 40),
+                              ),
                             ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.title,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.artist,
-                                      style: const TextStyle(color: Colors.grey, fontSize: 14),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (item.isArtist)
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.people, size: 14, color: Colors.grey),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          item.followers.toString(),
-                                          style: const TextStyle(color: Colors.grey, fontSize: 14),
-                                        ),
-                                      ],
-                                    ),
-                                ],
-                              ),
-                              if (item.highestBid.isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    item.highestBid,
-                                    style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold),
-                                  ),
+                        AnimatedOpacity(
+                          duration: const Duration(milliseconds: 300),
+                          opacity: hoveredIndex == index ? 1.0 : 0.0,
+                          child: Container(
+                            width: 400,
+                            height: 400,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.black.withOpacity(0.6),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.title,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
-                            ],
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        item.artist,
+                                        style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (item.isArtist)
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.people, size: 14, color: Colors.white70),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            item.followers.toString(),
+                                            style: const TextStyle(fontSize: 14, color: Colors.white70),
+                                          ),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                                if (item.highestBid.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(
+                                      item.highestBid,
+                                      style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

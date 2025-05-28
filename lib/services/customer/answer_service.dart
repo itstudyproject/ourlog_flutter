@@ -4,7 +4,7 @@ import 'package:ourlog/models/answer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AnswerService {
-  static const String _baseUrl = 'http://10.100.204.54:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.157:8080/ourlog';
 
   // 🔹 답변 작성 또는 수정
   Future<Answer?> createAnswer(String questionId, String contents) async {

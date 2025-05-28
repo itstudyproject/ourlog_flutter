@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
+import 'package:ourlog/screens/art/artRegister_screen.dart';
+import 'package:ourlog/screens/art/artlist_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
@@ -51,6 +53,8 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
+        '/artWork': (context) => const ArtListScreen(),
+        '/art/register': (context) => const ArtRegisterScreen(),
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(
@@ -58,7 +62,6 @@ class MyApp extends StatelessWidget {
           isAdmin: false, // 로그인하지 않은 사용자의 기본값
         ),
         '/admin/answer': (context) => AnswerScreen(),
-
         '/ranking': (context) => const RankingScreen(),
 
 

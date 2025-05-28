@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:ourlog/models/inquiry.dart';
 
 class QuestionService {
-  static const String _baseUrl = 'http://10.100.204.54:8080/ourlog/question';
+  static const String _baseUrl = 'http://10.100.204.157:8080/ourlog/question';
 
   // 🔹 문의 등록
   Future<bool> submitInquiry(String title, String content) async {

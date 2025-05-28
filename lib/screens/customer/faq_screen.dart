@@ -105,10 +105,10 @@ class _FaqScreenState extends State<FaqScreen> {
                     ),
                   ),
                   const SizedBox(height: 10), // 텍스트와 선 사이 간격 조절용
-              Container(
-                height: 2,
-                width: double.infinity,
-                color: Colors.orange,
+                  Container(
+                    height: 2,
+                    width: double.infinity,
+                    color: Colors.orange,
 
                   ),
                 ],

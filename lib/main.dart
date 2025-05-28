@@ -90,15 +90,15 @@ class MyApp extends StatelessWidget {
         // },
 
 
-    //     // 프로필수정 화면으로 라우팅
-    // '/mypage/edit': (ctx) {
-    // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
-    // if (userId == null) {
-    // // 로그인 안 된 상태면 로그인 페이지로
-    // return const LoginScreen();
-    // }
-    // return ProfileEditScreen(userId: userId);
-    // },
+        //     // 프로필수정 화면으로 라우팅
+        // '/mypage/edit': (ctx) {
+        // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
+        // if (userId == null) {
+        // // 로그인 안 된 상태면 로그인 페이지로
+        // return const LoginScreen();
+        // }
+        // return ProfileEditScreen(userId: userId);
+        // },
 
         // 회원정보수정
         // '/mypage/account/edit': (c) {
@@ -109,10 +109,10 @@ class MyApp extends StatelessWidget {
         //   },
 
 
-    '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
-    '/mypage/sale':             (context) => const SaleScreen(),
-    '/mypage/bookmark':         (context) => const BookmarkScreen(),
-    '/mypage/account/delete':   (context) => const DeleteUserScreen(),
+        '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
+        '/mypage/sale':             (context) => const SaleScreen(),
+        '/mypage/bookmark':         (context) => const BookmarkScreen(),
+        '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
     );
   }

@@ -344,6 +344,19 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
+<<<<<<< HEAD
+=======
+
+                              // 마이페이지 섹션 (로그인 시에만 표시)
+                              if (authProvider.isLoggedIn)
+                                _buildSidebarSection('마이페이지', [
+                                  '프로필 관리',
+                                  '나의 작품',
+                                  '좋아요 목록',
+                                  '구매 내역',
+                                  '설정',
+                                ]),
+>>>>>>> origin/dev/sin-tae
 
                               // 마이페이지 섹션
                               _buildSidebarSection('마이페이지', []),
@@ -481,4 +494,41 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       ],
     );
   }
+<<<<<<< HEAD
 }
+=======
+
+  Widget _buildSidebarItem(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: GestureDetector(
+        onTap: () {
+          // 해당 메뉴로 이동
+          _closeSidebar();
+
+          // 메뉴 항목에 따른 라우팅 처리
+          switch (title) {
+            case '프로필 관리':
+              Navigator.pushNamed(context, '/mypage/profile');
+              break;
+            case '나의 작품':
+              Navigator.pushNamed(context, '/mypage/artworks');
+              break;
+            case '설정':
+              Navigator.pushNamed(context, '/mypage/settings');
+              break;
+            // 다른 메뉴 항목들에 대한 처리 추가
+          }
+        },
+        child: Text(
+          title,
+          style: TextStyle(
+            color: Colors.grey[400],
+            fontSize: 18,
+          ),
+        ),
+      ),
+    );
+  }
+}
+>>>>>>> origin/dev/sin-tae

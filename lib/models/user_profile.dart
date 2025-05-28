@@ -39,11 +39,11 @@ class UserProfile {
     final int? parsedUserId = json['userId'] is int
         ? json['userId']
         : (json['userId'] is String ? int.tryParse(json['userId']) : null);
-    
+
     if (parsedUserId == null) {
-       debugPrint('UserProfile.fromJson: Failed to parse userId from JSON: $json');
-        // 유효한 userId가 없으면 기본값 또는 오류 처리
-        throw FormatException('Invalid userId in JSON: ${json['userId']}');
+      debugPrint('UserProfile.fromJson: Failed to parse userId from JSON: $json');
+      // 유효한 userId가 없으면 기본값 또는 오류 처리
+      throw FormatException('Invalid userId in JSON: ${json['userId']}');
     }
 
     return UserProfile(

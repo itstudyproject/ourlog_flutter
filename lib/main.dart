@@ -5,7 +5,10 @@ import 'package:ourlog/screens/art/artlist_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/post/community_post_detail_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
+import 'package:ourlog/screens/post/community_post_list_screen.dart';
+import 'package:ourlog/screens/post/community_post_register_screen.dart';
 
 
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
@@ -64,9 +67,28 @@ class MyApp extends StatelessWidget {
         '/admin/answer': (context) => AnswerScreen(),
         '/ranking': (context) => const RankingScreen(),
 
+        // New route for community post list
+        '/community/list': (context) {
+           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+           final boardType = args?['boardType'] as String?;
+           // Pass boardType to CommunityPostListScreen
+           return CommunityPostListScreen(boardType: boardType);
+        },
 
+        // New route for community post registration
+        '/post/register': (context) {
+           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+           final boardType = args?['boardType'] as String?;
+           // Pass boardType to CommunityPostRegisterScreen
+           return CommunityPostRegisterScreen(boardType: boardType);
+        },
 
-
+        // New route for community post detail
+        '/post/detail': (context) {
+          final postId = ModalRoute.of(context)!.settings.arguments as int; // Expecting int postId
+          // Need to create CommunityPostDetailScreen widget
+          return CommunityPostDetailScreen(postId: postId);
+        },
 
         '/mypage/edit': (context) {
           final userId = ModalRoute.of(context)!.settings.arguments as int;
@@ -76,43 +98,10 @@ class MyApp extends StatelessWidget {
           final id = ModalRoute.of(ctx)!.settings.arguments as int;
           return AccountEditScreen(userId: id);
         },
-        // '/mypage/purchase-bid': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return PurchaseBidScreen(userId: userId);
-        // },
-        // '/mypage/sale': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return SaleScreen(userId: userId);
-        // },
-        // '/mypage/bookmark': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return BookmarkScreen(userId: userId);
-        // },
-
-
-    //     // 프로필수정 화면으로 라우팅
-    // '/mypage/edit': (ctx) {
-    // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
-    // if (userId == null) {
-    // // 로그인 안 된 상태면 로그인 페이지로
-    // return const LoginScreen();
-    // }
-    // return ProfileEditScreen(userId: userId);
-    // },
-
-        // 회원정보수정
-        // '/mypage/account/edit': (c) {
-        //   final auth = Provider.of<AuthProvider>(c, listen: false);
-        //   final uid  = auth.userId;
-        //   if (uid == null) return const LoginScreen();
-        //   return AccountEditScreen(userId: uid);
-        //   },
-
-
-    '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
-    '/mypage/sale':             (context) => const SaleScreen(),
-    '/mypage/bookmark':         (context) => const BookmarkScreen(),
-    '/mypage/account/delete':   (context) => const DeleteUserScreen(),
+        '/mypage/purchase-bid':     (context) => const PurchaseBidScreen(),
+        '/mypage/sale':             (context) => const SaleScreen(),
+        '/mypage/bookmark':         (context) => const BookmarkScreen(),
+        '/mypage/account/delete':   (context) => const DeleteUserScreen(),
       },
     );
   }

@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/post.dart';
+import '../models/post/post.dart';
 
 class RankingService {
   static const String baseUrl = "http://10.100.204.157:8080/ourlog/ranking";

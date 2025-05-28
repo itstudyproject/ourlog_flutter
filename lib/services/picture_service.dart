@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:http/http.dart' as http;
 import '../models/picture.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Import SharedPreferences
+import 'dart:io'; // Import dart:io for File
 
 class PictureService {
-  static const String baseUrl = 'http://your-api-domain.com/api'; // API 도메인으로 변경 필요
+  static const String baseUrl = 'http://10.100.204.157:8080/ourlog'; // API 도메인으로 변경 필요
 
   // 이미지 목록 가져오기
   static Future<List<Picture>> getPictures({int page = 0, int size = 10}) async {
@@ -49,25 +51,54 @@ class PictureService {
     }
   }
 
-  // 새 이미지 업로드
-  static Future<Picture> uploadPicture(Picture picture) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/pictures'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
-        },
-        body: json.encode(picture.toJson()),
-      );
+  // 새 이미지 업로드 (Multipart)
+  static Future<Map<String, dynamic>> uploadImage(File imageFile) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
 
-      if (response.statusCode == 201) {
-        return Picture.fromJson(json.decode(response.body));
+    if (token.isEmpty) {
+       throw Exception('인증 토큰이 없습니다.');
+    }
+
+    // Assuming the upload endpoint is /upload
+    final uri = Uri.parse('$baseUrl/upload');
+
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..files.add(await http.MultipartFile.fromPath(
+        'file', // This should match the backend's expected file parameter name
+        imageFile.path,
+      ));
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        // Assuming backend returns paths like in UploadResultDTO
+        if (data is Map && data.containsKey('originImagePath') && data.containsKey('thumbnailImagePath')) {
+           return {
+             'originImagePath': data['originImagePath'],
+             'thumbnailImagePath': data['thumbnailImagePath'],
+           };
+        } else {
+           throw Exception('이미지 업로드 응답 형식이 잘못되었습니다: ${response.body}');
+        }
       } else {
-        throw Exception('Failed to upload picture: ${response.statusCode}');
+        String errorMessage = '이미지 업로드 실패: ${response.statusCode}';
+         try {
+            final errorData = json.decode(response.body);
+            if (errorData is Map && errorData.containsKey('message')) {
+               errorMessage = '이미지 업로드 실패: ${errorData['message']}';
+            }
+         } catch (e) {
+            // Ignore parsing error, use default message
+         }
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      throw Exception('Failed to upload picture: $e');
+      throw Exception('이미지 업로드 중 오류 발생: ${e.toString()}');
     }
   }
 

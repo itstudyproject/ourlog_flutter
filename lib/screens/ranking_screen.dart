@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:ourlog/models/post.dart';
+import 'package:ourlog/models/post/post.dart';
 import 'package:ourlog/services/ranking_service.dart';
 
 class RankingScreen extends StatefulWidget {
@@ -94,12 +94,12 @@ class _RankingScreenState extends State<RankingScreen> {
         return "$baseUrl/${item.fileName}";
       } else if (item.pictureDTOList != null && item.pictureDTOList!.isNotEmpty) {
         final pic = item.pictureDTOList!.first;
-        if (pic['resizedImagePath'] != null && (pic['resizedImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['resizedImagePath']}";
-        } else if (pic['thumbnailImagePath'] != null && (pic['thumbnailImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['thumbnailImagePath']}";
-        } else if (pic['originImagePath'] != null && (pic['originImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['originImagePath']}";
+        if (pic.resizedImagePath != null && (pic.resizedImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.resizedImagePath}";
+        } else if (pic.thumbnailImagePath != null && (pic.thumbnailImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.thumbnailImagePath}";
+        } else if (pic.originImagePath != null && (pic.originImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.originImagePath}";
         }
       }
     } else {

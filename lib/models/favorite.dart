@@ -1,6 +1,6 @@
 // lib/models/favorite.dart
 
-import 'post.dart';
+import 'post/post.dart';
 
 class Favorite {
   final int favoriteId;

@@ -307,10 +307,10 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
                               // 커뮤니티 섹션
                               _buildSidebarSection('커뮤니티', [
-                                '새소식',
-                                '자유게시판',
-                                '홍보 게시판',
-                                '요청 게시판',
+                                {'label': '새소식', 'type': 'news'},
+                                {'label': '자유게시판', 'type': 'free'},
+                                {'label': '홍보 게시판', 'type': 'promotion'},
+                                {'label': '요청 게시판', 'type': 'request'},
                               ]),
 
                               // 랭킹 섹션
@@ -395,7 +395,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     _overlayEntry = null;
   }
 
-  Widget _buildSidebarSection(String title, List<String> items) {
+  Widget _buildSidebarSection(String title, List<dynamic> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -406,6 +406,9 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               Navigator.pushNamed(context, '/ranking');
             } else if (title == '마이페이지') {
               Navigator.pushNamed(context, '/mypage');
+            } else if (title == '커뮤니티') {
+               // Optionally navigate to a general community landing page or the first category
+               // Navigator.pushNamed(context, '/community/list');
             }
           },
           child: Text(
@@ -422,24 +425,39 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         ...items.map((item) => GestureDetector(
           onTap: () async {
             await _closeSidebar();
-            if (item == '아트 등록') {
-              Navigator.pushNamed(context, '/postUpload');
+            // Assuming item is a Map like {'label': '새소식', 'type': 'news'}
+            if (title == '커뮤니티' && item is Map<String, String>) {
+               Navigator.pushNamed(
+                 context,
+                 '/community/list',
+                 arguments: {'boardType': item['type']},
+               );
+            } else if (item == '아트 등록') {
+              Navigator.pushNamed(context, '/postUpload'); // Update route if needed
             } else if (item == '아트 게시판') {
-              Navigator.pushNamed(context, '/artWork');
-            } else if (item == '새소식') {
-              Navigator.pushNamed(context, '/news');
-            } else if (item == '자유게시판') {
-              Navigator.pushNamed(context, '/free');
-            } else if (item == '홍보 게시판') {
-              Navigator.pushNamed(context, '/advertise');
-            } else if (item == '요청 게시판') {
-              Navigator.pushNamed(context, '/request');
+              Navigator.pushNamed(context, '/artWork'); // Update route if needed
+            } else if (title == '아트') { // Handle Art section navigation
+               if (item == '아트 등록') {
+                 Navigator.pushNamed(context, '/art/register');
+               } else if (item == '아트 게시판') {
+                 Navigator.pushNamed(context, '/artWork');
+               }
             }
+            // Remove or update old community navigation
+            // else if (item == '새소식') {
+            //   Navigator.pushNamed(context, '/news');
+            // } else if (item == '자유게시판') {
+            //   Navigator.pushNamed(context, '/free');
+            // } else if (item == '홍보 게시판') {
+            //   Navigator.pushNamed(context, '/advertise');
+            // } else if (item == '요청 게시판') {
+            //   Navigator.pushNamed(context, '/request');
+            // }
           },
           child: Padding(
             padding: const EdgeInsets.only(left: 12, bottom: 6),
             child: Text(
-              item,
+              item is Map<String, String> ? item['label'] : item,
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,

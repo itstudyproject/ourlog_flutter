@@ -35,38 +35,6 @@ class Footer extends StatelessWidget {
   }
 
 
-  Widget _buildFooterLink(String text, BuildContext context) {
-    String route = '';
-
-    switch (text) {
-      case '이용약관':
-        route = '/customer/termscondition';
-        break;
-      case '개인정보처리방침':
-        route = '/customer/privacypolicy';
-        break;
-      case '고객센터':
-        route = '/customer/customercenter';
-        break;
-    }
-
-    return GestureDetector(
-      onTap: () {
-        if (route.isNotEmpty) {
-          Navigator.pushNamed(context, route);
-        }
-      },
-      child: Text(
-        text,
-        style: TextStyle(
-          color: Colors.grey[400],
-          fontSize: 14,
-        ),
-      ),
-    );
-  }
-
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -92,30 +60,17 @@ class Footer extends StatelessWidget {
                     const Text(
                       'OurLog',
                       style: TextStyle(
-<<<<<<< HEAD
                         fontSize: 20,
-=======
-                        fontSize: 28,
->>>>>>> origin/dev/sin-tae
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-<<<<<<< HEAD
                     const SizedBox(height: 10),
                     Text(
                       '아티스트를 위한 최고의 커뮤니티!\n작품 공유와 피드백을 통해 창작 여정을\n응원합니다.',
                       style: TextStyle(
                         color: Colors.grey[400],
                         fontSize: 12,
-=======
-                    const SizedBox(height: 16),
-                    Text(
-                      '아티스트를 위한 최고의 커뮤니티!\n작품 공유와 피드백을 통해 창작 여정을 응원합니다.',
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: 14,
->>>>>>> origin/dev/sin-tae
                         height: 1.5,
                       ),
                     ),
@@ -163,11 +118,7 @@ class Footer extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-<<<<<<< HEAD
               const SizedBox(width: 10),
-=======
-              const SizedBox(width: 12),
->>>>>>> origin/dev/sin-tae
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -193,11 +144,7 @@ class Footer extends StatelessWidget {
             ],
           ),
 
-<<<<<<< HEAD
           const SizedBox(height: 15),
-=======
-          const SizedBox(height: 20),
->>>>>>> origin/dev/sin-tae
 
           // SNS 아이콘 가운데 정렬
           Center(
@@ -211,15 +158,9 @@ class Footer extends StatelessWidget {
             ),
           ),
 
-<<<<<<< HEAD
           const SizedBox(height: 5),
           Divider(color: Colors.grey[800]),
           const SizedBox(height: 5),
-=======
-          const SizedBox(height: 10),
-          Divider(color: Colors.grey[800]),
-          const SizedBox(height: 10),
->>>>>>> origin/dev/sin-tae
           Center(
             child: Text(
               '© ${DateTime.now().year} OurLog. All rights reserved.',
@@ -234,7 +175,7 @@ class Footer extends StatelessWidget {
     );
   }
 
-   Widget _buildSocialIcon(IconData icon) {
+  Widget _buildSocialIcon(IconData icon) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: GestureDetector(
@@ -244,7 +185,7 @@ class Footer extends StatelessWidget {
         child: Icon(
           icon,
           color: Colors.grey[400],
-          size: 22,
+          size: 20,
         ),
       ),
     );

@@ -74,113 +74,113 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
           // 중앙: 로고
           GestureDetector(
-            onTap: () {
-              // 홈으로 이동
-              Navigator.pushReplacementNamed(context, '/');
-            },
-            child: Image.asset('assets/images/OurLog.png', height: 55,)
+              onTap: () {
+                // 홈으로 이동
+                Navigator.pushReplacementNamed(context, '/');
+              },
+              child: Image.asset('assets/images/OurLog.png', height: 55,)
           ),
 
           // 오른쪽: 검색 및 사용자 메뉴
           Flexible(
             child: LayoutBuilder(
-              builder: (context, constraints) {
-                // 화면이 좁으면 검색창 숨기기
-                final bool showSearch = constraints.maxWidth > 300;
+                builder: (context, constraints) {
+                  // 화면이 좁으면 검색창 숨기기
+                  final bool showSearch = constraints.maxWidth > 300;
 
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (showSearch) ...[
-                      // 검색 레이블
-                      const Text(
-                        'SEARCH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // 검색창
-                      Container(
-                        width: 160,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white,
-                              width: 1,
-                            ),
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (showSearch) ...[
+                        // 검색 레이블
+                        const Text(
+                          'SEARCH',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                                decoration: const InputDecoration(
-                                  hintText: '검색',
-                                  hintStyle: TextStyle(color: Colors.white70),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                ),
+                        const SizedBox(width: 10),
+
+                        // 검색창
+                        Container(
+                          width: 160,
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Colors.white,
+                                width: 1,
                               ),
                             ),
-                            const Icon(
-                              Icons.search,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                                  decoration: const InputDecoration(
+                                    hintText: '검색',
+                                    hintStyle: TextStyle(color: Colors.white70),
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                                  ),
+                                ),
+                              ),
+                              const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                      ],
+
+                      // MyPage 아이콘: 로그인 시에만 표시
+                      if (authProvider.isLoggedIn) ...[
+                        IconButton(
+                          icon: Image.asset('assets/images/mypage.png'),
+                          onPressed: () => Navigator.pushNamed(context, '/mypage'),
+                        ),
+                      ] else ...[
+                        IconButton(
+                          icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
+                          onPressed: () => Navigator.pushNamed(context, '/login'),
+                        ),
+                      ],
+
+
+                      // 로그인/로그아웃 버튼
+                      GestureDetector(
+                        onTap: () {
+                          if (authProvider.isLoggedIn) {
+                            authProvider.logout().then((_) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('로그아웃 되었습니다')),
+                              );
+                            });
+                          } else {
+                            Navigator.pushNamed(context, '/login');
+                          }
+                        },
+                        child: Text(
+                          authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 24),
                     ],
-
-                    // MyPage 아이콘: 로그인 시에만 표시
-                    if (authProvider.isLoggedIn) ...[
-                      IconButton(
-                        icon: Image.asset('assets/images/mypage.png'),
-                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
-                      ),
-                    ] else ...[
-                      IconButton(
-                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
-                        onPressed: () => Navigator.pushNamed(context, '/login'),
-                      ),
-                    ],
-
-
-                    // 로그인/로그아웃 버튼
-                    GestureDetector(
-                      onTap: () {
-                        if (authProvider.isLoggedIn) {
-                          authProvider.logout().then((_) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('로그아웃 되었습니다')),
-                            );
-                          });
-                        } else {
-                          Navigator.pushNamed(context, '/login');
-                        }
-                      },
-                      child: Text(
-                        authProvider.isLoggedIn ? 'LOGOUT' : 'LOGIN',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }
+                  );
+                }
             ),
           ),
         ],
@@ -344,19 +344,6 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
                               // 랭킹 섹션
                               _buildSidebarSection('랭킹', []),
-<<<<<<< HEAD
-=======
-
-                              // 마이페이지 섹션 (로그인 시에만 표시)
-                              if (authProvider.isLoggedIn)
-                                _buildSidebarSection('마이페이지', [
-                                  '프로필 관리',
-                                  '나의 작품',
-                                  '좋아요 목록',
-                                  '구매 내역',
-                                  '설정',
-                                ]),
->>>>>>> origin/dev/sin-tae
 
                               // 마이페이지 섹션
                               _buildSidebarSection('마이페이지', []),
@@ -494,41 +481,4 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       ],
     );
   }
-<<<<<<< HEAD
 }
-=======
-
-  Widget _buildSidebarItem(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: GestureDetector(
-        onTap: () {
-          // 해당 메뉴로 이동
-          _closeSidebar();
-
-          // 메뉴 항목에 따른 라우팅 처리
-          switch (title) {
-            case '프로필 관리':
-              Navigator.pushNamed(context, '/mypage/profile');
-              break;
-            case '나의 작품':
-              Navigator.pushNamed(context, '/mypage/artworks');
-              break;
-            case '설정':
-              Navigator.pushNamed(context, '/mypage/settings');
-              break;
-            // 다른 메뉴 항목들에 대한 처리 추가
-          }
-        },
-        child: Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 18,
-          ),
-        ),
-      ),
-    );
-  }
-}
->>>>>>> origin/dev/sin-tae

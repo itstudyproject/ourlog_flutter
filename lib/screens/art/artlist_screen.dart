@@ -31,7 +31,6 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
   OverlayEntry? _overlayEntry; // Add OverlayEntry instance
   late AnimationController _fadeController; // Change to late
   late Animation<double> _fadeAnimation; // Change to late
-  late Animation<double> _scaleAnimation; // Add scale animation
 
   @override
   void initState() {
@@ -369,152 +368,135 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
 
   void _initFadeController() {
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 300), // 애니메이션 시간을 300ms로 단축
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _fadeController,
-        curve: Curves.easeOut, // 부드러운 감속 효과
-      ),
-    );
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _fadeController,
-        curve: Curves.easeOut,
-      ),
-    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_fadeController);
   }
 
   void _showExpandedArtworkOverlay(BuildContext context, Post artwork, GlobalKey imageKey) {
+    // Find the render box of the image to get its size and position
     final RenderBox? renderBox = imageKey.currentContext?.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+    if (renderBox == null) return; // Return if render box is not found
+
+    // final size = renderBox.size; // Not needed for Hero animation positioning
+    // final position = renderBox.localToGlobal(Offset.zero); // Not needed for Hero animation positioning
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => FadeTransition(
-        opacity: _fadeAnimation,
-        child: ScaleTransition(
-          scale: _scaleAnimation,
-          child: GestureDetector(
-            onTap: () {
-              _hideExpandedArtworkOverlay();
-            },
-            child: Container(
-              color: Colors.black.withOpacity(0.8),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Hero(
-                        tag: 'artwork-${artwork.postId}',
-                        child: Material(
-                          color: Colors.transparent,
-                          child: Image.network(
-                            artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(),
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Container(
-                              width: MediaQuery.of(context).size.width * 0.9,
-                              height: MediaQuery.of(context).size.width * 0.6,
-                              color: Colors.grey[300],
-                              child: const Center(child: Text('이미지 없음')),
-                            ),
+      builder: (context) => FadeTransition( // Add FadeTransition for the overlay
+        opacity: _fadeAnimation, // Use the fade animation controller
+        child: GestureDetector(
+          onTap: () {
+            // Dismiss overlay on tap outside info area
+            _hideExpandedArtworkOverlay(); // Use a new hide function
+          },
+          child: Container(
+            color: Colors.black.withOpacity(0.8), // Dark semi-transparent background
+            child: Center(
+              child: SingleChildScrollView( // Allow scrolling if content overflows
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Center content vertically
+                  crossAxisAlignment: CrossAxisAlignment.center, // Center content horizontally
+                  children: [
+                    // Expanded Image using Hero animation
+                    Hero(
+                      tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
+                      child: Material( // Wrap Image with Material for Hero
+                        color: Colors.transparent, // Make Material transparent
+                        child: Image.network(
+                          artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(), // Try multiple image URLs
+                          fit: BoxFit.contain, // Use contain to show full image without cropping
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            width: MediaQuery.of(context).size.width * 0.9,
+                            height: MediaQuery.of(context).size.width * 0.6, // Example fallback height
+                            color: Colors.grey[300],
+                            child: const Center(child: Text('이미지 없음')),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      Container(
-                        width: MediaQuery.of(context).size.width * 0.9,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[800],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: StatefulBuilder(
-                          builder: (BuildContext context, StateSetter setStateInOverlay) {
-                            return Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  artwork.title ?? '제목 없음',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '작가: ${artwork.nickname ?? '알 수 없음'}',
-                                  style: const TextStyle(
-                                    color: Colors.white70,
-                                    fontSize: 14,
-                                    decoration: TextDecoration.none,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                if (artwork.tradeDTO != null) ...[
-                                  Text(
-                                    '현재가: ${(artwork.tradeDTO!['highestBid'] ?? artwork.tradeDTO!['startPrice'])?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Colors.white,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  if (artwork.isEnded)
-                                    const Text(
-                                      '경매 종료',
-                                      style: TextStyle(
-                                        color: Colors.red,
-                                        fontSize: 14,
-                                        decoration: TextDecoration.none,
-                                      ),
-                                    )
-                                  else
-                                    Text(
-                                      '남은 시간: ${artwork.getTimeLeft()}',
-                                      style: TextStyle(
-                                        color: artwork.isEndingSoon ? Colors.red : Colors.white,
-                                        fontSize: 14,
-                                        decoration: TextDecoration.none,
-                                      ),
-                                    ),
-                                ] else
-                                  const Text(
-                                    '경매 정보 없음',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 14,
-                                      decoration: TextDecoration.none,
-                                    ),
-                                  ),
-                                const SizedBox(height: 16),
-                                Center(
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      _hideExpandedArtworkOverlay();
-                                      Navigator.pushNamed(context, '/Art/${artwork.postId}');
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.orange,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                    child: const Text('상세보기'),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                    ),
+                    const SizedBox(height: 24), // Spacing between image and info
+                    // Artwork Info Board
+                    Container(
+                      width: MediaQuery.of(context).size.width * 0.9, // Info board width
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[800], // Dark background for info
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ],
-                  ),
+                      child: StatefulBuilder( // Use StatefulBuilder for real-time time update
+                        builder: (BuildContext context, StateSetter setStateInOverlay) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Ensure no underline on title
+                              Text(artwork.title ?? '제목 없음', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none)),
+                              const SizedBox(height: 8),
+                              // Ensure no underline on author nickname
+                              Text('작가: ${artwork.nickname ?? '알 수 없음'}', style: TextStyle(color: Colors.white70, fontSize: 14, decoration: TextDecoration.none)),
+                              const SizedBox(height: 8),
+                              if (artwork.tradeDTO != null) ...[
+                                // Ensure no underline on current price
+                                Text(
+                                  // Corrected comma formatting logic
+                                  '현재가: ${(artwork.tradeDTO!['highestBid'] ?? artwork.tradeDTO!['startPrice'])?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.white,
+                                    decoration: TextDecoration.none, // Ensure no underline
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                if (artwork.isEnded) // Use isEnded getter
+                                  const Text(
+                                    '경매 종료',
+                                    style: TextStyle(
+                                      color: Colors.red,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.none, // Ensure no underline
+                                    ),
+                                  )
+                                else // Only show time left if not ended
+                                  // Ensure no underline on time left
+                                  Text(
+                                    '남은 시간: ${artwork.getTimeLeft()}', // Display time from getTimeLeft()
+                                    style: TextStyle(
+                                      color: artwork.isEndingSoon ? Colors.red : Colors.white,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.none, // Ensure no underline
+                                    ),
+                                  ),
+                              ] else
+                                const Text(
+                                  '경매 정보 없음',
+                                  style: TextStyle(
+                                    color: Colors.grey,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.none, // Ensure no underline
+                                  ),
+                                ),
+                              const SizedBox(height: 16),
+                              Center(
+                                child: ElevatedButton(
+                                  child: const Text('상세보기', style: TextStyle(color: Colors.white)),
+                                  onPressed: () {
+                                    _hideExpandedArtworkOverlay(); // Dismiss overlay before navigating
+                                    Navigator.pushNamed(context, '/Art/${artwork.postId}'); // Navigate to detail page
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange, // Customer folder reference
+                                    foregroundColor: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -523,17 +505,19 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
       ),
     );
 
+    // Use an AnimationController for fade transition
     _fadeController.forward();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Overlay.of(context).insert(_overlayEntry!);
-    });
+    // Insert the overlay when the image is tapped
+     WidgetsBinding.instance.addPostFrameCallback((_) {
+       Overlay.of(context).insert(_overlayEntry!);
+     });
   }
 
   void _hideExpandedArtworkOverlay() {
     _fadeController.reverse().then((_) {
-      _overlayEntry?.remove();
-      _overlayEntry = null;
+       _overlayEntry?.remove();
+       _overlayEntry = null;
     });
   }
 

@@ -151,14 +151,14 @@ class Post {
     final minutes = diff.inMinutes.remainder(60);
     final seconds = diff.inSeconds.remainder(60);
 
-    if (diff.inMinutes < 1) {
-      return "${seconds}초 남음";
-    } else if (diff.inHours < 1) {
-      return "${minutes}분 남음";
-    } else if (diff.inDays < 1) {
-      return "${hours}시간 ${minutes}분 남음";
+    if (days > 0) {
+      return "${days}일 ${hours}시간 ${minutes}분 ${seconds}초 ";
+    } else if (hours > 0) {
+      return "${hours}시간 ${minutes}분 ${seconds}초 ";
+    } else if (minutes > 0) {
+      return "${minutes}분 ${seconds}초 ";
     } else {
-      return "${days}일 ${hours}시간 ${minutes}분 남음";
+      return "${seconds}초 남음";
     }
   }
 

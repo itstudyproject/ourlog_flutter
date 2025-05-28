@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async'; // Import dart:async for Timer
 import '../../models/post.dart';
 
 class ArtListScreen extends StatefulWidget {
@@ -11,8 +12,8 @@ class ArtListScreen extends StatefulWidget {
   State<ArtListScreen> createState() => _ArtListScreenState();
 }
 
-class _ArtListScreenState extends State<ArtListScreen> {
-  static const String baseUrl = "http://10.100.204.54:8080/ourlog";
+class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateMixin {
+  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
   static const int artworksPerPage = 15;
 
   List<Post> artworks = [];
@@ -26,6 +27,11 @@ class _ArtListScreenState extends State<ArtListScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isSearching = false;
+  Timer? _timer; // Add Timer instance
+  OverlayEntry? _overlayEntry; // Add OverlayEntry instance
+  late AnimationController _fadeController; // Change to late
+  late Animation<double> _fadeAnimation; // Change to late
+  late Animation<double> _scaleAnimation; // Add scale animation
 
   @override
   void initState() {
@@ -33,13 +39,28 @@ class _ArtListScreenState extends State<ArtListScreen> {
     _loadUserData();
     _loadSavedPage();
     fetchArtworks();
+    _startTimer(); // Start the timer
+    _initFadeController(); // Initialize the fade controller
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _timer?.cancel(); // Cancel the timer
+    _fadeController.dispose(); // Dispose the fade controller
     super.dispose();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      // Trigger a rebuild to update time display
+      setState(() {});
+    });
   }
 
   Future<void> _loadUserData() async {
@@ -168,14 +189,20 @@ class _ArtListScreenState extends State<ArtListScreen> {
       );
 
       setState(() {
-        artworks = updatedArtworks;
+        if (currentPage == 1) {
+          artworks = updatedArtworks;
+        } else {
+          artworks.addAll(updatedArtworks);
+        }
         totalPages = pageResultDTO['totalPage'] ?? 1;
         isLoading = false;
       });
     } catch (e) {
       debugPrint('작품을 불러오는 중 오류가 발생했습니다: $e');
       setState(() {
-        artworks = [];
+        if (currentPage == 1) {
+           artworks = [];
+        }
         totalPages = 1;
         isLoading = false;
       });
@@ -326,15 +353,7 @@ class _ArtListScreenState extends State<ArtListScreen> {
   }
 
   void handlePageClick(int page) {
-    setState(() {
-      currentPage = page;
-    });
-    fetchArtworks();
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+    // Remove pagination logic
   }
 
   void handleRegisterClick() {
@@ -344,7 +363,178 @@ class _ArtListScreenState extends State<ArtListScreen> {
   void handleArtworkClick(int postId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('artworkListPage', currentPage.toString());
-    Navigator.pushNamed(context, '/Art/$postId');
+    // This will now be handled by the detail button in the overlay
+    // Navigator.pushNamed(context, '/Art/$postId');
+  }
+
+  void _initFadeController() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300), // 애니메이션 시간을 300ms로 단축
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: Curves.easeOut, // 부드러운 감속 효과
+      ),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _fadeController,
+        curve: Curves.easeOut,
+      ),
+    );
+  }
+
+  void _showExpandedArtworkOverlay(BuildContext context, Post artwork, GlobalKey imageKey) {
+    final RenderBox? renderBox = imageKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    _overlayEntry = OverlayEntry(
+      builder: (context) => FadeTransition(
+        opacity: _fadeAnimation,
+        child: ScaleTransition(
+          scale: _scaleAnimation,
+          child: GestureDetector(
+            onTap: () {
+              _hideExpandedArtworkOverlay();
+            },
+            child: Container(
+              color: Colors.black.withOpacity(0.8),
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Hero(
+                        tag: 'artwork-${artwork.postId}',
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Image.network(
+                            artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(),
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) => Container(
+                              width: MediaQuery.of(context).size.width * 0.9,
+                              height: MediaQuery.of(context).size.width * 0.6,
+                              color: Colors.grey[300],
+                              child: const Center(child: Text('이미지 없음')),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        width: MediaQuery.of(context).size.width * 0.9,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[800],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: StatefulBuilder(
+                          builder: (BuildContext context, StateSetter setStateInOverlay) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  artwork.title ?? '제목 없음',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '작가: ${artwork.nickname ?? '알 수 없음'}',
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 14,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                if (artwork.tradeDTO != null) ...[
+                                  Text(
+                                    '현재가: ${(artwork.tradeDTO!['highestBid'] ?? artwork.tradeDTO!['startPrice'])?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Colors.white,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (artwork.isEnded)
+                                    const Text(
+                                      '경매 종료',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 14,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    )
+                                  else
+                                    Text(
+                                      '남은 시간: ${artwork.getTimeLeft()}',
+                                      style: TextStyle(
+                                        color: artwork.isEndingSoon ? Colors.red : Colors.white,
+                                        fontSize: 14,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
+                                ] else
+                                  const Text(
+                                    '경매 정보 없음',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                      decoration: TextDecoration.none,
+                                    ),
+                                  ),
+                                const SizedBox(height: 16),
+                                Center(
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      _hideExpandedArtworkOverlay();
+                                      Navigator.pushNamed(context, '/Art/${artwork.postId}');
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.orange,
+                                      foregroundColor: Colors.white,
+                                    ),
+                                    child: const Text('상세보기'),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    _fadeController.forward();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Overlay.of(context).insert(_overlayEntry!);
+    });
+  }
+
+  void _hideExpandedArtworkOverlay() {
+    _fadeController.reverse().then((_) {
+      _overlayEntry?.remove();
+      _overlayEntry = null;
+    });
   }
 
   List<Post> getSortedArtworks() {
@@ -375,18 +565,19 @@ class _ArtListScreenState extends State<ArtListScreen> {
   @override
   Widget build(BuildContext context) {
     final filteredArtworks = getFilteredArtworks();
-    final pageGroup = (currentPage - 1) ~/ 10;
-    final startPage = pageGroup * 10 + 1;
-    final endPage = (startPage + 9).clamp(1, totalPages);
-    final pageNumbers = List.generate(endPage - startPage + 1, (i) => startPage + i);
+    // Remove pagination variables
+    // final pageGroup = (currentPage - 1) ~/ 10;
+    // final startPage = pageGroup * 10 + 1;
+    // final endPage = (startPage + 9).clamp(1, totalPages);
+    // final pageNumbers = List.generate(endPage - startPage + 1, (i) => startPage + i);
 
-    if (isLoading) {
+    if (isLoading && artworks.isEmpty) { // Show loading only on initial load
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    if (filteredArtworks.isEmpty) {
+    if (filteredArtworks.isEmpty && !isLoading) { // Show "no artworks" only if no artworks and not loading
       return Scaffold(
         body: Center(
           child: Column(
@@ -524,122 +715,52 @@ class _ArtListScreenState extends State<ArtListScreen> {
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 0.8,
+                          crossAxisCount: 2, // Changed from 3 to 2
+                          childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to reduce vertical space
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                         ),
                         itemCount: filteredArtworks.length,
                         itemBuilder: (context, index) {
                           final artwork = filteredArtworks[index];
+                          final GlobalKey _imageKey = GlobalKey(); // Add GlobalKey for the image
                           return GestureDetector(
-                            onTap: () => handleArtworkClick(artwork.postId!),
+                            // Changed onTap to show overlay
+                            onTap: () => _showExpandedArtworkOverlay(context, artwork, _imageKey),
                             child: Card(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                              // Removed Column, directly using Stack for larger image area
+                              clipBehavior: Clip.antiAlias, // Clip content to card shape
+                              child: Stack(
                                 children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Stack(
-                                      children: [
-                                        Image.network(
-                                          artwork.getImageUrl(),
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            color: Colors.grey[300],
-                                            child: const Center(child: Text('이미지 없음')),
-                                          ),
+                                  Positioned.fill( // Make image fill the Card
+                                    child: Hero(
+                                      tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
+                                      child: Image.network(
+                                        artwork.getImageUrl(),
+                                        key: _imageKey, // Assign the GlobalKey to the image
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => Container(
+                                          color: Colors.grey[300],
+                                          child: const Center(child: Text('이미지 없음')),
                                         ),
-                                        Positioned(
-                                          top: 8,
-                                          right: 8,
-                                          child: GestureDetector(
-                                            onTap: () => handleLikeToggle(artwork.postId!),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: Colors.white.withOpacity(0.8),
-                                                borderRadius: BorderRadius.circular(20),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(
-                                                    artwork.liked ? '🧡' : '🤍',
-                                                    style: const TextStyle(fontSize: 16),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '${artwork.favoriteCnt ?? 0}',
-                                                    style: const TextStyle(fontSize: 14),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            artwork.title ?? '',
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            artwork.nickname ?? '',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 14,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 4),
-                                          if (artwork.tradeDTO != null) ...[
-                                            Text(
-                                              '현재가: ${(artwork.tradeDTO!['highestBid'] ?? artwork.tradeDTO!['startPrice'])?.toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}원',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            if (artwork.tradeDTO!['tradeStatus'] == true)
-                                              const Text(
-                                                '경매 종료',
-                                                style: TextStyle(
-                                                  color: Colors.red,
-                                                  fontSize: 14,
-                                                ),
-                                              )
-                                            else if (artwork.tradeDTO!['lastBidTime'] != null)
-                                              Text(
-                                                artwork.getTimeLeft(),
-                                                style: TextStyle(
-                                                  color: artwork.isEndingSoon ? Colors.red : null,
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                          ] else
-                                            const Text(
-                                              '경매 정보 없음',
-                                              style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                        ],
+                                  Positioned(
+                                    top: 8,
+                                    right: 8,
+                                    child: GestureDetector(
+                                      onTap: () => handleLikeToggle(artwork.postId!),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4), // Added slight padding back for heart visibility
+                                        decoration: BoxDecoration(
+                                          color: Colors.black54, // Darker background for heart
+                                          shape: BoxShape.circle, // Circular background
+                                        ),
+                                        child: Text(
+                                          artwork.liked ? '🧡' : '🤍', // Kept only the heart icon
+                                          style: const TextStyle(fontSize: 20), // Slightly reduced size
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -650,35 +771,55 @@ class _ArtListScreenState extends State<ArtListScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          IconButton(
-                            onPressed: startPage > 1 ? () => handlePageClick(startPage - 10) : null,
-                            icon: const Text('<<'),
-                          ),
-                          IconButton(
-                            onPressed: currentPage > 1 ? () => handlePageClick(currentPage - 1) : null,
-                            icon: const Text('<'),
-                          ),
-                          ...pageNumbers.map((number) => TextButton(
-                            onPressed: () => handlePageClick(number),
-                            style: TextButton.styleFrom(
-                              backgroundColor: currentPage == number ? Colors.orange : null,
-                              foregroundColor: currentPage == number ? Colors.white : null,
-                            ),
-                            child: Text(number.toString()),
-                          )),
-                          IconButton(
-                            onPressed: currentPage < totalPages ? () => handlePageClick(currentPage + 1) : null,
-                            icon: const Text('>'),
-                          ),
-                          IconButton(
-                            onPressed: endPage < totalPages ? () => handlePageClick(endPage + 1) : null,
-                            icon: const Text('>>'),
-                          ),
-                        ],
-                      ),
+                      // Removed pagination Row
+                      // Row(
+                      //   mainAxisAlignment: MainAxisAlignment.center,
+                      //   children: [
+                      //     IconButton(
+                      //       onPressed: startPage > 1 ? () => handlePageClick(startPage - 10) : null,
+                      //       icon: const Text('<<'),
+                      //     ),
+                      //     IconButton(
+                      //       onPressed: currentPage > 1 ? () => handlePageClick(currentPage - 1) : null,
+                      //       icon: const Text('<'),
+                      //     ),
+                      //     ...pageNumbers.map((number) => TextButton(
+                      //       onPressed: () => handlePageClick(number),
+                      //       style: TextButton.styleFrom(
+                      //         backgroundColor: currentPage == number ? Colors.orange : null,
+                      //         foregroundColor: currentPage == number ? Colors.white : null,
+                      //       ),
+                      //       child: Text(number.toString()),
+                      //     )),
+                      //     IconButton(
+                      //       onPressed: currentPage < totalPages ? () => handlePageClick(currentPage + 1) : null,
+                      //       icon: const Text('>'),
+                      //     ),
+                      //     IconButton(
+                      //       onPressed: endPage < totalPages ? () => handlePageClick(endPage + 1) : null,
+                      //       icon: const Text('>>'),
+                      //     ),
+                      //   ],
+                      // ),
+                      if (currentPage < totalPages)
+                        ElevatedButton(
+                          onPressed: isLoading
+                              ? null // Disable button while loading
+                              : () {
+                            setState(() {
+                              currentPage++;
+                            });
+                            fetchArtworks();
+                          },
+                          child: isLoading
+                              ? const CircularProgressIndicator() // Show loading indicator on button
+                              : const Text('더보기'),
+                        ),
+                      if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
+                         const Padding(
+                           padding: EdgeInsets.all(8.0),
+                           child: CircularProgressIndicator(),
+                         ),
                     ],
                   ),
                 ),

@@ -10,35 +10,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // late 키워드를 사용하여 initState에서 초기화
-  late final TextEditingController emailController;
+  final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool autoLogin = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // emailController는 didChangeDependencies에서 초기화됩니다.
-    emailController = TextEditingController();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 라우트 인자에서 이메일을 가져와 컨트롤러 초기화합니다.
-    // 이메일이 이미 채워져 있지 않은 경우에만 초기화합니다.
-    final String? initialEmail = ModalRoute.of(context)?.settings.arguments as String?;
-    if (initialEmail != null && emailController.text.isEmpty) {
-      emailController.text = initialEmail;
-    }
-  }
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
-  }
 
   void  _login() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -52,13 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (success && mounted) {
       print('로그인 성공! 메인 화면으로 이동합니다.');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '환영합니다 ${authProvider.userNickname}님!\n이메일: ${authProvider.userEmail ?? '정보 없음'}\n사용자 ID: ${authProvider.userId ?? '정보 없음'}',
-            style: const TextStyle(color: Color.fromRGBO(248, 193, 71, 100)),
-          ),
-          backgroundColor: Colors.black87,
-        ),
+        const SnackBar(content: Text('로그인 성공!')),
       );
       
       // 로그인 성공 시 메인 화면으로 이동

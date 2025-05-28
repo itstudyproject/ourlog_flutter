@@ -7,7 +7,7 @@ class CustomerCenterScreen extends StatefulWidget {
   final int initialTabIndex;
   final bool isAdmin;
 
-  const CustomerCenterScreen({
+  CustomerCenterScreen({
     super.key,
     this.initialTabIndex = 0,
     required this.isAdmin, // ✅ 여기를 추가해야 오류가 사라집니다.
@@ -89,7 +89,7 @@ class _CustomerCenterScreenState extends State<CustomerCenterScreen>
                 children: [
                   const FaqScreen(),
                   const InquiryScreen(),
-                  QuestionListScreen(),  // 탭 3은 항상 질문 목록
+                  QuestionListScreen(isAdmin: widget.isAdmin),  // 탭 3은 항상 질문 목록
                 ],
               ),
             ),

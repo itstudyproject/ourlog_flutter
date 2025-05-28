@@ -9,7 +9,7 @@ import '../services/profile_service.dart';
 import '../widgets/main_layout.dart';
 
 class MyPageScreen extends StatefulWidget {
-  const MyPageScreen({super.key});
+  const MyPageScreen({Key? key}) : super(key: key);
 
   @override
   _MyPageScreenState createState() => _MyPageScreenState();

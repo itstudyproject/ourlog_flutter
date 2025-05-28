@@ -1,5 +1,4 @@
-import 'package:ourlog/models/answer.dart';
-import 'package:ourlog/models/user.dart';
+import '../dto/answer_dto.dart';
 
 class Inquiry {
   final String questionId;
@@ -7,8 +6,7 @@ class Inquiry {
   final String regDate;
   final bool answered;
   String content;
-  final Answer? answer;
-  final User? user;  // User 타입으로 변경, userDTO → user
+  final AnswerDTO? answer;
 
   Inquiry({
     required this.questionId,
@@ -17,7 +15,6 @@ class Inquiry {
     required this.answered,
     required this.content,
     this.answer,
-    this.user,
   });
 
   factory Inquiry.fromJson(Map<String, dynamic> json) {
@@ -28,10 +25,7 @@ class Inquiry {
       answered: json['answerDTO'] != null,
       content: json['content'] ?? '',
       answer: json['answerDTO'] != null
-          ? Answer.fromJson(json['answerDTO'])
-          : null,
-      user: json['userDTO'] != null
-          ? User.fromJson(json['userDTO'])
+          ? AnswerDTO.fromJson(json['answerDTO'])
           : null,
     );
   }

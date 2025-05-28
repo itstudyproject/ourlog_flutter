@@ -7,7 +7,7 @@ import '../services/trade_service.dart';
 import '../models/trade.dart';
 
 class SaleScreen extends StatefulWidget {
-  const SaleScreen({super.key});
+  const SaleScreen({Key? key}) : super(key: key);
 
   @override
   _SaleScreenState createState() => _SaleScreenState();

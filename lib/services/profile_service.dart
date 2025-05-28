@@ -8,7 +8,7 @@ import '../models/user_profile.dart';
 
 class ProfileService {
   // UserProfileController의 @RequestMapping("/profile") 까지 포함
-  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog/profile';
+  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog/profile';
 
   /// 1) 프로필 조회
   Future<UserProfile> fetchProfile(int userId) async {

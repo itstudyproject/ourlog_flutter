@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/models/inquiry.dart';
+import 'package:ourlog/dto/answer_dto.dart';
 import 'package:ourlog/services/customer/answer_service.dart';
 import 'package:ourlog/services/customer/question_service.dart';
 
 class AnswerScreen extends StatefulWidget {
   final Inquiry? inquiry;
-  const AnswerScreen({super.key, this.inquiry});
+  const AnswerScreen({Key? key, this.inquiry}) : super(key: key);
 
   @override
   State<AnswerScreen> createState() => _AnswerScreenState();
@@ -46,8 +47,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
       inquiries = await _questionService.fetchAllInquiries();
 
       for (var inquiry in inquiries) {
-        final needsAnswer = inquiry.answer == null || (inquiry.answer!.contents.trim().isEmpty ?? true);
-        _isEditing[inquiry.questionId] = needsAnswer;
+        final needsAnswer = inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true);
+        _isEditing[inquiry.questionId] = needsAnswer; // 답변이 없으면 자동 편집 모드
         _answerControllers[inquiry.questionId] =
             TextEditingController(text: inquiry.answer?.contents ?? "");
       }
@@ -62,7 +63,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
 
   Widget _buildInquiryItem(Inquiry inquiry) {
     final isEditing =
-        _isEditing[inquiry.questionId] ?? (inquiry.answer == null || (inquiry.answer!.contents.trim().isEmpty ?? true));
+        _isEditing[inquiry.questionId] ?? (inquiry.answer == null || (inquiry.answer!.contents?.trim().isEmpty ?? true));
     final answerController = _answerControllers[inquiry.questionId]!;
 
     return Container(
@@ -76,13 +77,11 @@ class _AnswerScreenState extends State<AnswerScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('User ID: ${inquiry.user?.userId ?? '정보 없음'}', style: const TextStyle(color: Colors.white, fontSize: 16)),
-          const SizedBox(height: 4),
-          Text('User e-mail: ${inquiry.user?.email ?? '정보 없음'}', style: const TextStyle(color: Colors.white, fontSize: 16)),
-          const SizedBox(height: 4),
           Text('제목: ${inquiry.title}', style: const TextStyle(color: Colors.white, fontSize: 16)),
           const SizedBox(height: 4),
-          Text('내용: ${inquiry.content}', style: const TextStyle(color: Colors.white)),
+          Text('내용: ${inquiry.content}', style: const TextStyle(color: Colors.white70)),
+          const SizedBox(height: 4),
+          Text('작성일: ${inquiry.regDate}', style: const TextStyle(color: Colors.white38)),
           const SizedBox(height: 8),
 
           if (isEditing)
@@ -90,41 +89,23 @@ class _AnswerScreenState extends State<AnswerScreen> {
               controller: answerController,
               maxLines: null,
               style: const TextStyle(color: Colors.white),
-              cursorColor: Colors.orange,
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.white12,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.orange, width: 2),
-                ),
                 hintText: '답변을 입력하세요',
                 hintStyle: const TextStyle(color: Colors.white54),
               ),
             )
           else if (inquiry.answered && inquiry.answer != null)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '답변: ',
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white12,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      inquiry.answer!.contents,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ),
-              ],
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white12,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('답변: ${inquiry.answer!.contents}', style: const TextStyle(color: Colors.white)),
             ),
 
           const SizedBox(height: 8),
@@ -133,27 +114,29 @@ class _AnswerScreenState extends State<AnswerScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               if (isEditing)
-                GestureDetector(
-                  onTap: () async {
-                    final existingAnswer = inquiry.answer;
-                    final newContents = answerController.text;
-                    bool success;
+                TextButton(
+                  onPressed: () async {
+                    final answerDTO = await _answerService.answerInquiry(
+                      inquiry.questionId,
+                      answerController.text,
+                    );
 
-                    if (existingAnswer != null) {
-                      success = await _answerService.modifyAnswer(
-                        existingAnswer.answerId.toString(),
-                        newContents,
-                      );
-                    } else {
-                      final answer = await _answerService.createAnswer(
-                        inquiry.questionId,
-                        newContents,
-                      );
-                      success = answer != null;
-                    }
+                    if (answerDTO != null) {
+                      setState(() {
+                        final index = inquiries.indexWhere((item) => item.questionId == inquiry.questionId);
+                        if (index != -1) {
+                          inquiries[index] = Inquiry(
+                            questionId: inquiry.questionId,
+                            title: inquiry.title,
+                            regDate: inquiry.regDate,
+                            content: inquiry.content,
+                            answered: true,
+                            answer: answerDTO,
+                          );
+                        }
+                        _isEditing[inquiry.questionId] = false;
+                      });
 
-                    if (success) {
-                      await _loadInquiries();
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('답변이 저장되었습니다.')),
                       );
@@ -163,102 +146,56 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       );
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('저장',  textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
-                  ),
+                  child: const Text('저장', style: TextStyle(color: Colors.white)),
                 ),
 
               if (isEditing)
-                GestureDetector(
-                  onTap: () {
+                TextButton(
+                  onPressed: () {
                     setState(() {
                       _isEditing[inquiry.questionId] = false;
                       answerController.text = inquiries
                           .firstWhere((item) => item.questionId == inquiry.questionId)
                           .answer
-                          ?.contents ?? "";
+                          ?.contents ??
+                          "";
                     });
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('취소',  textAlign: TextAlign.center, style: TextStyle(color: Colors.white54)),
-                  ),
+                  child: const Text('취소', style: TextStyle(color: Colors.white54)),
                 ),
 
               if (!isEditing)
-                GestureDetector(
-                  onTap: () {
+                TextButton.icon(
+                  onPressed: () {
                     setState(() {
                       _isEditing[inquiry.questionId] = true;
                     });
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const SizedBox(width: 6),
-                        Text(
-                          '${inquiry.answered ? "수정" : "작성"}',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
+                  icon: const Icon(Icons.edit, size: 18, color: Colors.white),
+                  label: Text(
+                    '답변 ${inquiry.answered ? "수정" : "작성"}',
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
 
               if (!isEditing && inquiry.answered)
-                GestureDetector(
-                  onTap: () async {
+                TextButton.icon(
+                  onPressed: () async {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (context) => AlertDialog(
                         backgroundColor: Colors.grey[900],
-                        title: const Text('답변을 삭제하시겠습니까?', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        content: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context, false),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                margin: const EdgeInsets.only(right: 10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text('취소', textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => Navigator.pop(context, true),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text('삭제', style: TextStyle(color: Colors.white)),
-                              ),
-                            ),
-                          ],
-                        ),
+                        title: const Text('답변을 삭제하시겠습니까?', style: TextStyle(color: Colors.white)),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('취소', style: TextStyle(color: Colors.white)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            child: const Text('삭제', style: TextStyle(color: Colors.redAccent)),
+                          ),
+                        ],
                       ),
                     );
 
@@ -283,7 +220,6 @@ class _AnswerScreenState extends State<AnswerScreen> {
                               content: inquiry.content,
                               answered: false,
                               answer: null,
-                              user: inquiry.user,
                             );
                           }
                           _isEditing[inquiry.questionId] = true;
@@ -299,14 +235,8 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       }
                     }
                   },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('삭제', style: TextStyle(color: Colors.white)),
-                  ),
+                  icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                  label: const Text('답변 삭제', style: TextStyle(color: Colors.redAccent)),
                 ),
             ],
           ),

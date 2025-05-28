@@ -80,7 +80,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.black, // 배경색 어두운 테마
       appBar: AppBar(
-        title: const Text('개인정보처리방침', style: TextStyle(color: Colors.white)),
+        title: const Text('개인정보처리방침'),
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
       ),

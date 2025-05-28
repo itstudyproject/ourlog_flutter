@@ -64,7 +64,7 @@ class _BulletinBoardState extends State<BulletinBoard> {
       final category = entry.key;
       final boardNo = entry.value;
       final url =
-          'http://10.100.204.171:8080/ourlog/post/list?boardNo=$boardNo&size=10&type=t&keyword=';
+          'http://10.100.204.47:8080/ourlog/post/list?boardNo=$boardNo&size=10&type=t&keyword=';
 
       try {
         final response = await http.get(Uri.parse(url));
@@ -90,7 +90,7 @@ class _BulletinBoardState extends State<BulletinBoard> {
                 );
                 if (pic != null) {
                   thumbnail =
-                      'http://10.100.204.171:8080/ourlog/picture/display/${pic['path']}/s_${pic['uuid']}_${pic['picName']}';
+                      'http://10.100.204.47:8080/ourlog/picture/display/${pic['path']}/s_${pic['uuid']}_${pic['picName']}';
                 }
 
                 return PostItem(

@@ -27,6 +27,7 @@ class AppRoutes {
   static const String accountEdit     = '/mypage/account/edit';
   static const String accountDelete   = '/mypage/account/delete';
 
+
   static const String termscondition   = '/customer/termscondition';
   static const String privacypolicy   = '/customer/privacypolicy';
   static const String customercenter   = '/customer/customercenter';

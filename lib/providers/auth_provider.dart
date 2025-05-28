@@ -416,7 +416,7 @@ class AuthProvider extends ChangeNotifier {
       final token = prefs.getString('token');
 
       final response = await http.get(
-        Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
+        Uri.parse('http://10.100.204.47:8080/ourlog/user/check-admin'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

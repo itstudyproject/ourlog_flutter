@@ -113,7 +113,7 @@ class ArtRegisterScreen extends StatefulWidget {
 }
 
 class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
-  static const String baseUrl = "http://10.100.204.54:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.47:8080/ourlog";
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();

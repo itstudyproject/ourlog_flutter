@@ -3,6 +3,7 @@ import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/art/artRegister_screen.dart';
 import 'package:ourlog/screens/art/artlist_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
+import 'package:ourlog/screens/worker_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
 
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
         '/ranking': (context) => const RankingScreen(),
         '/chatList': (context) => const ChatListScreen(), // <-- ChatListScreen 라우트 추가
 
+
         '/chat': (context) {
           // 라우트 인자(arguments)로 전달된 GroupChannel 객체를 가져옴
           final Object? args = ModalRoute.of(context)!.settings.arguments;
@@ -83,6 +85,13 @@ class MyApp extends StatelessWidget {
               body: const Center(child: Text('잘못된 채팅 채널 정보입니다.')),
             );
           }
+        },
+
+        '/worker': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+          final String userId = args['userId']!;
+          final String currentUserId = args['currentUserId']!;
+          return WorkerScreen(userId: userId, currentUserId: currentUserId);
         },
 
         '/mypage/edit': (context) {

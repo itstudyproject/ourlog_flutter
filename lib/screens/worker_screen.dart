@@ -13,7 +13,7 @@ class WorkerScreen extends StatefulWidget {
   });
 
   @override
-  State<WorkerScreen> createState() => _WorkerScreenState();
+  _WorkerScreenState createState() => _WorkerScreenState();
 }
 
 class _WorkerScreenState extends State<WorkerScreen> {
@@ -25,7 +25,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
   final int size = 6;
   bool isLoading = false;
   bool hasMore = true;
-  ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -41,14 +41,16 @@ class _WorkerScreenState extends State<WorkerScreen> {
     super.dispose();
   }
 
-  // 프로필 정보 가져오기 - 수정된 함수
   Future<void> fetchProfile() async {
     final response = await http.get(
       Uri.parse('http://localhost:8080/ourlog/profile/get/${widget.userId}'),
     );
 
+    print('응답 상태: ${response.statusCode}');
+    print('응답 바디: ${response.body}');
+
+
     if (response.statusCode == 200) {
-      print("프로필 응답: ${response.body}"); // 디버깅용 출력
       final data = json.decode(response.body);
       setState(() {
         nickname = data['nickname'] ?? '';
@@ -62,9 +64,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> fetchPosts() async {
     if (isLoading || !hasMore) return;
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
 
     final response = await http.get(
       Uri.parse(
@@ -79,15 +79,22 @@ class _WorkerScreenState extends State<WorkerScreen> {
         page++;
         hasMore = !data['last'];
       });
-    }
-    setState(() {
-      isLoading = false;
-    });
+
+
+
+    // ✅ 여기에 출력
+    print('불러온 포스트 수: ${posts.length}');
+  } else {
+  print('포스트 로딩 실패: ${response.statusCode}');
+  }
+
+
+    setState(() => isLoading = false);
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels ==
-        _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100) {
       fetchPosts();
     }
   }
@@ -104,9 +111,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
     );
 
     if (response.statusCode == 200) {
-      setState(() {
-        isFollowing = !isFollowing;
-      });
+      setState(() => isFollowing = !isFollowing);
     }
   }
 
@@ -125,10 +130,15 @@ class _WorkerScreenState extends State<WorkerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('$nickname의 페이지')),
+      backgroundColor: const Color(0xFF1A1A1A),
+      appBar: AppBar(
+        title: Text('$nickname의 페이지'),
+        backgroundColor: Colors.black,
+        elevation: 0,
+      ),
       body: Column(
         children: [
-          // 작가 정보
+          // ─── 작가 프로필 ──────────────────────────
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -138,35 +148,47 @@ class _WorkerScreenState extends State<WorkerScreen> {
                   backgroundImage: profileImageUrl.isNotEmpty
                       ? NetworkImage(profileImageUrl)
                       : null,
+                  backgroundColor: Colors.grey[800],
                   child: profileImageUrl.isEmpty
-                      ? Icon(Icons.person, size: 40)
+                      ? const Icon(Icons.person, size: 40, color: Colors.white)
                       : null,
                 ),
-                SizedBox(width: 16),
-                Text(nickname, style: TextStyle(fontSize: 20)),
-                Spacer(),
-                ElevatedButton(
+                const SizedBox(width: 16),
+                Text(
+                  nickname,
+                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                ),
+                const Spacer(),
+                OutlinedButton(
                   onPressed: toggleFollow,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                  ),
                   child: Text(isFollowing ? '언팔로우' : '팔로우'),
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 ElevatedButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/chat');
                   },
-                  child: Text('채팅창'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF8C147),
+                    foregroundColor: Colors.black,
+                  ),
+                  child: const Text('채팅창'),
                 ),
               ],
             ),
           ),
 
-          // 작품 목록
+          // ─── 작품 목록 ────────────────────────────────
           Expanded(
             child: GridView.builder(
               controller: _scrollController,
-              padding: EdgeInsets.all(8),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 두 개씩 정렬
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
                 crossAxisSpacing: 8,
                 mainAxisSpacing: 8,
                 childAspectRatio: 0.75,
@@ -174,26 +196,45 @@ class _WorkerScreenState extends State<WorkerScreen> {
               itemCount: posts.length + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
                 if (index >= posts.length) {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  );
                 }
 
                 final post = posts[index];
-                return Card(
-                  elevation: 4,
+                return Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF232323),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // 썸네일 이미지
                       Expanded(
-                        child: Image.network(
-                          post['imagePath'] ?? '',
-                          fit: BoxFit.cover,
-                          width: double.infinity,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(8)),
+                          child: post['imagePath'] != null
+                              ? Image.network(
+                            post['imagePath'],
+                            fit: BoxFit.cover,
+                            width: double.infinity,
+                            errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.broken_image,
+                                color: Colors.white),
+                          )
+                              : const Icon(Icons.image, color: Colors.white),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(post['title'] ?? '제목 없음',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          post['title'] ?? '제목 없음',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                        ),
                       ),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -205,10 +246,16 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                   : Icons.favorite_border,
                               color: Colors.red,
                             ),
-                            onPressed: () => toggleLike(post['postId'], index),
+                            onPressed: () =>
+                                toggleLike(post['postId'], index),
                           ),
-                          Text('${post['favoriteCnt']}'),
-                          SizedBox(width: 8),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: Text(
+                              '${post['favoriteCnt']}',
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                          ),
                         ],
                       ),
                     ],

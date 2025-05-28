@@ -424,14 +424,6 @@ class AuthProvider extends ChangeNotifier {
       );
       if (token == null) return false;
 
-      final response = await http.get(
-        Uri.parse('http://10.100.204.47:8080/ourlog/user/check-admin'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-      );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         print("Check Admin Response: $data"); // 👈 추가

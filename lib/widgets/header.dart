@@ -259,41 +259,44 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     const SizedBox(width: 16),
 
                                     // 사용자 정보 (닉네임, 마이페이지 링크)
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          authProvider.userNickname ??
-                                              authProvider.userEmail ??
-                                              '사용자',
-                                          // 닉네임 또는 이메일 표시
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            authProvider.userNickname ??
+                                                authProvider.userEmail ??
+                                                '사용자',
+                                            // 닉네임 또는 이메일 표시
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        GestureDetector(
-                                          onTap: () {
-                                            _closeSidebar();
-                                            Navigator.pushNamed(
-                                              context,
-                                              '/mypage',
-                                            );
-                                          },
-                                          child: const Text(
-                                            '마이페이지',
-                                            style: TextStyle(
-                                              color: Color(0xFF9BCABF),
-                                              fontSize: 14,
-                                              decoration:
-                                                  TextDecoration.underline,
+                                          const SizedBox(height: 4),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _closeSidebar();
+                                              Navigator.pushNamed(
+                                                context,
+                                                '/mypage',
+                                              );
+                                            },
+                                            child: const Text(
+                                              '마이페이지',
+                                              style: TextStyle(
+                                                color: Color(0xFF9BCABF),
+                                                fontSize: 14,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),

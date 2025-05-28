@@ -261,7 +261,7 @@ class AuthService {
         body: {
           'userId': userId,
           'nickname': nickname,
-          'introduction': '', // 기본값 추가
+          'introduction': '안녕하세요,$nickname입니다.', // 기본값 추가
           'originImagePath': '/images/mypage.png',
           'thumbnailImagePath': '/images/mypage.png',
           'followCnt': 0,

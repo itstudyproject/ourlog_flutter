@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,6 +72,62 @@ class _LoginScreenState extends State<LoginScreen> {
       SnackBar(content: Text('$provider 로그인은 아직 구현되지 않았습니다.')),
     );
   }
+
+  void _handleGoogleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (authProvider.isLoading) return; // 중복 방지
+
+    try {
+      authProvider.setLoading(true);
+
+      final googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+        serverClientId: '831383126225-5oknllf8737qqsmqk9jcc7emh2b9etip.apps.googleusercontent.com',
+      );
+
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google 로그인이 취소되었습니다.')),
+        );
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Google ID 토큰을 가져오지 못했습니다.')),
+        );
+        return;
+      }
+
+      final response = await authProvider.googleLogin(idToken);
+
+      if (response['success'] == true && mounted) {
+        authProvider.setToken(response['token']);
+        authProvider.setUserId(response['userId']);
+        authProvider.setNickname(response['nickname']);
+
+        Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('로그인 실패: ${response['message'] ?? '알 수 없는 오류'}')),
+        );
+      }
+
+    } catch (e) {
+      debugPrint('로그인 오류: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류 발생: ${e.toString()}')),
+      );
+    } finally {
+      authProvider.setLoading(false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -233,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 
                 // 소셜 로그인 버튼
                 OutlinedButton.icon(
-                  onPressed: () => _handleSocialLogin('Google'),
+                  onPressed: _handleGoogleLogin,
                   icon: Image.asset('assets/images/Google.png', width: 24, height: 24),
                   label: const Text('Google로 계속하기'),
                   style: OutlinedButton.styleFrom(

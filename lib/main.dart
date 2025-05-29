@@ -28,6 +28,8 @@ import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'providers/chat_provider.dart';
+import 'screens/art/payment_screen.dart';
+import 'screens/art/bid_history_screen.dart';
 
 void main() {
   runApp(
@@ -64,24 +66,18 @@ class MyApp extends StatelessWidget {
         '/artWork': (context) => const ArtListScreen(),
         '/art/register': (context) => const ArtRegisterScreen(),
         '/Art': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments;
-          final postId = (args is String) ? int.tryParse(args) : null;
-
-          if (postId == null) {
-            return Scaffold(
-              body: Center(child: Text('Invalid or missing postId')),
-            );
-          }
-
+          final postId = int.parse(
+            ModalRoute.of(context)!.settings.arguments as String,
+          );
           return ArtDetailScreen(postId: postId);
         },
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter':
             (context) => CustomerCenterScreen(
-              initialTabIndex: 0,
-              isAdmin: false, // 로그인하지 않은 사용자의 기본값
-            ),
+          initialTabIndex: 0,
+          isAdmin: false, // 로그인하지 않은 사용자의 기본값
+        ),
         '/admin/answer': (context) => AnswerScreen(),
         // ✅ 추가
         '/ranking': (context) => const RankingScreen(),
@@ -169,6 +165,8 @@ class MyApp extends StatelessWidget {
         '/mypage/sale': (context) => const SaleScreen(),
         '/mypage/bookmark': (context) => const BookmarkScreen(),
         '/mypage/account/delete': (context) => const DeleteUserScreen(),
+        '/art/payment': (context) => const PaymentScreen(),
+        '/Art/bidhistory': (context) => const BidHistoryScreen(),
       },
     );
   }

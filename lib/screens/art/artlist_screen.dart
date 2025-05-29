@@ -200,7 +200,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
       debugPrint('작품을 불러오는 중 오류가 발생했습니다: $e');
       setState(() {
         if (currentPage == 1) {
-           artworks = [];
+          artworks = [];
         }
         totalPages = 1;
         isLoading = false;
@@ -404,7 +404,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                       child: Material( // Wrap Image with Material for Hero
                         color: Colors.transparent, // Make Material transparent
                         child: Image.network(
-                          artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(), // Try multiple image URLs
+                          artwork.getImageUrl(), // artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(), // artwork.getImageUrl() 사용
                           fit: BoxFit.contain, // Use contain to show full image without cropping
                           errorBuilder: (context, error, stackTrace) => Container(
                             width: MediaQuery.of(context).size.width * 0.9,
@@ -459,7 +459,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                     ),
                                   )
                                 else // Only show time left if not ended
-                                  // Ensure no underline on time left
+                                // Ensure no underline on time left
                                   Text(
                                     '남은 시간: ${artwork.getTimeLeft()}', // Display time from getTimeLeft()
                                     style: TextStyle(
@@ -517,15 +517,15 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
     _fadeController.forward();
 
     // Insert the overlay when the image is tapped
-     WidgetsBinding.instance.addPostFrameCallback((_) {
-       Overlay.of(context).insert(_overlayEntry!);
-     });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Overlay.of(context).insert(_overlayEntry!);
+    });
   }
 
   void _hideExpandedArtworkOverlay() {
     _fadeController.reverse().then((_) {
-       _overlayEntry?.remove();
-       _overlayEntry = null;
+      _overlayEntry?.remove();
+      _overlayEntry = null;
     });
   }
 
@@ -810,10 +810,10 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                               : const Text('더보기'),
                         ),
                       if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
-                         const Padding(
-                           padding: EdgeInsets.all(8.0),
-                           child: CircularProgressIndicator(),
-                         ),
+                        const Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ),
                     ],
                   ),
                 ),

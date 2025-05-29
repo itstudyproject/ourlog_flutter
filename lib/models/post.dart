@@ -1,3 +1,6 @@
+
+import 'package:ourlog/models/trade.dart';
+
 class Post {
   final int? postId;
   final int? userId;
@@ -49,28 +52,28 @@ class Post {
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      postId: json['postId'],
-      userId: json['userId'],
-      title: json['title'],
-      content: json['content'],
-      nickname: json['nickname'],
-      fileName: json['fileName'],
-      boardNo: json['boardNo'],
-      views: json['views'],
-      tag: json['tag'],
-      thumbnailImagePath: json['thumbnailImagePath'],
-      resizedImagePath: json['resizedImagePath'],
-      originImagePath: json['originImagePath'],
-      followers: json['followers'],
-      downloads: json['downloads'],
-      favoriteCnt: json['favoriteCnt'],
-      tradeDTO: json['tradeDTO'],
-      pictureDTOList: json['pictureDTOList'],
-      profileImage: json['profileImage'],
-      replyCnt: json['replyCnt'],
-      regDate: json['regDate'],
-      modDate: json['modDate'],
-      liked: false,
+      postId: json['postId'] is int ? json['postId'] as int : int.tryParse(json['postId']?.toString() ?? ''),
+      userId: json['userId'] is int ? json['userId'] as int : int.tryParse(json['userId']?.toString() ?? ''),
+      title: json['title']?.toString() ?? '',
+      content: json['content']?.toString() ?? '',
+      nickname: json['nickname']?.toString() ?? '',
+      fileName: json['fileName']?.toString() ?? '',
+      boardNo: json['boardNo'] is int ? json['boardNo'] as int : int.tryParse(json['boardNo']?.toString() ?? ''),
+      views: json['views'] is int ? json['views'] as int : int.tryParse(json['views']?.toString() ?? ''),
+      tag: json['tag']?.toString() ?? '',
+      thumbnailImagePath: json['thumbnailImagePath']?.toString(),
+      resizedImagePath: json['resizedImagePath']?.toString(),
+      originImagePath: json['originImagePath'], // dynamic이므로 그대로
+      followers: json['followers'] is int ? json['followers'] as int : int.tryParse(json['followers']?.toString() ?? ''),
+      downloads: json['downloads'] is int ? json['downloads'] as int : int.tryParse(json['downloads']?.toString() ?? ''),
+      favoriteCnt: json['favoriteCnt'] is int ? json['favoriteCnt'] as int : int.tryParse(json['favoriteCnt']?.toString() ?? ''),
+      tradeDTO: json['tradeDTO'] != null ? TradeDTO.fromJson(json['tradeDTO']) : null,
+      pictureDTOList: json['pictureDTOList'] is List ? List<dynamic>.from(json['pictureDTOList']) : null,
+      profileImage: json['profileImage']?.toString(),
+      replyCnt: json['replyCnt'] is int ? json['replyCnt'] as int : int.tryParse(json['replyCnt']?.toString() ?? ''),
+      regDate: json['regDate']?.toString(),
+      modDate: json['modDate']?.toString(),
+      liked: false, // 기본값 false, 추후 따로 세팅 가능
     );
   }
 
@@ -134,11 +137,11 @@ class Post {
   }
 
   String getTimeLeft() {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO == null || tradeDTO!.lastBidTime == null) {
       return "경매 정보 없음";
     }
 
-    final end = DateTime.parse(tradeDTO!['lastBidTime']!);
+    final end = tradeDTO!.lastBidTime!;
     final now = DateTime.now();
     final diff = end.difference(now);
 
@@ -163,11 +166,11 @@ class Post {
   }
 
   bool get isEndingSoon {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO == null || tradeDTO!.lastBidTime == null) {
       return false;
     }
 
-    final end = DateTime.parse(tradeDTO!['lastBidTime']!);
+    final end = tradeDTO!.lastBidTime!;
     final now = DateTime.now();
     final diff = end.difference(now);
 
@@ -175,11 +178,13 @@ class Post {
   }
 
   bool get isEnded {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO == null || tradeDTO!.lastBidTime == null) {
       return false;
     }
 
-    final end = DateTime.parse(tradeDTO!['lastBidTime']!);
+    final end = tradeDTO!.lastBidTime!;
+    if (end == null) return false;
+
     final now = DateTime.now();
     return end.isBefore(now);
   }

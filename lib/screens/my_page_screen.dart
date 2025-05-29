@@ -43,7 +43,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
     } catch (_) {
       // 에러 처리
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        debugPrint('★★★ fetchProfile 성공, 이미지 URL 확인: thumbnailImagePath=${_profile?.thumbnailImagePath}, profileImageUrl=${_profile?.profileImageUrl}');
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -97,7 +100,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
           CircleAvatar(
             radius: 40,
             backgroundColor: const Color(0xFF333333),
-            backgroundImage: AssetImage('assets/images/mypage.png'),
+            backgroundImage: NetworkImage(
+              'http://10.100.204.124:8080' + (_profile?.thumbnailImagePath ?? ''),
+              headers: {
+                'Authorization': 'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}',
+              },
+            ) as ImageProvider,
           ),
           const SizedBox(width: 16),
           Expanded(

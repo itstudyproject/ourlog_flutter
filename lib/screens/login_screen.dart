@@ -43,13 +43,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void  _login() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    
+
     final success = await authProvider.login(
       emailController.text,
       passwordController.text,
       autoLogin: autoLogin,
     );
-    
+
     if (success && mounted) {
       print('로그인 성공! 메인 화면으로 이동합니다.');
 
@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
           backgroundColor: Colors.black87,
         ),
       );
-      
+
       // 로그인 성공 시 메인 화면으로 이동
       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     }
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   height: 160,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // 에러 메시지
                 if (authProvider.errorMessage != null)
                   Container(
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 const SizedBox(height: 24),
-                
+
                 // 이메일 입력
                 const Text(
                   '이메일',
@@ -151,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 비밀번호 입력
                 const Text(
                   '비밀번호',
@@ -181,7 +181,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // 자동 로그인 체크박스
                 Row(
                   children: [
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           });
                         },
                         fillColor: WidgetStateProperty.resolveWith<Color>(
-                          (Set<WidgetState> states) {
+                              (Set<WidgetState> states) {
                             if (states.contains(WidgetState.selected)) {
                               return const Color(0xFF9BCABF);
                             }
@@ -214,30 +214,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 32),
-                
+
                 // 로그인 버튼
                 authProvider.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8BD7B5),
-                          foregroundColor: const Color(0xFF23332C),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                          ),
-                        ),
-                        child: const Text(
-                          '계속하기',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF8BD7B5),
+                    foregroundColor: const Color(0xFF23332C),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  child: const Text(
+                    '계속하기',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 24),
-                
+
                 // 소셜 로그인 버튼
                 OutlinedButton.icon(
                   onPressed: () => _handleSocialLogin('Google'),
@@ -281,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // 회원가입 링크
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,

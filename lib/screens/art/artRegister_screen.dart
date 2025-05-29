@@ -6,97 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 import '../../models/post.dart';
-
-// 점선 테두리를 위한 CustomPainter
-class DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double strokeWidth;
-  final double dashWidth;
-  final double dashSpace;
-
-  DashedBorderPainter({
-    this.color = const Color(0xFF333333),
-    this.strokeWidth = 2.0,
-    this.dashWidth = 5.0,
-    this.dashSpace = 3.0,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth
-      ..style = PaintingStyle.stroke;
-
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-
-    final pathMetrics = path.computeMetrics();
-    for (final metric in pathMetrics) {
-      double distance = 0;
-      while (distance < metric.length) {
-        final extractPath = metric.extractPath(
-          distance,
-          distance + dashWidth,
-        );
-        canvas.drawPath(extractPath, paint);
-        distance += dashWidth + dashSpace;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-// 점선 테두리를 가진 컨테이너 위젯
-class DashedBorderContainer extends StatelessWidget {
-  final Widget child;
-  final Color color;
-  final double strokeWidth;
-  final double dashWidth;
-  final double dashSpace;
-  final double borderRadius;
-
-  const DashedBorderContainer({
-    super.key,
-    required this.child,
-    this.color = const Color(0xFF333333),
-    this.strokeWidth = 2.0,
-    this.dashWidth = 5.0,
-    this.dashSpace = 3.0,
-    this.borderRadius = 8.0,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Stack(
-          children: [
-            child,
-            SizedBox(
-              width: constraints.maxWidth,
-              height: constraints.maxHeight,
-              child: CustomPaint(
-                painter: DashedBorderPainter(
-                  color: color,
-                  strokeWidth: strokeWidth,
-                  dashWidth: dashWidth,
-                  dashSpace: dashSpace,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
+import '../../models/trade.dart';
+import '../../models/picture.dart';
+import 'artDetail_screen.dart';
 
 class ArtRegisterScreen extends StatefulWidget {
   final Post? postData;
@@ -113,7 +25,7 @@ class ArtRegisterScreen extends StatefulWidget {
 }
 
 class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
-  static const String baseUrl = "http://10.100.204.47:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
@@ -156,17 +68,14 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
 
   Future<void> _loadUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    final userData = prefs.getString('user');
-    if (userData != null) {
-      try {
-        final user = jsonDecode(userData);
-        setState(() {
-          _userId = user['userId'];
-          _nickname = user['nickname'] ?? user['email'] ?? '익명';
-        });
-      } catch (e) {
-        debugPrint("사용자 데이터 파싱 실패: $e");
-      }
+    try {
+      setState(() {
+        _userId = prefs.getInt('userId');
+        _nickname = prefs.getString('userNickname') ?? prefs.getString('userEmail') ?? '익명';
+        debugPrint("[_loadUserInfo] extracted userId: $_userId, nickname: $_nickname");
+      });
+    } catch (e) {
+      debugPrint("[_loadUserInfo] 사용자 데이터 파싱 실패: $e");
     }
   }
 
@@ -227,6 +136,16 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // Check if user info is loaded, if not, load it first
+      if (_userId == null || _nickname == null) {
+        await _loadUserInfo(); // Wait for user info to load
+      }
+      // Re-check after loading, just in case loading failed
+      if (_userId == null || _nickname == null) {
+        throw Exception("사용자 정보를 불러오는데 실패했습니다.");
+      }
+
+
       if (widget.isReregister) {
         await _handleReregister();
       } else {
@@ -282,21 +201,44 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    // 경매 시간 설정 확인
+    if (_startTime == null || _endTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('경매 시작/종료 시간이 설정되지 않았습니다.')),
+      );
+      return;
+    }
+
+    // 경매 시간 유효성 검사
+    if (_endTime!.isBefore(_startTime!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('경매 종료 시간은 시작 시간보다 이후여야 합니다.')),
+      );
+      return;
+    }
+
+    print('경매 시작 시간: ${_startTime!.toIso8601String()}');
+    print('경매 종료 시간: ${_endTime!.toIso8601String()}');
+
     // 1. 이미지 업로드
     final List<Map<String, dynamic>> uploadedImages = [];
-    for (var file in _imageFiles) {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/picture/upload'),
-      );
-      request.headers['Authorization'] = 'Bearer $token';
-      request.files.add(await http.MultipartFile.fromPath('files', file.path));
+    if (!widget.isReregister && _imageFiles.isNotEmpty) {
+      for (var file in _imageFiles) {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrl/picture/upload'),
+        );
+        request.headers['Authorization'] = 'Bearer $token';
+        request.files.add(await http.MultipartFile.fromPath('files', file.path));
 
-      final response = await request.send();
-      if (response.statusCode == 200) {
-        final responseData = await response.stream.bytesToString();
-        final imageData = jsonDecode(responseData)[0];
-        uploadedImages.add(imageData);
+        final response = await request.send();
+        if (response.statusCode == 200) {
+          final responseData = await response.stream.bytesToString();
+          final imageData = jsonDecode(responseData)[0];
+          uploadedImages.add(imageData);
+        } else {
+          throw Exception('이미지 업로드 실패: ${response.statusCode}');
+        }
       }
     }
 
@@ -309,17 +251,22 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
       'boardNo': 5,
       'views': 0,
       'tag': _tags.join(','),
-      'thumbnailImagePath': uploadedImages.firstWhere(
+      'thumbnailImagePath': uploadedImages.isNotEmpty ? uploadedImages.firstWhere(
             (img) => img['uuid'] == _selectedThumbnailId,
         orElse: () => uploadedImages.first,
-      )['thumbnailImagePath'],
+      )['thumbnailImagePath'] : null,
       'followers': 0,
       'downloads': 0,
       'favoriteCnt': 0,
       'replyCnt': 0,
-      'fileName': _selectedThumbnailId,
+      'fileName': uploadedImages.isNotEmpty ? uploadedImages.firstWhere(
+            (img) => img['uuid'] == _selectedThumbnailId,
+        orElse: () => uploadedImages.first,
+      )['uuid'] : null,
       'pictureDTOList': uploadedImages,
     };
+
+    print('게시글 등록 요청 데이터: $postData');
 
     final postResponse = await http.post(
       Uri.parse('$baseUrl/post/register'),
@@ -330,41 +277,124 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
       body: jsonEncode(postData),
     );
 
-    if (postResponse.statusCode != 200) {
-      throw Exception('게시글 등록 실패: ${postResponse.statusCode}');
-    }
+    if (postResponse.statusCode == 200) {
+      final postId = int.parse(postResponse.body);
+      print('작품 등록 성공 응답: ${postResponse.body}');
 
-    final postId = int.parse(postResponse.body);
+      // 3. 경매 등록
+      final tradeData = {
+        'postId': postId,
+        'sellerId': _userId,
+        'startPrice': int.parse(_startPriceController.text),
+        'nowBuy': int.parse(_nowBuyController.text),
+        'startBidTime': _startTime!.toIso8601String(),
+        'lastBidTime': _endTime!.toIso8601String(),
+        'tradeStatus': false,
+      };
 
-    // 3. 경매 등록
-    final tradeData = {
-      'postId': postId,
-      'sellerId': _userId,
-      'startPrice': int.parse(_startPriceController.text),
-      'nowBuy': int.parse(_nowBuyController.text),
-      'startBidTime': _startTime!.toIso8601String(),
-      'lastBidTime': _endTime!.toIso8601String(),
-      'tradeStatus': false,
-    };
+      print('[_handleNewRegister] 경매 등록 요청 데이터: $tradeData');
 
-    final tradeResponse = await http.post(
-      Uri.parse('$baseUrl/trades/register'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(tradeData),
-    );
-
-    if (tradeResponse.statusCode == 200) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('작품이 성공적으로 등록되었습니다!')),
+      try {
+        final tradeResponse = await http.post(
+          Uri.parse('$baseUrl/trades/register'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode(tradeData),
         );
-        Navigator.pushReplacementNamed(context, '/art/$postId');
+
+        print('[_handleNewRegister] 경매 등록 응답 상태 코드: ${tradeResponse.statusCode}');
+        print('[_handleNewRegister] 경매 등록 응답 본문: ${tradeResponse.body}');
+
+        if (tradeResponse.statusCode == 200) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('작품이 성공적으로 등록되었습니다!')),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ArtDetailScreen(postId: postId),
+              ),
+            );
+          }
+        } else {
+          throw Exception('경매 등록 실패: ${tradeResponse.statusCode} - ${tradeResponse.body}');
+        }
+      } catch (e) {
+        print('[_handleNewRegister] 경매 등록 요청 중 예외 발생: $e');
+        throw Exception('경매 등록 요청 중 오류 발생: $e');
       }
     } else {
-      throw Exception('경매 등록 실패: ${tradeResponse.statusCode}');
+      throw Exception('게시글 등록 실패: ${postResponse.statusCode} - ${postResponse.body}');
+    }
+  }
+
+  Future<void> _selectEndTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _endTime ?? DateTime.now().add(const Duration(hours: 1)),
+      firstDate: DateTime.now().add(const Duration(hours: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 7)),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.dark().copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: Colors.orange,
+              onPrimary: Colors.white,
+              onSurface: Colors.white,
+            ),
+            dialogBackgroundColor: Colors.grey[800],
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_endTime ?? DateTime.now()),
+        builder: (context, child) {
+          return Theme(
+            data: ThemeData.dark().copyWith(
+              colorScheme: const ColorScheme.dark(
+                primary: Colors.orange,
+                onPrimary: Colors.white,
+                onSurface: Colors.white,
+              ),
+              dialogBackgroundColor: Colors.grey[800],
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        final selectedDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        final minimumEndTime = DateTime.now().add(const Duration(hours: 1));
+        final maximumEndTime = DateTime.now().add(const Duration(days: 7));
+
+        if (selectedDateTime.isAfter(minimumEndTime) &&
+            selectedDateTime.isBefore(maximumEndTime.add(const Duration(minutes: 1)))) {
+          setState(() {
+            _endTime = selectedDateTime;
+            print('경매 종료 시간이 설정되었습니다: ${_endTime!.toIso8601String()}');
+          });
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('경매 종료 시간은 현재 시간으로부터 최소 1시간, 최대 7일까지 설정할 수 있습니다.')),
+          );
+        }
+      }
     }
   }
 
@@ -381,352 +411,343 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
         elevation: 0,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFFFFD700)))
-          : ListView(
-        padding: const EdgeInsets.all(32.0),
-        children: [
-          Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (!widget.isReregister) ...[
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A1A),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_imageFiles.isNotEmpty) ...[
-                          AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: Container(
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: _selectedThumbnailId == _imageFiles[0].path
-                                      ? const Color(0xFFFFD700)
-                                      : Colors.grey,
-                                  width: 2,
-                                ),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    Image.file(
-                                      _imageFiles[0],
-                                      fit: BoxFit.cover,
-                                    ),
-                                    if (_selectedThumbnailId == _imageFiles[0].path)
-                                      Positioned(
-                                        bottom: 8,
-                                        right: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFFFD700),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Text(
-                                            '대표 이미지',
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            height: 200,
-                            child: GridView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                childAspectRatio: 1,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
-                              itemCount: _imageFiles.length + 1,
-                              itemBuilder: (context, index) {
-                                if (index == _imageFiles.length) {
-                                  return GestureDetector(
-                                    onTap: _pickImages,
-                                    child: DashedBorderContainer(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Center(
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(
-                                                Icons.add_photo_alternate,
-                                                color: Color(0xFF888888),
-                                                size: 48,
-                                              ),
-                                              SizedBox(height: 16),
-                                              Text(
-                                                '이미지 추가',
-                                                style: TextStyle(
-                                                  color: Color(0xFF888888),
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () => _setThumbnail(_imageFiles[index].path),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: _selectedThumbnailId == _imageFiles[index].path
-                                                  ? const Color(0xFFFFD700)
-                                                  : Colors.transparent,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: Image.file(
-                                            _imageFiles[index],
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        right: 8,
-                                        child: GestureDetector(
-                                          onTap: () => _removeImage(index),
-                                          child: Container(
-                                            width: 24,
-                                            height: 24,
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFFF0000),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.close,
-                                              color: Colors.white,
-                                              size: 16,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ] else
-                          GestureDetector(
-                            onTap: _pickImages,
-                            child: DashedBorderContainer(
-                              child: Container(
-                                height: 300,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.add_photo_alternate,
-                                        color: Color(0xFF888888),
-                                        size: 48,
-                                      ),
-                                      SizedBox(height: 16),
-                                      Text(
-                                        '이미지를 추가해주세요',
-                                        style: TextStyle(
-                                          color: Color(0xFF888888),
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                ],
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A1A),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildTagSection(),
-                      const SizedBox(height: 24),
-                      _buildTitleField(),
-                      const SizedBox(height: 16),
-                      _buildContentField(),
-                      const SizedBox(height: 24),
-                      _buildPriceFields(),
-                      const SizedBox(height: 24),
-                      _buildAuctionTimeSection(),
-                      const SizedBox(height: 24),
-                      _buildActionButtons(),
-                    ],
-                  ),
-                ),
+          ? const Center(child: CircularProgressIndicator(color: Colors.orange))
+          : SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildTitleField(),
+              const SizedBox(height: 24),
+              if (!widget.isReregister) ...[
+                _buildImageUploadSection(),
+                const SizedBox(height: 24),
               ],
-            ),
+              _buildContentField(),
+              const SizedBox(height: 24),
+              _buildPriceFields(),
+              const SizedBox(height: 24),
+              _buildAuctionTimeSection(),
+              const SizedBox(height: 24),
+              _buildTagSection(),
+              const SizedBox(height: 80),
+            ],
           ),
-        ],
+        ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _submitForm,
+        backgroundColor: Colors.orange,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
-  Widget _buildTagSection() {
+  Widget _buildImageUploadSection() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
+        color: Colors.white10,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0xFF333333)),
+        border: Border.all(color: Colors.white54),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            '태그',
+            '작품 이미지',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '작품과 관련된 태그를 추가해주세요',
-            style: TextStyle(
-              color: Color(0xFF888888),
-              fontSize: 14,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ..._tags.map((tag) => Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+          if (_imageFiles.isNotEmpty) ...[
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Container(
+                width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF333333),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _selectedThumbnailId == _imageFiles[0].path
+                        ? Colors.orange
+                        : Colors.white54,
+                    width: 2,
+                  ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tag,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image.file(
+                        _imageFiles[0],
+                        fit: BoxFit.cover,
+                      ),
+                      if (_selectedThumbnailId == _imageFiles[0].path)
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              '대표 이미지',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _imageFiles.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _imageFiles.length) {
+                    return GestureDetector(
+                      onTap: _pickImages,
+                      child: Container(
+                        width: 120,
+                        margin: const EdgeInsets.only(right: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.white54,
+                          ),
+                        ),
+                        child: const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.add_photo_alternate,
+                                color: Colors.white70,
+                                size: 32,
+                              ),
+                              SizedBox(height: 8),
+                              Text(
+                                '이미지 추가',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return Container(
+                    width: 120,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          GestureDetector(
+                            onTap: () => _setThumbnail(_imageFiles[index].path),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: _selectedThumbnailId == _imageFiles[index].path
+                                      ? Colors.orange
+                                      : Colors.transparent,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Image.file(
+                                _imageFiles[index],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: GestureDetector(
+                              onTap: () => _removeImage(index),
+                              child: Container(
+                                width: 24,
+                                height: 24,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFF0000),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _removeTag(tag),
-                      child: const Icon(
-                        Icons.close,
-                        color: Color(0xFF888888),
-                        size: 16,
-                      ),
-                    ),
-                  ],
+                  );
+                },
+              ),
+            ),
+          ] else
+            GestureDetector(
+              onTap: _pickImages,
+              child: Container(
+                height: 300,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              )),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate,
+                        color: Colors.white70,
+                        size: 48,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '이미지를 추가해주세요',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContentSection() {
+    // 이 메서드는 더 이상 사용되지 않습니다. 각 필드는 build 메서드에서 직접 호출됩니다.
+    return Container(); // Placeholder
+  }
+
+
+  Widget _buildTagSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            ..._tags.map((tag) => Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white54),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    tag,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => _removeTag(tag),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white70,
+                      size: 16,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  // Removed border from the container
+                ),
                 child: TextFormField(
                   controller: _tagController,
                   style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: '태그 입력',
-                    hintStyle: const TextStyle(color: Color(0xFF666666)),
+                    hintStyle: TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: const Color(0xFF1A1A1A),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: Color(0xFF333333)),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
+                    fillColor: Colors.black,
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
                     ),
                   ),
                   onFieldSubmitted: (_) => _addTag(),
                 ),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: _addTag,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF333333),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+            ),
+            const SizedBox(width: 12),
+            ElevatedButton(
+              onPressed: _addTag,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
                 ),
-                child: const Text(
-                  '추가',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
+              child: const Text(
+                '추가',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -856,12 +877,17 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
               if (price == null || price <= 0) {
                 return '0보다 큰 값을 입력해주세요';
               }
+              // Check if _startPriceController text is not empty before parsing
+              if (_startPriceController.text.isNotEmpty) {
+                final startPrice = int.tryParse(_startPriceController.text);
+                if (startPrice != null && price < startPrice) {
+                  return '시작가보다 커야 합니다';
+                }
+              }
               if (price % 1000 != 0) {
                 return '1,000원 단위로 입력해주세요';
               }
-              if (price < int.parse(_startPriceController.text)) {
-                return '시작가보다 커야 합니다';
-              }
+
               return null;
             },
           ),
@@ -877,108 +903,80 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
         color: const Color(0xFF2A2A2A),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '경매 시작 시간',
-                  style: TextStyle(
-                    color: Color(0xFF888888),
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat('yyyy.MM.dd HH:mm').format(_startTime!),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+          const Text(
+            '경매 시간',
+            style: TextStyle(
+              color: Color(0xFF888888),
+              fontSize: 13,
             ),
           ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '경매 종료 시간',
-                  style: TextStyle(
-                    color: Color(0xFF888888),
-                    fontSize: 13,
-                  ),
+          const SizedBox(height: 16),
+          // 경매 시작 시간
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '경매 시작 시간',
+                style: TextStyle(
+                  color: Color(0xFF888888),
+                  fontSize: 13,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  DateFormat('yyyy.MM.dd HH:mm').format(_endTime!),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.bold,
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                DateFormat('yyyy.MM.dd HH:mm').format(_startTime!),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16), // 간격 추가
+          // 경매 종료 시간
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '경매 종료 시간',
+                    style: TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 13,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => _selectEndTime(context),
+                    child: const Icon(Icons.calendar_today, color: Colors.orange, size: 18), // 아이콘 추가
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                DateFormat('yyyy.MM.dd HH:mm').format(_endTime!),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
+
   Widget _buildActionButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 12,
-            ),
-            backgroundColor: const Color(0xFF2A2A2A),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          child: const Text(
-            '취소',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        ElevatedButton(
-          onPressed: _submitForm,
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 12,
-            ),
-            backgroundColor: const Color(0xFFFFD700),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-          child: Text(
-            widget.isReregister ? '경매 재등록' : '등록',
-            style: const TextStyle(
-              color: Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
+    // 이 메서드는 더 이상 사용되지 않습니다.
+    return Container(); // Placeholder
   }
 
   @override

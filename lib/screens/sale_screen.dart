@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/trade_service.dart';
 import '../models/trade.dart';
-import '../models/post.dart';
 
 class SaleScreen extends StatefulWidget {
   const SaleScreen({super.key});
@@ -155,13 +154,6 @@ class _SaleScreenState extends State<SaleScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 15),
       itemBuilder: (context, idx) {
         final t = list[idx];
-
-        // '판매 목록' (진행 중) 일 때는 최고 입찰가, 없으면 시작가 표시
-        // '판매 현황' (완료) 일 때는 즉시 구매가 표시
-        final displayPrice = _showPending
-            ? (t.highestBid ?? t.startPrice) // 진행 중: 최고 입찰가 또는 시작가
-            : t.nowBuy; // 완료: 즉시 구매가
-
         return Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
@@ -171,14 +163,13 @@ class _SaleScreenState extends State<SaleScreen> {
           child: Row(
             children: [
               Expanded(
-                // 임시로 Trade ID와 Post ID를 표시합니다. 실제 게시글 제목을 표시하려면 Post 데이터를 가져와야 합니다.
                 child: Text(
-                  'Trade ID: ${t.tradeId}, Post ID: ${t.postId}', // 게시글 제목 대신 ID 표시
+                  t.title,
                   style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
               Text(
-                '₩${displayPrice.toString().replaceAllMapped(
+                '₩${t.price.toString().replaceAllMapped(
                     RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}',
                 style: const TextStyle(
                   color: Color(0xFFF8C147),

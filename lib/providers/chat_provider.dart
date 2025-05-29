@@ -25,7 +25,7 @@ class UserProfile {
   }
 }
 
-class ChatProvider with ChangeNotifier {
+class ChatProvider with ChangeNotifier implements MessageCollectionHandler {
   User? _currentUser;
   bool _isSendbirdInitialized = false;
   bool _isLoading = false;
@@ -65,6 +65,71 @@ class ChatProvider with ChangeNotifier {
   bool get isMessagesLoading => _isMessagesLoading;
 
   String? get messagesErrorMessage => _messagesErrorMessage;
+
+  @override
+  void onMessagesAdded(
+      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
+    debugPrint('Messages added: ${messages.length}');
+    _currentChannelMessages.insertAll(0, messages);
+    notifyListeners();
+    debugPrint('Messages list updated, new count: ${_currentChannelMessages.length}');
+  }
+
+  @override
+  void onMessagesUpdated(
+      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
+    debugPrint('Messages updated: ${messages.length}');
+    for (var updatedMsg in messages) {
+      final index = _currentChannelMessages
+          .indexWhere((msg) => msg.messageId == updatedMsg.messageId);
+      if (index != -1) {
+        _currentChannelMessages[index] = updatedMsg;
+      }
+    }
+    notifyListeners();
+    debugPrint('Messages list updated after edits.');
+  }
+
+  @override
+  void onMessagesDeleted(
+      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
+    debugPrint('Messages deleted: ${messages.length}');
+    for (var deletedMsg in messages) {
+      _currentChannelMessages
+          .removeWhere((msg) => msg.messageId == deletedMsg.messageId);
+    }
+    notifyListeners();
+    debugPrint('Messages list updated after deletions.');
+  }
+
+  @override
+  void onChannelUpdated(
+      GroupChannelContext context, GroupChannel channel) {
+    debugPrint('Channel updated: ${channel.channelUrl}');
+    final index = _channels.indexWhere((c) => c.channelUrl == channel.channelUrl);
+    if (index != -1) {
+      _channels[index] = channel;
+      notifyListeners();
+      debugPrint('Channel list updated.');
+    }
+  }
+
+  @override
+  void onChannelDeleted(GroupChannelContext context, String deletedChannelUrl) {
+    debugPrint('Channel deleted: $deletedChannelUrl');
+    _channels.removeWhere((channel) => channel.channelUrl == deletedChannelUrl);
+    notifyListeners();
+    debugPrint('Channel list updated after deletion.');
+
+    if (_messageCollection?.channel.channelUrl == deletedChannelUrl) {
+      disposeMessageCollection();
+    }
+  }
+
+  @override
+  void onHugeGapDetected() {
+    debugPrint('Huge gap detected. Re-fetching messages...');
+  }
 
   Future<void> initializeAndConnect(
       String userId,
@@ -181,7 +246,7 @@ class ChatProvider with ChangeNotifier {
 
       _messageCollection = MessageCollection(
           channel: channel,
-          handler: MyMessageCollectionHandler(),
+          handler: this,
           params: MessageListParams()
       );
 
@@ -198,6 +263,7 @@ class ChatProvider with ChangeNotifier {
       debugPrint('Failed to load messages: $e');
       _messagesErrorMessage = '메시지 로드 실패: ${e.toString()}';
       _currentChannelMessages = [];
+      notifyListeners();
     } finally {
       _isMessagesLoading = false;
       notifyListeners();
@@ -230,21 +296,7 @@ class ChatProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>?> fetchSendbirdAuthInfo(String jwtToken, int backendUserId) async {
     try {
-      // AuthProvider에서 현재 로그인된 사용자 ID 가져오기
-      // ChatProvider는 AuthProvider에 의존성을 가지므로 context를 통해 접근하거나 별도의 주입 필요
-      // 여기서는 예시로 userId를 가져온다고 가정합니다.
-      // 실제 코드에서는 ChatProvider가 생성될 때 AuthProvider 인스턴스를 받거나,
-      // fetchSendbirdAuthInfo 호출 시 userId를 인자로 받도록 수정해야 합니다.
-      // 임시로 AuthProvider를 직접 Provider.of로 접근합니다 (ChatProvider 외부에서 호출 시 문제될 수 있음).
-      // 더 나은 설계는 ChatProvider에 userId를 주입하거나, 함수 인자로 받는 것입니다.
-      // 현재 구조에서는 이 함수가 ChatProvider 내부에서 호출되지 않으므로 직접 Provider 접근은 어려울 수 있습니다.
-      // ChatListScreen에서 이 함수를 호출하고 있으므로, ChatListScreen에서 AuthProvider에 접근하여 userId를 가져와 전달하는 것이 더 적절합니다.
-      // TODO: ChatListScreen에서 userId를 가져와 fetchSendbirdAuthInfo 함수 인자로 전달하도록 수정 필요
-      // 현재는 수정된 fetchSendbirdToken의 두 번째 인자가 null이 될 수 있습니다.
-
-      // 임시 방편으로 JWT 토큰에서 다시 userId를 추출 시도 (이상적으로는 이미 가지고 있어야 함)
-
-      final authInfo = await AuthService.fetchSendbirdToken(jwtToken, backendUserId); // <-- userId 인자 전달
+      final authInfo = await AuthService.fetchSendbirdToken(jwtToken, backendUserId);
       if (authInfo != null &&
           authInfo['userId'] != null &&
           authInfo['accessToken'] != null) {
@@ -273,131 +325,14 @@ class ChatProvider with ChangeNotifier {
   Future<void> shutdown() async {
     await disconnect();
   }
-}
 
-// MyMessageCollectionHandler 클래스 정의
-class MyMessageCollectionHandler extends MessageCollectionHandler {
-  // 내부 메시지 저장소 (예: 화면에 표시할 메시지 리스트)
-  final List<BaseMessage> _messages = [];
-
-  // 메시지 추가 시 호출
-  @override
-  void onMessagesAdded(
-      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
-    // 메시지 추가 시 처리 로직 구현
-    print('Messages added: ${messages.length}');
-
-    if (channel != null) { // Null 체크 추가
-      // 1. 기존 메시지 리스트에 새 메시지 추가
-      _messages.addAll(messages);
-
-      // 2. 메시지 리스트를 ID 기준으로 정렬 (예: 시간 순)
-      _messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-      // 3. UI 갱신 호출 (가상 함수)
-      _refreshUI();
-    } else {
-      print('Messages added event received, but channel is null.');
-    }
+  void setErrorMessage(String message) {
+    _errorMessage = message;
+    notifyListeners();
   }
 
-  // 메시지 수정 시 호출
-  @override
-  void onMessagesUpdated(
-      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
-    // 메시지 업데이트 시 처리 로직 구현
-    print('Messages updated: ${messages.length}');
-
-    if (channel != null) { // Null 체크 추가
-      for (var updatedMsg in messages) {
-        // 1. 기존 메시지 리스트에서 해당 메시지 ID 찾기
-        int index = _messages.indexWhere((msg) => msg.messageId == updatedMsg.messageId);
-        if (index != -1) {
-          // 2. 기존 메시지 교체
-          _messages[index] = updatedMsg;
-        }
-      }
-
-      // 3. UI 갱신
-      _refreshUI();
-    } else {
-      print('Messages updated event received, but channel is null.');
-    }
-  }
-
-  // 메시지 삭제 시 호출
-  @override
-  void onMessagesDeleted(
-      MessageContext context, GroupChannel channel, List<BaseMessage> messages) {
-    // 메시지 삭제 시 처리 로직 구현
-    print('Messages deleted: ${messages.length}');
-
-    if (channel != null) { // Null 체크 추가
-      for (var deletedMsg in messages) {
-        // 1. 메시지 리스트에서 삭제 대상 메시지 제거
-        _messages.removeWhere((msg) => msg.messageId == deletedMsg.messageId);
-      }
-
-      // 2. UI 갱신
-      _refreshUI();
-    } else {
-      print('Messages deleted event received, but channel is null.');
-    }
-  }
-
-  // 채널 정보 업데이트 시 호출
-  @override
-  void onChannelUpdated(
-      GroupChannelContext context, GroupChannel channel) {
-    // 채널 정보 업데이트 시 처리 로직 구현
-    if (channel != null) { // Null 체크 추가
-      print('Channel updated: ${channel.channelUrl}');
-      // 예: 채널 이름이나 멤버 변경을 UI에 반영
-      _refreshChannelInfo(channel);
-    } else {
-      print('Channel updated event received, but channel is null.');
-    }
-  }
-
-  // 채널 삭제 시 호출
-  @override
-  void onChannelDeleted(GroupChannelContext context, String deletedChannelUrl) {
-    print('Channel deleted: $deletedChannelUrl');
-
-    // 예: 채널 목록에서 제거, 해당 채널 화면 종료 처리
-    _handleChannelDeletion(deletedChannelUrl);
-  }
-
-  // 큰 메시지 갭 발견 시 호출
-  @override
-  void onHugeGapDetected() {
-    print('Huge gap detected.');
-
-    // 예: 누락된 메시지 재요청
-    _requestMessageSync();
-  }
-
-  // UI 갱신 (예시)
-  void _refreshUI() {
-    // 실제 앱에서는 여기서 상태관리 라이브러리나 setState 등으로 UI 갱신
-    print('UI refreshed with ${_messages.length} messages.');
-  }
-
-  // 채널 정보 갱신 처리 (예시)
-  void _refreshChannelInfo(GroupChannel channel) {
-    // 채널명, 멤버, 커버 이미지 등 갱신 후 UI 반영
-    print('Channel info refreshed: ${channel.name}');
-  }
-
-  // 채널 삭제 처리 (예시)
-  void _handleChannelDeletion(String channelUrl) {
-    // 채널 목록에서 제거, 필요하면 화면 닫기 처리
-    print('Handled deletion of channel: $channelUrl');
-  }
-
-  // 메시지 동기화 요청 (예시)
-  void _requestMessageSync() {
-    // 네트워크 호출 등으로 누락된 메시지 다시 로드하는 로직 구현
-    print('Requested message sync to fill gap.');
+  void clearErrorMessage() {
+    _errorMessage = null;
+    notifyListeners();
   }
 }

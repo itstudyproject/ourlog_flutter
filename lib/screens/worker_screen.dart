@@ -60,8 +60,12 @@ class _WorkerScreenState extends State<WorkerScreen> {
     try {
       final data = await WorkerService.fetchUserPosts(widget.userId, page, size);
       final newPosts = data['content'] ?? [];
+
+      // 🔥 boardNo == 5인 포스트만 필터링
+      final filteredPosts = newPosts.where((post) => post['boardNo'] == 5).toList();
+
       setState(() {
-        posts.addAll(newPosts);
+        posts.addAll(filteredPosts);
         page++;
         hasMore = !(data['last'] ?? true);
       });
@@ -186,16 +190,13 @@ class _WorkerScreenState extends State<WorkerScreen> {
                       // 썸네일 이미지
                       Expanded(
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(8)),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                           child: post['imagePath'] != null
                               ? Image.network(
                             post['imagePath'],
                             fit: BoxFit.cover,
                             width: double.infinity,
-                            errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.broken_image,
-                                color: Colors.white),
+                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, color: Colors.white),
                           )
                               : const Icon(Icons.image, color: Colors.white),
                         ),
@@ -204,9 +205,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
                           post['title'] ?? '제목 없음',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ),
                       Row(
@@ -214,13 +213,10 @@ class _WorkerScreenState extends State<WorkerScreen> {
                         children: [
                           IconButton(
                             icon: Icon(
-                              post['liked']
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
+                              post['liked'] ? Icons.favorite : Icons.favorite_border,
                               color: Colors.red,
                             ),
-                            onPressed: () =>
-                                toggleLike(post['postId'], index),
+                            onPressed: () => toggleLike(post['postId'], index),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(right: 8.0),

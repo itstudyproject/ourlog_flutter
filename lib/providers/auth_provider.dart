@@ -16,11 +16,17 @@ class AuthProvider extends ChangeNotifier {
   String? _token; // JWT 토큰 저장
 
   bool get isLoggedIn => _isLoggedIn;
+
   bool get isLoading => _isLoading;
+
   String? get errorMessage => _errorMessage;
+
   int? get userId => _userId;
+
   String? get userEmail => _userEmail;
+
   String? get userNickname => _userNickname;
+
   String? get token => _token;
 
   // 문자열 형태로 바로 꺼낼 수 있게 currentUserId alias를 하나 더 만듭니다.
@@ -50,7 +56,8 @@ class AuthProvider extends ChangeNotifier {
         _token = token;
         // userId와 userNickname 로드 및 프로필 확인/생성은 이 메서드에서 처리
         print('자동 로그인 성공, 사용자 정보 및 프로필 로드 시작');
-        await loadUserInfoAndProfile(_token!, _userEmail!); // 사용자 정보 및 프로필 로드/생성
+        await loadUserInfoAndProfile(
+            _token!, _userEmail!); // 사용자 정보 및 프로필 로드/생성
 
       } else {
         _isLoggedIn = false;
@@ -70,7 +77,8 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // 로그인
-  Future<bool> login(String email, String password, {bool autoLogin = false}) async {
+  Future<bool> login(String email, String password,
+      {bool autoLogin = false}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -155,13 +163,21 @@ class AuthProvider extends ChangeNotifier {
   }
 
   // 회원가입
-  Future<bool> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
+  Future<bool> register(String email, String password, String passwordConfirm,
+      String name, String nickname, String mobile, bool fromSocial) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      final response = await AuthService.register(email, password, passwordConfirm, name, nickname, mobile, fromSocial);
+      final response = await AuthService.register(
+          email,
+          password,
+          passwordConfirm,
+          name,
+          nickname,
+          mobile,
+          fromSocial);
 
       if (response['success'] && response['userId'] != null) {
         final userId = response['userId'];
@@ -169,7 +185,8 @@ class AuthProvider extends ChangeNotifier {
 
         // 회원가입 성공 후 프로필 자동 생성 시도
         // createProfile 호출 시 토큰 전달 (회원가입 직후에는 _token이 null일 수 있음)
-        final profileResponse = await AuthService.createProfile(userId, nickname, _token);
+        final profileResponse = await AuthService.createProfile(
+            userId, nickname, _token);
 
         if (profileResponse['success']) {
           print('프로필 자동 생성 성공');
@@ -218,7 +235,8 @@ class AuthProvider extends ChangeNotifier {
 
       // 추가 요청으로 userId 획득 시도
       try {
-        final userInfoResponse = await AuthService.getUserInfo(_token!, _userEmail);
+        final userInfoResponse = await AuthService.getUserInfo(
+            _token!, _userEmail);
         if (userInfoResponse['success'] && userInfoResponse['userId'] != null) {
           _userId = userInfoResponse['userId'];
           print('회원탈퇴를 위해 사용자 정보 API에서 획득한 userId: $_userId');
@@ -278,7 +296,8 @@ class AuthProvider extends ChangeNotifier {
       }
 
       // 토큰 출력 (디버깅용)
-      print('사용할 토큰: ${_token!.substring(0, _token!.length > 30 ? 30 : _token!.length)}...');
+      print('사용할 토큰: ${_token!.substring(
+          0, _token!.length > 30 ? 30 : _token!.length)}...');
 
       // 삭제 요청
       final response = await AuthService.deleteUser(userId, _token!);
@@ -290,7 +309,8 @@ class AuthProvider extends ChangeNotifier {
         _errorMessage = response['message'] ?? '회원탈퇴에 실패했습니다.';
 
         // 403 오류인 경우 토큰 갱신을 권장하는 메시지 추가
-        if (_errorMessage!.contains('권한이 없습니다') || _errorMessage!.contains('403')) {
+        if (_errorMessage!.contains('권한이 없습니다') ||
+            _errorMessage!.contains('403')) {
           _errorMessage = '${_errorMessage!} 다시 로그인 후 시도해주세요.';
         }
 
@@ -332,7 +352,8 @@ class AuthProvider extends ChangeNotifier {
           _userId = userInfoResponse['userId'];
           _userNickname = userInfoResponse['nickname'];
           _userEmail = userInfoResponse['email'];
-          print('loadUserInfoAndProfile: getUserInfo 성공, userId: $_userId, nickname: $_userNickname');
+          print(
+              'loadUserInfoAndProfile: getUserInfo 성공, userId: $_userId, nickname: $_userNickname');
 
           // SharedPreferences 업데이트
           final prefs = await SharedPreferences.getInstance();
@@ -343,8 +364,10 @@ class AuthProvider extends ChangeNotifier {
           await prefs.setString('userEmail', _userEmail!); // 이메일도 저장
 
         } else {
-          print('loadUserInfoAndProfile: getUserInfo 실패: ${userInfoResponse['message']}');
-          _errorMessage = userInfoResponse['message'] ?? '사용자 정보를 가져오는데 실패했습니다.';
+          print(
+              'loadUserInfoAndProfile: getUserInfo 실패: ${userInfoResponse['message']}');
+          _errorMessage =
+              userInfoResponse['message'] ?? '사용자 정보를 가져오는데 실패했습니다.';
           _isLoading = false;
           notifyListeners();
           return; // 사용자 정보 없으면 프로필 로드/생성 불가
@@ -354,7 +377,8 @@ class AuthProvider extends ChangeNotifier {
       // userId가 확보되었으므로 프로필 로드 시도
       print('loadUserInfoAndProfile: userId 확보 ($_userId), 프로필 로드 시도');
       // fetchProfile 호출 시 토큰 전달
-      final profileResponse = await AuthService.fetchProfile(_userId!, token); // userId와 토큰 전달
+      final profileResponse = await AuthService.fetchProfile(
+          _userId!, token); // userId와 토큰 전달
 
       if (profileResponse['success']) {
         print('프로필 로드 성공');
@@ -380,7 +404,8 @@ class AuthProvider extends ChangeNotifier {
           _userNickname = '사용자'; // 임시 기본 닉네임
         }
         // createProfile 호출 시 토큰 전달
-        final createProfileResponse = await AuthService.createProfile(_userId!, _userNickname!, token); // userId, nickname, 토큰 사용
+        final createProfileResponse = await AuthService.createProfile(
+            _userId!, _userNickname!, token); // userId, nickname, 토큰 사용
 
         if (createProfileResponse['success']) {
           print('프로필 생성 성공 후 정보 로드');
@@ -394,7 +419,8 @@ class AuthProvider extends ChangeNotifier {
             }
           }
         } else {
-          print('⚠️ 경고: 프로필 생성 실패 (로그인 후): ${createProfileResponse['message']}');
+          print(
+              '⚠️ 경고: 프로필 생성 실패 (로그인 후): ${createProfileResponse['message']}');
           _errorMessage = createProfileResponse['message'] ?? '프로필 생성에 실패했습니다.';
         }
       } else {
@@ -402,7 +428,6 @@ class AuthProvider extends ChangeNotifier {
         print('⚠️ 경고: 프로필 로드 실패 (로그인 후): ${profileResponse['message']}');
         _errorMessage = profileResponse['message'] ?? '프로필 로드에 실패했습니다.';
       }
-
     } catch (e) {
       print('사용자 정보 및 프로필 로드/생성 중 예외 발생: $e');
       _errorMessage = '사용자 정보 및 프로필 로드 중 오류가 발생했습니다.';
@@ -433,7 +458,8 @@ class AuthProvider extends ChangeNotifier {
 
         return data['isAdmin'] == true;
       } else {
-        print("Admin check failed: ${response.statusCode}, ${response.body}"); // 👈 추가
+        print("Admin check failed: ${response.statusCode}, ${response
+            .body}"); // 👈 추가
 
         return false;
       }
@@ -442,7 +468,4 @@ class AuthProvider extends ChangeNotifier {
       return false;
     }
   }
-
-
-
 }

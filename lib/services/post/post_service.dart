@@ -5,40 +5,34 @@ import 'package:ourlog/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PostService {
-  static const String baseUrl = 'http://10.100.204.157:8080/ourlog'; // Update base URL to the correct one
+  static const String baseUrl = 'http://10.100.204.157:8080/ourlog';
 
-  // 게시글 목록 가져오기
+  // 게시글 목록 가져오기 (이전과 동일)
   static Future<List<Post>> getPosts({int page = 0, int size = 10, int? boardNo}) async {
     try {
-      final String? token = await _getToken(); // Get token
-
-      // Construct URL with optional boardNo
+      final String? token = await _getToken();
       final url = boardNo != null
           ? '$baseUrl/post/list?boardNo=$boardNo&page=${page + 1}&size=$size'
-          : '$baseUrl/post/list?page=${page + 1}&size=$size'; // Use /post/list even if boardNo is null, send page + 1
+          : '$baseUrl/post/list?page=${page + 1}&size=$size';
 
       final response = await http.get(
         Uri.parse(url),
         headers: {
           'Content-Type': 'application/json',
-          if (token != null) 'Authorization': 'Bearer $token', // Add Authorization header if token exists
+          if (token != null) 'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-         // Handle different response structures for list endpoint
-         final dynamic responseData = json.decode(response.body);
-
-         if (responseData is Map && responseData.containsKey('pageResultDTO')) {
-            // Assumes backend returns a structure like { 'pageResultDTO': { 'dtoList': [...] } }
-             final List<dynamic> jsonList = responseData['pageResultDTO']['dtoList'];
-             return jsonList.map((json) => Post.fromJson(json)).toList();
-         } else if (responseData is List) {
-            // Assumes backend returns a direct list of posts
-             return responseData.map((json) => Post.fromJson(json)).toList();
-         } else {
-           throw Exception('Unknown response format for getPosts');
-         }
+        final dynamic responseData = json.decode(response.body);
+        if (responseData is Map && responseData.containsKey('pageResultDTO')) {
+          final List<dynamic> jsonList = responseData['pageResultDTO']['dtoList'];
+          return jsonList.map((json) => Post.fromJson(json)).toList();
+        } else if (responseData is List) {
+          return responseData.map((json) => Post.fromJson(json)).toList();
+        } else {
+          throw Exception('Unknown response format for getPosts');
+        }
       } else {
         throw Exception('Failed to load posts: ${response.statusCode}');
       }
@@ -47,19 +41,28 @@ class PostService {
     }
   }
 
-  // 게시글 상세 조회
+  // 게시글 상세 조회 (수정된 부분)
   static Future<Post> getPostById(int postId) async {
     try {
+      final String? token = await _getToken();
       final response = await http.get(
-        Uri.parse('$baseUrl/posts/$postId'),
+        Uri.parse('$baseUrl/post/read/$postId'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
+          if (token != null) 'Authorization': 'Bearer $token',
         },
       );
 
       if (response.statusCode == 200) {
-        return Post.fromJson(json.decode(response.body));
+        final Map<String, dynamic> responseData = json.decode(response.body); // 응답 본문을 Map으로 디코딩
+
+        // 백엔드에서 "postDTO"라는 키 아래에 실제 게시물 데이터가 있으므로, 해당 키로 접근합니다.
+        if (responseData.containsKey('postDTO')) {
+          return Post.fromJson(responseData['postDTO']); // 'postDTO' 키의 값으로 Post.fromJson 호출
+        } else {
+          // 'postDTO' 키가 없을 경우 에러 처리
+          throw Exception('Failed to load post: "postDTO" key not found in response.');
+        }
       } else {
         throw Exception('Failed to load post: ${response.statusCode}');
       }
@@ -68,7 +71,7 @@ class PostService {
     }
   }
 
-  // 새 게시글 작성
+  // 새 게시글 작성 (이전과 동일)
   static Future<dynamic> createPost(Post post) async {
     try {
       final response = await AuthService.authenticatedPost(
@@ -78,9 +81,7 @@ class PostService {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        // Decode the response body
         final dynamic responseBody = json.decode(response.body);
-        // Return the decoded body directly. The caller will handle the type.
         return responseBody;
       } else {
         String errorMessage = 'Failed to create post: ${response.statusCode}';
@@ -101,14 +102,14 @@ class PostService {
     }
   }
 
-  // 게시글 수정
+  // 게시글 수정 (이전과 동일)
   static Future<Post> updatePost(Post post) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/posts/${post.postId}'),
+        Uri.parse('$baseUrl/post/${post.postId}'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
+          // 'Authorization': 'Bearer $token',
         },
         body: json.encode(post.toJson()),
       );
@@ -123,14 +124,14 @@ class PostService {
     }
   }
 
-  // 게시글 삭제
+  // 게시글 삭제 (이전과 동일)
   static Future<void> deletePost(int postId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/posts/$postId'),
+        Uri.parse('$baseUrl/post/$postId'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
+          // 'Authorization': 'Bearer $token',
         },
       );
 
@@ -142,14 +143,14 @@ class PostService {
     }
   }
 
-  // 게시글 검색
+  // 게시글 검색 (이전과 동일)
   static Future<List<Post>> searchPosts(String keyword, {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/posts/search?keyword=$keyword&page=$page&size=$size'),
+        Uri.parse('$baseUrl/post/search?keyword=$keyword&page=$page&size=$size'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
+          // 'Authorization': 'Bearer $token',
         },
       );
 
@@ -164,14 +165,14 @@ class PostService {
     }
   }
 
-  // 사용자의 게시글 목록 가져오기
+  // 사용자의 게시글 목록 가져오기 (이전과 동일)
   static Future<List<Post>> getUserPosts(int userId, {int page = 0, int size = 10}) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/posts/user/$userId?page=$page&size=$size'),
+        Uri.parse('$baseUrl/post/user/$userId?page=$page&size=$size'),
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer $token', // 인증이 필요한 경우
+          // 'Authorization': 'Bearer $token',
         },
       );
 
@@ -186,9 +187,9 @@ class PostService {
     }
   }
 
-  // Helper to get token
+  // Helper to get token (이전과 동일)
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('token');
   }
-} 
+}

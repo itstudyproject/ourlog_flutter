@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/post/post_service.dart';
 import '../../models/post/post.dart';
+import 'community_post_detail_screen.dart'; // 상세 페이지 스크린 임포트 추가
 
 class CommunityPostListScreen extends StatefulWidget {
   final String? boardType;
@@ -76,51 +77,58 @@ class _CommunityPostListScreenState extends State<CommunityPostListScreen> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator(color: Colors.orange))
               : _errorMessage.isNotEmpty
-                  ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.redAccent)))
-                  : _posts.isEmpty
-                      ? Center(child: Text('${_getBoardTitle()} 게시글이 없습니다.', style: const TextStyle(color: Colors.white70)))
-                      : ListView.builder(
-                          itemCount: _posts.length,
-                          itemBuilder: (context, index) {
-                            final post = _posts[index];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.white10,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.white54),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () {
-                                  print('Tapped on post: ${post.title}');
-                                },
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        post.title ?? '제목 없음',
-                                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        '작성자: ${post.nickname ?? '알 수 없음'}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.white70),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        '작성일: ${post.regDate ?? '날짜 없음'}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.white70),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
+              ? Center(child: Text(_errorMessage, style: const TextStyle(color: Colors.redAccent)))
+              : _posts.isEmpty
+              ? Center(child: Text('${_getBoardTitle()} 게시글이 없습니다.', style: const TextStyle(color: Colors.white70)))
+              : ListView.builder(
+            itemCount: _posts.length,
+            itemBuilder: (context, index) {
+              final post = _posts[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white10,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.white54),
+                ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () {
+                    print('Tapped on post: ${post.title}, postId: ${post.postId}'); // 디버깅을 위해 postId도 추가
+                    // *** 이 부분을 수정했습니다. 상세 페이지로 이동하는 코드입니다. ***
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CommunityPostDetailScreen(postId: post.postId!), // post.postId는 int? 타입일 수 있으므로 null 체크 후 전달
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.title ?? '제목 없음',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '작성자: ${post.nickname ?? '알 수 없음'}',
+                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '작성일: ${post.regDate ?? '날짜 없음'}',
+                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -146,4 +154,4 @@ class _CommunityPostListScreenState extends State<CommunityPostListScreen> {
       default: return '커뮤니티';
     }
   }
-} 
+}

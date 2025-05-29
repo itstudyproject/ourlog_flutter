@@ -45,7 +45,7 @@ class AppTheme {
       surface: backgroundColor,
       onSurface: textColor,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.black.withOpacity(0.2),
       elevation: 0,
       shape: RoundedRectangleBorder(

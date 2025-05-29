@@ -23,7 +23,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
   Timer? _timer; // 타이머 추가
   String countdown = '경매 정보 없음'; // 카운트다운 문자열 추가
 
-  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.47:8080/ourlog";
 
   @override
   void initState() {
@@ -174,7 +174,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                         children: [
                           // 작품 이미지
                           Center(
-                            child: artwork!.getImageUrl() != "http://10.100.204.171:8080/ourlog/picture/display/default-image.jpg"
+                            child: artwork!.getImageUrl() != "http://10.100.204.47:8080/ourlog/picture/display/default-image.jpg"
                                 ? Image.network(
                                     artwork!.getImageUrl(),
                                     fit: BoxFit.contain,
@@ -193,6 +193,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                           const SizedBox(height: 24), // 간격 조정
 
                           // 작가 정보 및 좋아요 버튼
+<<<<<<< Updated upstream
                            Row(
                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                              children: [
@@ -264,8 +265,85 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                              ]
                            ),
                            const SizedBox(height: 16),
+=======
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // 작가 정보 (아바타, 닉네임) 전체를 클릭 가능하게 처리
+                              Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque, // 클릭 감지 영역 확장
+                                  onTap: () {
+                                    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                    final currentUserId = authProvider.userId;
+                                    if (artwork?.userId != null) {
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/worker',
+                                        arguments: {
+                                          'userId': artwork!.userId.toString(),
+                                          'currentUserId': currentUserId, // 현재 로그인된 유저 ID를 변수로 가지고 있어야 함
+                                          },);
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundImage: artwork!.profileImage != null
+                                            ? NetworkImage(
+                                          artwork!.profileImage!.startsWith('/ourlog')
+                                              ? 'http://10.100.204.47:8080${artwork!.profileImage!}'
+                                              : '$baseUrl/picture/display/${artwork!.profileImage!}',
+                                        )
+                                            : null,
+                                        child: artwork!.profileImage == null ? Icon(Icons.person) : null,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            artwork!.nickname ?? '알 수 없음',
+                                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                              color: Colors.blue, // 클릭 가능 느낌
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                          Text(
+                                            '일러스트레이터',
+                                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              // 좋아요 버튼
+                              GestureDetector(
+                                onTap: () {
+                                  // TODO: 좋아요 토글 로직 구현
+                                },
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      artwork!.liked ? '🧡' : '🤍',
+                                      style: const TextStyle(fontSize: 24),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${artwork!.favoriteCnt ?? 0}',
+                                      style: Theme.of(context).textTheme.titleMedium,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+>>>>>>> Stashed changes
 
-                           // 제목
+                          // 제목
                            Text(
                             artwork!.title ?? '제목 없음',
                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),

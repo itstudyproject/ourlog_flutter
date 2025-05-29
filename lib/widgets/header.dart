@@ -86,60 +86,9 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                 final bool showSearch = constraints.maxWidth > 300;
 
                 return Row(
-                  mainAxisSize: MainAxisSize.min,
+                  // mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (showSearch) ...[
-                      // 검색 레이블
-                      const Text(
-                        'SEARCH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // 검색창
-                      Container(
-                        width: 160,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(color: Colors.white, width: 1),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                                decoration: const InputDecoration(
-                                  hintText: '검색',
-                                  hintStyle: TextStyle(color: Colors.white70),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.search,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                    ],
-
                     // MyPage 아이콘: 로그인 시에만 표시
                     if (authProvider.isLoggedIn) ...[
                       IconButton(
@@ -228,7 +177,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 사이드바 헤더
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -259,44 +208,41 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     const SizedBox(width: 16),
 
                                     // 사용자 정보 (닉네임, 마이페이지 링크)
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            authProvider.userNickname ??
-                                                authProvider.userEmail ??
-                                                '사용자',
-                                            // 닉네임 또는 이메일 표시
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                            overflow: TextOverflow.ellipsis,
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          authProvider.userNickname ??
+                                              authProvider.userEmail ??
+                                              '사용자',
+                                          // 닉네임 또는 이메일 표시
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
                                           ),
-                                          const SizedBox(height: 4),
-                                          GestureDetector(
-                                            onTap: () {
-                                              _closeSidebar();
-                                              Navigator.pushNamed(
-                                                context,
-                                                '/mypage',
-                                              );
-                                            },
-                                            child: const Text(
-                                              '마이페이지',
-                                              style: TextStyle(
-                                                color: Color(0xFF9BCABF),
-                                                fontSize: 14,
-                                                decoration:
-                                                    TextDecoration.underline,
-                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        GestureDetector(
+                                          onTap: () {
+                                            _closeSidebar();
+                                            Navigator.pushNamed(
+                                              context,
+                                              '/mypage',
+                                            );
+                                          },
+                                          child: const Text(
+                                            '마이페이지',
+                                            style: TextStyle(
+                                              color: Color(0xFF9BCABF),
+                                              fontSize: 14,
+                                              decoration:
+                                              TextDecoration.underline,
                                             ),
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -380,7 +326,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     margin: const EdgeInsets.only(top: 20),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -475,38 +421,39 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 10),
-        ...items.map((item) => GestureDetector(
-          onTap: () async {
-            await _closeSidebar();
-            if (item == '아트 등록') {
-              Navigator.pushNamed(context, '/postUpload');
-            } else if (item == '아트 게시판') {
-              Navigator.pushNamed(context, '/artWork');
-            } else if (item == '새소식') {
-              Navigator.pushNamed(context, '/news');
-            } else if (item == '자유게시판') {
-              Navigator.pushNamed(context, '/free');
-            } else if (item == '홍보 게시판') {
-              Navigator.pushNamed(context, '/advertise');
-            } else if (item == '요청 게시판') {
-              Navigator.pushNamed(context, '/request');
-            }
-          },
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12, bottom: 6),
-            child: Text(
-              item,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                letterSpacing: 0.5,
+        ...items.map(
+              (item) => GestureDetector(
+            onTap: () async {
+              await _closeSidebar();
+              if (item == '아트 등록') {
+                Navigator.pushNamed(context, '/art/register');
+              } else if (item == '아트 게시판') {
+                Navigator.pushNamed(context, '/artWork');
+              } else if (item == '새소식') {
+                Navigator.pushNamed(context, '/news');
+              } else if (item == '자유게시판') {
+                Navigator.pushNamed(context, '/free');
+              } else if (item == '홍보 게시판') {
+                Navigator.pushNamed(context, '/advertise');
+              } else if (item == '요청 게시판') {
+                Navigator.pushNamed(context, '/request');
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, bottom: 6),
+              child: Text(
+                item,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                ),
               ),
             ),
           ),
-        )),
+        ),
         const SizedBox(height: 20),
       ],
     );
   }
-
 }

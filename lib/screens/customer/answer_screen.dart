@@ -214,7 +214,7 @@ class _AnswerScreenState extends State<AnswerScreen> {
                       children: [
                         const SizedBox(width: 6),
                         Text(
-                          '${inquiry.answered ? "수정" : "작성"}',
+                          inquiry.answered ? "수정" : "작성",
                           textAlign: TextAlign.center,
                           style: const TextStyle(color: Colors.white),
                         ),

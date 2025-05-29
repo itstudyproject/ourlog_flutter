@@ -482,8 +482,16 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                 child: ElevatedButton(
                                   child: const Text('상세보기', style: TextStyle(color: Colors.white)),
                                   onPressed: () {
-                                    _hideExpandedArtworkOverlay(); // Dismiss overlay before navigating
-                                    Navigator.pushNamed(context, '/Art/${artwork.postId}'); // Navigate to detail page
+                                    // 오버레이 숨김 애니메이션 완료 후 페이지 이동
+                                    _fadeController.reverse().then((_) {
+                                      _overlayEntry?.remove();
+                                      _overlayEntry = null;
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/Art',
+                                        arguments: artwork.postId.toString(),
+                                      );
+                                    });
                                   },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.orange, // Customer folder reference

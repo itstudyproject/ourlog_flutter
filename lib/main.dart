@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/art/artRegister_screen.dart';
 import 'package:ourlog/screens/art/artlist_screen.dart';
+import 'package:ourlog/screens/art/artDetail_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
@@ -60,6 +61,10 @@ class MyApp extends StatelessWidget {
         '/mypage': (context) => const MyPageScreen(),
         '/artWork': (context) => const ArtListScreen(),
         '/art/register': (context) => const ArtRegisterScreen(),
+        '/Art': (context) {
+          final postId = int.parse(ModalRoute.of(context)!.settings.arguments as String);
+          return ArtDetailScreen(postId: postId);
+        },
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
         '/customer/customercenter': (context) => CustomerCenterScreen(

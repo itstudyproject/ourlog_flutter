@@ -105,27 +105,27 @@ class Post {
 
     if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
       final picData = pictureDTOList![0];
-      if (picData['resizedImagePath'] != null) {
+      if (picData['originImagePath'] != null) {
+        return "$baseUrl/picture/display/${picData['originImagePath']}";
+      } else if (picData['resizedImagePath'] != null) {
         return "$baseUrl/picture/display/${picData['resizedImagePath']}";
       } else if (picData['thumbnailImagePath'] != null) {
         return "$baseUrl/picture/display/${picData['thumbnailImagePath']}";
-      } else if (picData['originImagePath'] != null) {
-        return "$baseUrl/picture/display/${picData['originImagePath']}";
       } else if (picData['fileName'] != null) {
         return "$baseUrl/picture/display/${picData['fileName']}";
       }
     }
 
-    if (resizedImagePath != null) {
-      return "$baseUrl/picture/display/$resizedImagePath";
-    } else if (thumbnailImagePath != null) {
-      return "$baseUrl/picture/display/$thumbnailImagePath";
-    } else if (originImagePath != null) {
+    if (originImagePath != null) {
       if (originImagePath is String) {
         return "$baseUrl/picture/display/$originImagePath";
       } else if (originImagePath is List && originImagePath.isNotEmpty) {
         return "$baseUrl/picture/display/${originImagePath.first}";
       }
+    } else if (resizedImagePath != null) {
+      return "$baseUrl/picture/display/$resizedImagePath";
+    } else if (thumbnailImagePath != null) {
+      return "$baseUrl/picture/display/$thumbnailImagePath";
     } else if (fileName != null) {
       return "$baseUrl/picture/display/$fileName";
     }

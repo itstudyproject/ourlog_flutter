@@ -4,6 +4,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 
 // Artwork 모델 정의
 class Artwork {
@@ -74,8 +76,8 @@ class ArtworkSlider extends StatefulWidget {
 }
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
-  static const String viewsApiUrl = "http://10.100.204.124:8080/ourlog/ranking?type=views";
-  static const String followersApiUrl = "http://10.100.204.124:8080/ourlog/ranking?type=followers";
+  static const String viewsApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=views";
+  static const String followersApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];
@@ -543,15 +545,32 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        // context,
-                        // item.link,                           // 예: '/Art'
-                        // arguments: item.postId.toString();
+                        final currentUserId = Provider.of<AuthProvider>(context, listen: false).userId;
+
+                        if (item.isArtist) {
+                          // 주요 아티스트인 경우
+                          Navigator.pushNamed(
+                            context,
+                            '/worker',
+                            arguments: {
+                              'userId': item.link.split('/').last,
+                              'currentUserId': currentUserId,
+                            },
+                          );
+                        } else {
+                          // 인기 작품인 경우
+                          Navigator.pushNamed(
+                            context,
+                            '/Art',
+                            arguments: item.link.split('/').last,
+                          );
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text("상세보기"),
+                      child: Text(item.isArtist ? "작가프로필보기" : "작품상세보기"),
                     ),
                     const SizedBox(width: 16),
                     ElevatedButton(

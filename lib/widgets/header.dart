@@ -177,7 +177,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 사이드바 헤더
                               Row(
                                 mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -208,41 +208,43 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     const SizedBox(width: 16),
 
                                     // 사용자 정보 (닉네임, 마이페이지 링크)
-                                    Column(
-                                      crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          authProvider.userNickname ??
-                                              authProvider.userEmail ??
-                                              '사용자',
-                                          // 닉네임 또는 이메일 표시
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        GestureDetector(
-                                          onTap: () {
-                                            _closeSidebar();
-                                            Navigator.pushNamed(
-                                              context,
-                                              '/mypage',
-                                            );
-                                          },
-                                          child: const Text(
-                                            '마이페이지',
-                                            style: TextStyle(
-                                              color: Color(0xFF9BCABF),
-                                              fontSize: 14,
-                                              decoration:
-                                              TextDecoration.underline,
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            authProvider.userNickname ??
+                                                authProvider.userEmail ??
+                                                '사용자',
+                                            // 닉네임 또는 이메일 표시
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 4),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _closeSidebar();
+                                              Navigator.pushNamed(
+                                                context,
+                                                '/mypage',
+                                              );
+                                            },
+                                            child: const Text(
+                                              '마이페이지',
+                                              style: TextStyle(
+                                                color: Color(0xFF9BCABF),
+                                                fontSize: 14,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -326,7 +328,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     margin: const EdgeInsets.only(top: 20),
                                     child: Column(
                                       crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -422,7 +424,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         ),
         const SizedBox(height: 10),
         ...items.map(
-              (item) => GestureDetector(
+          (item) => GestureDetector(
             onTap: () async {
               await _closeSidebar();
               if (item == '아트 등록') {

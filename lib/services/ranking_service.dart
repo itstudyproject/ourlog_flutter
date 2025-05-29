@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/post.dart';
 
 class RankingService {
-  static const String baseUrl = "http://10.100.204.54:8080/ourlog/ranking";
+  static const String baseUrl = "http://10.100.204.124:8080/ourlog/ranking";
 
   // 인증 토큰과 헤더를 내부에서 가져오는 메서드
   Future<Map<String, String>> _getHeaders() async {

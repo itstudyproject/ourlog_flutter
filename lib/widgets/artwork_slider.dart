@@ -74,8 +74,8 @@ class ArtworkSlider extends StatefulWidget {
 }
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
-  static const String viewsApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=views";
-  static const String followersApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=followers";
+  static const String viewsApiUrl = "http://10.100.204.124:8080/ourlog/ranking?type=views";
+  static const String followersApiUrl = "http://10.100.204.124:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];
@@ -345,9 +345,9 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
               int displayedDataIndex;
               if (extendedData.length > data.length) { // 복제된 데이터가 있는 경우
                 if (index == 0) { // 복제된 첫 항목은 displayedData의 마지막 항목에 해당 (표시용)
-                  displayedDataIndex = displayedData.length > 0 ? displayedData.length - 1 : -1;
+                  displayedDataIndex = displayedData.isNotEmpty ? displayedData.length - 1 : -1;
                 } else if (index == extendedData.length - 1) { // 복제된 마지막 항목은 displayedData의 첫 항목에 해당 (표시용)
-                  displayedDataIndex = displayedData.length > 0 ? 0 : -1;
+                  displayedDataIndex = displayedData.isNotEmpty ? 0 : -1;
                 } else { // 원본 항목 범위 (index 1 ~ extendedData.length - 2)
                   // 이 인덱스를 displayedData의 인덱스 범위로 변환
                   // displayedData는 _displayCount 길이이므로 modulo 연산 등을 사용
@@ -543,7 +543,9 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        Navigator.pushNamed(context, item.link);
+                        // context,
+                        // item.link,                           // 예: '/Art'
+                        // arguments: item.postId.toString();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,

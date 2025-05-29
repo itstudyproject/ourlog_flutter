@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
 import 'package:ourlog/screens/art/artRegister_screen.dart';
 import 'package:ourlog/screens/art/artlist_screen.dart';
-import 'package:ourlog/screens/art/artDetail_screen.dart';
+import 'package:ourlog/screens/art/art_detail_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';

@@ -8,7 +8,7 @@ import 'package:intl/intl.dart';
 import '../../models/post.dart';
 import '../../models/trade.dart';
 import '../../models/picture.dart';
-import 'artDetail_screen.dart';
+import 'art_detail_screen.dart';
 
 class ArtRegisterScreen extends StatefulWidget {
   final Post? postData;
@@ -25,7 +25,7 @@ class ArtRegisterScreen extends StatefulWidget {
 }
 
 class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
-  static const String baseUrl = "http://10.100.204.124:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();

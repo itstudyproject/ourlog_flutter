@@ -9,7 +9,7 @@ import '../models/trade.dart';
 class TradeService {
   // NOTE: make sure this matches your @RequestMapping on the backend,
   // which was "/profile" + "/purchases/{userId}" etc.
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog/profile';
+  static const String _baseUrl = 'http://10.100.204.171:8080/ourlog/profile';
 
   /// 구매
   Future<PurchaseResponse> fetchPurchases(int userId) async {
@@ -37,7 +37,7 @@ class TradeService {
   }
 
   /// 판매
-  Future<List<Trade>> fetchSales(int userId) async {
+  Future<List<TradeDTO>> fetchSales(int userId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token') ?? '';
 
@@ -58,6 +58,6 @@ class TradeService {
     }
 
     final List<dynamic> list = jsonDecode(resp.body);
-    return list.map((json) => Trade.fromJson(json)).toList();
+    return list.map((json) => TradeDTO.fromJson(json)).toList();
   }
 }

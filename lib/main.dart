@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ourlog/screens/account_edit_screen.dart';
-import 'package:ourlog/screens/art/artRegister_screen.dart';
+import 'package:ourlog/screens/art/art_register_screen.dart';
 import 'package:ourlog/screens/art/artlist_screen.dart';
 import 'package:ourlog/screens/art/art_detail_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';

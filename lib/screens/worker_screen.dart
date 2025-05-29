@@ -1,9 +1,12 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:ourlog/services/worker_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkerScreen extends StatefulWidget {
-  final int userId;
-  final int currentUserId;
+  final int userId; // 작가 id
+  final int currentUserId; // 로그인한 유저 id
 
   const WorkerScreen({
     super.key,
@@ -42,12 +45,13 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> fetchProfile() async {
     try {
-      final Map<String, dynamic> profile = await WorkerService.fetchUserProfile(widget.userId);
+      final profile = await WorkerService.fetchUserProfile(widget.userId);
       setState(() {
         nickname = profile['nickname'] ?? '';
         profileImageUrl = profile['thumbnailImagePath'] ?? '';
         isFollowing = profile['isFollowing'] ?? false;
       });
+      print('[DEBUG] 프로필 이미지 URL: $profileImageUrl');
     } catch (e) {
       print('프로필 로딩 에러: $e');
     }
@@ -58,10 +62,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
     setState(() => isLoading = true);
 
     try {
-      final Map<String, dynamic> postsData = await WorkerService.fetchUserPosts(widget.userId, page, size);
+      final postsData = await WorkerService.fetchUserPosts(widget.userId, page, size);
       final newPosts = postsData['content'] ?? [];
-
-      // 🔥 boardNo == 5인 포스트만 필터링
       final filteredPosts = newPosts.where((post) => post['boardNo'] == 5).toList();
 
       setState(() {
@@ -85,7 +87,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> toggleFollow() async {
     try {
-      await WorkerService.toggleFollow(widget.userId, isFollowing);
+      await WorkerService.toggleFollow(widget.currentUserId, widget.userId, isFollowing);
       setState(() => isFollowing = !isFollowing);
     } catch (e) {
       print('팔로우 토글 에러: $e');
@@ -94,13 +96,41 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> toggleLike(int postId, int index) async {
     try {
-      final liked = await WorkerService.toggleLike(postId);
+      final liked = await WorkerService.toggleLike(widget.currentUserId, postId);
       setState(() {
         posts[index]['liked'] = liked;
-        posts[index]['favoriteCnt'] += liked ? 1 : -1;
+        posts[index]['favoriteCnt'] = (posts[index]['favoriteCnt'] ?? 0) + (liked ? 1 : -1);
       });
     } catch (e) {
       print('좋아요 토글 에러: $e');
+    }
+  }
+
+  Future<Uint8List?> fetchImageBytes(String imageUrl) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token') ?? '';
+
+      final response = await http.get(
+        Uri.parse(imageUrl),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.statusCode == 200) {
+        final contentType = response.headers['content-type'];
+        if (contentType != null && contentType.startsWith('image/')) {
+          return response.bodyBytes;
+        } else {
+          print('[DEBUG] 이미지 아님: content-type=$contentType');
+          return null;
+        }
+      } else {
+        print('[DEBUG] 이미지 요청 실패: ${response.statusCode}, URL: $imageUrl');
+        return null;
+      }
+    } catch (e) {
+      print('[DEBUG] 이미지 요청 예외 발생: $e');
+      return null;
     }
   }
 
@@ -115,20 +145,39 @@ class _WorkerScreenState extends State<WorkerScreen> {
       ),
       body: Column(
         children: [
-          // ─── 작가 프로필 ──────────────────────────
+          // 작가 프로필 영역
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 40,
-                  backgroundImage: profileImageUrl.isNotEmpty
-                      ? NetworkImage(profileImageUrl)
-                      : null,
                   backgroundColor: Colors.grey[800],
-                  child: profileImageUrl.isEmpty
-                      ? const Icon(Icons.person, size: 40, color: Colors.white)
-                      : null,
+                  child: profileImageUrl.isNotEmpty
+                      ? FutureBuilder<Uint8List?>(
+                    future: fetchImageBytes(profileImageUrl),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const CircularProgressIndicator(
+                            color: Colors.white);
+                      } else if (snapshot.hasError ||
+                          snapshot.data == null) {
+                        return const Icon(Icons.person,
+                            size: 40, color: Colors.white);
+                      } else {
+                        return ClipOval(
+                          child: Image.memory(
+                            snapshot.data!,
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      }
+                    },
+                  )
+                      : const Icon(Icons.person, size: 40, color: Colors.white),
                 ),
                 const SizedBox(width: 16),
                 Text(
@@ -159,83 +208,102 @@ class _WorkerScreenState extends State<WorkerScreen> {
             ),
           ),
 
-          // ─── 작품 목록 ────────────────────────────────
+          // 작품 목록 그리드
           Expanded(
             child: GridView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 0.75,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
               ),
-              itemCount: posts.length + (hasMore ? 1 : 0),
+              itemCount: posts.length,
               itemBuilder: (context, index) {
-                if (index >= posts.length) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  );
-                }
-
                 final post = posts[index];
-                return Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF232323),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                final imageUrl = post['imagePath'] ?? '';
+                final title = post['title'] ?? '';
+                final likesCount = post['favoriteCnt'] ?? 0;
+                final liked = post['liked'] ?? false;
+
+                return Card(
+                  color: Colors.grey[900],
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
-                          child: post['imagePath'] != null
-                              ? Image.network(
-                            post['imagePath'],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.broken_image, color: Colors.white),
-                          )
-                              : const Icon(Icons.image, color: Colors.white),
+                        child: imageUrl.isNotEmpty
+                            ? FutureBuilder<Uint8List?>(
+                          future: fetchImageBytes(imageUrl),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError ||
+                                snapshot.data == null) {
+                              return const Center(
+                                child: Icon(Icons.broken_image,
+                                    color: Colors.white),
+                              );
+                            } else {
+                              return Image.memory(
+                                snapshot.data!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                              );
+                            }
+                          },
+                        )
+                            : Container(
+                          color: Colors.grey[700],
+                          child: const Center(
+                            child: Icon(Icons.image, color: Colors.white),
+                          ),
                         ),
                       ),
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          post['title'] ?? '제목 없음',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              post['liked'] ? Icons.favorite : Icons.favorite_border,
-                              color: Colors.red,
-                            ),
-                            onPressed: () => toggleLike(post['postId'], index),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: Text(
-                              '${post['favoriteCnt']}',
+                      Padding(
+                        padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '$likesCount 좋아요',
                               style: const TextStyle(color: Colors.white70),
                             ),
-                          ),
-                        ],
-                      ),
+                            IconButton(
+                              onPressed: () => toggleLike(post['id'], index),
+                              icon: Icon(
+                                liked ? Icons.favorite : Icons.favorite_border,
+                                color: liked ? Colors.red : Colors.white70,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     ],
                   ),
                 );
               },
             ),
           ),
+
+          if (isLoading)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
         ],
       ),
     );

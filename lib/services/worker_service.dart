@@ -1,89 +1,109 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkerService {
-  static const String baseUrl = 'http://10.100.204.47:8080/';
-  static String? authToken; // 로그인 후 받아서 저장할 토큰
+  static const String baseUrl = 'http://10.100.204.47:8080/ourlog'; // 실제 API URL
 
-  // 토큰 설정 함수 (로그인 후 호출)
-  static void setAuthToken(String token) {
-    authToken = token;
+  // 공통 헤더 빌드 (토큰 포함)
+  static Future<Map<String, String>> _buildHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
   }
 
-  // 프로필 정보 가져오기 (토큰 포함)
-  static Future<Map<String, Object?>> fetchUserProfile(int userId) async {
+  // 유저 프로필 조회
+  static Future<Map<String, dynamic>> fetchUserProfile(int userId) async {
+    final headers = await _buildHeaders();
     final response = await http.get(
-      Uri.parse('$baseUrl/ourlog/profile/get/$userId'),
-      headers: _buildHeaders(),
+      Uri.parse('$baseUrl/profile/get/$userId'),
+      headers: headers,
     );
-
     if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, Object?>;
+      return json.decode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('프로필 정보를 불러오지 못했습니다. 상태 코드: ${response.statusCode}');
     }
   }
 
-  // 게시물 정보 가져오기 (토큰 포함)
-  static Future<Map<String, Object?>> fetchUserPosts(int userId, int page, int size) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/ourlog/posts/user/$userId?page=$page&size=$size'),
-      headers: _buildHeaders(),
-    );
+  // 유저 게시물 페이지네이션 조회
+  static Future<Map<String, dynamic>> fetchUserPosts(int userId, int page, int size) async {
+    if (page < 0) {
+      throw ArgumentError('page 값은 0 이상이어야 합니다. 전달된 값: $page');
+    }
 
+    final headers = await _buildHeaders();
+    final response = await http.get(
+      Uri.parse('$baseUrl/post/list?userId=$userId&page=$page&size=$size'),
+      headers: headers,
+    );
     if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, Object?>;
+      return json.decode(response.body) as Map<String, dynamic>;
     } else {
       throw Exception('게시물 정보를 불러오지 못했습니다. 상태 코드: ${response.statusCode}');
     }
   }
 
-  // 팔로우/언팔로우 토글 (토큰 포함)
-  static Future<void> toggleFollow(int userId, bool isCurrentlyFollowing) async {
-    final url = isCurrentlyFollowing
-        ? '$baseUrl/ourlog/unfollow'
-        : '$baseUrl/ourlog/follow';
+  // 팔로우 토글 (로그인 유저 id, 작가 id, 현재 팔로우 여부)
+  static Future<void> toggleFollow(int fromUserId, int toUserId, bool isFollowing) async {
+    final headers = await _buildHeaders();
 
-    final response = await http.post(
-      Uri.parse(url),
-      headers: _buildHeaders(contentType: true),
-      body: jsonEncode(<String, Object?>{'followingUserId': userId.toString()}),
-    );
+    final url = isFollowing
+        ? Uri.parse('$baseUrl/followers/$fromUserId/unfollow/$toUserId')
+        : Uri.parse('$baseUrl/followers/$fromUserId/follow/$toUserId');
 
-    if (response.statusCode != 200) {
-      throw Exception('팔로우/언팔로우 처리 실패 상태 코드: ${response.statusCode}');
+    final response = isFollowing
+        ? await http.delete(url, headers: headers)
+        : await http.post(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      final msg = json.decode(response.body)['message'];
+      print('✅ Follow 처리 결과: $msg');
+    } else if (response.statusCode == 403) {
+      throw Exception('❌ 권한 없음 (인증된 사용자와 불일치)');
+    } else {
+      throw Exception('❌ Follow 처리 실패: ${response.statusCode}');
     }
   }
 
-  // 좋아요 토글 (토큰 포함)
-  static Future<bool> toggleLike(int postId) async {
+  static Future<bool> isFollowing(int fromUserId, int toUserId) async {
+    final headers = await _buildHeaders();
+
+    final url = Uri.parse('$baseUrl/followers/status/isFollowing/$fromUserId/$toUserId');
+
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as bool;
+    } else {
+      throw Exception('팔로우 상태 확인 실패: ${response.statusCode}');
+    }
+  }
+
+  // 좋아요 토글 (로그인 유저 id, 게시물 id) - true/false 리턴
+  static Future<bool> toggleLike(int loggedInUserId, int postId) async {
+    final headers = await _buildHeaders();
+    final url = Uri.parse('$baseUrl/favorites/toggle');
+    final body = json.encode({
+      'userId': loggedInUserId,
+      'postId': postId,
+    });
+
     final response = await http.post(
-      Uri.parse('$baseUrl/ourlog/like/$postId'),
-      headers: _buildHeaders(),
+      url,
+      headers: headers,
+      body: body,
     );
 
     if (response.statusCode == 200) {
-      final result = json.decode(response.body) as Map<String, Object?>;
-      return result['liked'] == true;
+      final data = json.decode(response.body) as Map<String, dynamic>;
+      // 백엔드 응답 구조에 따라 이 부분 조정 (liked 여부 포함 시)
+      return data['liked'] as bool? ?? true; // true면 좋아요 됨
     } else {
       throw Exception('좋아요 처리 실패 상태 코드: ${response.statusCode}');
     }
-  }
-
-  // 요청 헤더 생성 함수
-  static Map<String, String> _buildHeaders({bool contentType = false}) {
-    final Map<String, String> headers = {};
-
-    if (authToken != null) {
-      headers['Authorization'] = 'Bearer $authToken';
-    }
-
-    if (contentType) {
-      headers['Content-Type'] = 'application/json';
-    }
-
-    print('[DEBUG] 보낼 헤더: $headers'); // ✅ 확인용 로그
-
-    return headers;
   }
 }

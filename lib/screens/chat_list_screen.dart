@@ -138,20 +138,13 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   onTap: () {
                     // 채널 선택 시 채팅 화면으로 이동
                     debugPrint('Selected channel: ${channel.name ?? channel.url}');
-                    if (channel != null) { // channel 객체가 null이 아닌지 확인
-                      Navigator.pushNamed(
-                        context,
-                        '/chat', // 채팅 화면 라우트 이름
-                        arguments: channel, // 선택된 GroupChannel 객체를 인자로 전달
-                      );
-                    } else {
-                      // channel이 null일 경우 오류 처리 또는 사용자에게 알림
-                      debugPrint('Attempted to navigate to chat with null channel.');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('채널 정보를 불러오는데 실패했습니다. 다시 시도해주세요.')),
-                      );
-                    }
-                  },
+ // channel 객체가 null이 아닌지 확인
+                    Navigator.pushNamed(
+                      context,
+                      '/chat', // 채팅 화면 라우트 이름
+                      arguments: channel, // 선택된 GroupChannel 객체를 인자로 전달
+                    );
+                                    },
                 );
               },
             ),

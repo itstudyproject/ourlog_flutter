@@ -64,9 +64,15 @@ class MyApp extends StatelessWidget {
         '/artWork': (context) => const ArtListScreen(),
         '/art/register': (context) => const ArtRegisterScreen(),
         '/Art': (context) {
-          final postId = int.parse(
-            ModalRoute.of(context)!.settings.arguments as String,
-          );
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final postId = (args is String) ? int.tryParse(args) : null;
+
+          if (postId == null) {
+            return Scaffold(
+              body: Center(child: Text('Invalid or missing postId')),
+            );
+          }
+
           return ArtDetailScreen(postId: postId);
         },
         '/customer/termscondition': (context) => const TermsConditionScreen(),

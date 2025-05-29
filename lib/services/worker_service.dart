@@ -36,16 +36,25 @@ class WorkerService {
     }
 
     final headers = await _buildHeaders();
-    final response = await http.get(
-      Uri.parse('$baseUrl/post/list?userId=$userId&page=$page&size=$size'),
-      headers: headers,
-    );
+    final url = '$baseUrl/post/list?userId=$userId&page=$page&size=$size';
+
+    print('Request URL: $url');
+    print('Headers: $headers');
+
+    final response = await http.get(Uri.parse(url), headers: headers);
+
+    print('Response status: ${response.statusCode}');
+    print('Response body: ${response.body}');
+
     if (response.statusCode == 200) {
-      return json.decode(response.body) as Map<String, dynamic>;
+      final Map<String, dynamic> data = json.decode(response.body);
+      return data; // content만 아니라 전체 Map 반환
     } else {
       throw Exception('게시물 정보를 불러오지 못했습니다. 상태 코드: ${response.statusCode}');
     }
   }
+
+
 
   // 팔로우 토글 (로그인 유저 id, 작가 id, 현재 팔로우 여부)
   static Future<void> toggleFollow(int fromUserId, int toUserId, bool isFollowing) async {

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:ourlog/services/worker_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/post.dart';
 
 class WorkerScreen extends StatefulWidget {
   final int userId; // 작가 id
@@ -22,8 +23,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
   String nickname = '';
   String profileImageUrl = '';
   bool isFollowing = false;
-  List<dynamic> posts = [];
-  int page = 0;
+  List<Post> posts = [];
+  int page = 1;
   final int size = 6;
   bool isLoading = false;
   bool hasMore = true;
@@ -34,7 +35,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
     super.initState();
     fetchProfile();
     fetchPosts();
-    _scrollController.addListener(_onScroll);
+    _scrollController.addListener(_onScroll);  // 리스너 등록
   }
 
   @override
@@ -63,25 +64,23 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
     try {
       final postsData = await WorkerService.fetchUserPosts(widget.userId, page, size);
-      final newPosts = postsData['content'] ?? [];
-      final filteredPosts = newPosts.where((post) => post['boardNo'] == 5).toList();
+
+      final newPostsJson = postsData['pageResultDTO']?['dtoList'] ?? [];
+
+      final newPosts = newPostsJson
+          .map<Post>((json) => Post.fromJson(json))
+          .where((post) => post.boardNo == 5)
+          .toList();
 
       setState(() {
-        posts.addAll(filteredPosts);
+        posts.addAll(newPosts);
         page++;
-        hasMore = !(postsData['last'] ?? true);
+        hasMore = !(postsData['pageResultDTO']?['last'] ?? true);
+        isLoading = false;
       });
     } catch (e) {
       print('포스트 로딩 에러: $e');
-    }
-
-    setState(() => isLoading = false);
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 100) {
-      fetchPosts();
+      setState(() => isLoading = false);
     }
   }
 
@@ -98,8 +97,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
     try {
       final liked = await WorkerService.toggleLike(widget.currentUserId, postId);
       setState(() {
-        posts[index]['liked'] = liked;
-        posts[index]['favoriteCnt'] = (posts[index]['favoriteCnt'] ?? 0) + (liked ? 1 : -1);
+        posts[index].liked = liked;
+        posts[index].favoriteCnt = (posts[index].favoriteCnt ?? 0) + (liked ? 1 : -1);
       });
     } catch (e) {
       print('좋아요 토글 에러: $e');
@@ -134,6 +133,14 @@ class _WorkerScreenState extends State<WorkerScreen> {
     }
   }
 
+  // ★ 여기가 추가된 부분 ★
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100) {
+      fetchPosts();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,14 +164,10 @@ class _WorkerScreenState extends State<WorkerScreen> {
                       ? FutureBuilder<Uint8List?>(
                     future: fetchImageBytes(profileImageUrl),
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const CircularProgressIndicator(
-                            color: Colors.white);
-                      } else if (snapshot.hasError ||
-                          snapshot.data == null) {
-                        return const Icon(Icons.person,
-                            size: 40, color: Colors.white);
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator(color: Colors.white);
+                      } else if (snapshot.hasError || snapshot.data == null) {
+                        return const Icon(Icons.person, size: 40, color: Colors.white);
                       } else {
                         return ClipOval(
                           child: Image.memory(
@@ -222,10 +225,10 @@ class _WorkerScreenState extends State<WorkerScreen> {
               itemCount: posts.length,
               itemBuilder: (context, index) {
                 final post = posts[index];
-                final imageUrl = post['imagePath'] ?? '';
-                final title = post['title'] ?? '';
-                final likesCount = post['favoriteCnt'] ?? 0;
-                final liked = post['liked'] ?? false;
+                final imageUrl = post.getImageUrl();
+                final title = post.title;
+                final likesCount = post.favoriteCnt;
+                final liked = post.liked;
 
                 return Card(
                   color: Colors.grey[900],
@@ -237,15 +240,11 @@ class _WorkerScreenState extends State<WorkerScreen> {
                             ? FutureBuilder<Uint8List?>(
                           future: fetchImageBytes(imageUrl),
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            } else if (snapshot.hasError || snapshot.data == null) {
                               return const Center(
-                                  child: CircularProgressIndicator());
-                            } else if (snapshot.hasError ||
-                                snapshot.data == null) {
-                              return const Center(
-                                child: Icon(Icons.broken_image,
-                                    color: Colors.white),
+                                child: Icon(Icons.broken_image, color: Colors.white),
                               );
                             } else {
                               return Image.memory(
@@ -266,15 +265,14 @@ class _WorkerScreenState extends State<WorkerScreen> {
                       Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Text(
-                          title,
+                          post.title ?? '',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: Colors.white),
                         ),
                       ),
                       Padding(
-                        padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -283,7 +281,11 @@ class _WorkerScreenState extends State<WorkerScreen> {
                               style: const TextStyle(color: Colors.white70),
                             ),
                             IconButton(
-                              onPressed: () => toggleLike(post['id'], index),
+                              onPressed: () {
+                                if (post.postId != null) {
+                                  toggleLike(post.postId!, index);
+                                }
+                              },
                               icon: Icon(
                                 liked ? Icons.favorite : Icons.favorite_border,
                                 color: liked ? Colors.red : Colors.white70,

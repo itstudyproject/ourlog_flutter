@@ -743,15 +743,17 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                     right: 8,
                                     child: GestureDetector(
                                       onTap: () => handleLikeToggle(artwork.postId!),
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4), // Added slight padding back for heart visibility
-                                        decoration: BoxDecoration(
-                                          color: Colors.black54, // Darker background for heart
-                                          shape: BoxShape.circle, // Circular background
-                                        ),
-                                        child: Text(
-                                          artwork.liked ? '🧡' : '🤍', // Kept only the heart icon
-                                          style: const TextStyle(fontSize: 20), // Slightly reduced size
+                                      child: Text(
+                                        artwork.liked ? '🧡' : '🤍',
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          shadows: [
+                                            Shadow(
+                                              offset: Offset(0, 0),
+                                              blurRadius: 3.0,
+                                              color: Colors.black,
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),

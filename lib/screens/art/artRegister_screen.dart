@@ -277,9 +277,13 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
       body: jsonEncode(postData),
     );
 
-    if (postResponse.statusCode == 200) {
+    print('[_handleNewRegister] 게시글 등록 응답 상태 코드: ${postResponse.statusCode}');
+    print('[_handleNewRegister] 게시글 등록 응답 본문: ${postResponse.body}');
+
+    // 200 또는 201 상태 코드를 성공으로 간주
+    if (postResponse.statusCode >= 200 && postResponse.statusCode < 300) { // 2xx 코드는 성공으로 간주
       final postId = int.parse(postResponse.body);
-      print('작품 등록 성공 응답: ${postResponse.body}');
+      print('작품 등록 성공, postId: $postId');
 
       // 3. 경매 등록
       final tradeData = {
@@ -320,13 +324,27 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
             );
           }
         } else {
+          // 경매 등록 API에서 200 OK가 아닌 다른 상태 코드를 반환한 경우
+          print('[_handleNewRegister] 경매 등록 API 오류: ${tradeResponse.statusCode} - ${tradeResponse.body}');
           throw Exception('경매 등록 실패: ${tradeResponse.statusCode} - ${tradeResponse.body}');
         }
       } catch (e) {
+        // 경매 등록 요청 자체에서 예외가 발생한 경우 (네트워크 오류 등)
         print('[_handleNewRegister] 경매 등록 요청 중 예외 발생: $e');
-        throw Exception('경매 등록 요청 중 오류 발생: $e');
+        // 사용자에게 오류 메시지를 표시할 수 있습니다.
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('경매 등록 중 오류가 발생했습니다: ${e.toString()}')),
+        );
+        // 여기서 throw e; 를 사용하여 상위 catch 블록으로 예외를 전파하거나,
+        // 또는 여기서 예외 처리를 완료하고 함수를 종료할 수 있습니다.
+        // 사용자가 게시글은 등록되었지만 경매 정보는 없는 상태를 인지해야 하므로,
+        // 게시글 등록은 성공했음을 알리고 경매 등록 실패를 별도로 알리는 것이 좋습니다.
+        print('게시글은 등록되었지만 경매 등록에 실패했습니다.');
+        // throw e; // 예외 전파 (선택 사항)
       }
     } else {
+      // 게시글 등록 API에서 200 OK가 아닌 다른 상태 코드를 반환한 경우
+      print('[_handleNewRegister] 게시글 등록 API 오류: ${postResponse.statusCode} - ${postResponse.body}');
       throw Exception('게시글 등록 실패: ${postResponse.statusCode} - ${postResponse.body}');
     }
   }

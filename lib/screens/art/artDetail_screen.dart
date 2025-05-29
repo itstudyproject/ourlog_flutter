@@ -240,7 +240,19 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                                    onTap: () { /* TODO: 좋아요 토글 로직 */ }, // 좋아요 토글 기능 연결
                                    child: Row(
                                      children: [
-                                      Text(artwork!.liked ? '🧡' : '🤍', style: const TextStyle(fontSize: 24)), // 하트 이모지
+                                      Text(
+                                        artwork!.liked ? '🧡' : '🤍',
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          shadows: [
+                                            Shadow(
+                                              offset: Offset(0, 0),
+                                              blurRadius: 3.0,
+                                              color: Colors.black,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
                                       const SizedBox(width: 4),
                                        Text(
                                         '${artwork!.favoriteCnt ?? 0}',
@@ -307,7 +319,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                                        Text('즉시 구매가', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600])),
                                        const SizedBox(height: 4),
                                        Text(
-                                         '${artwork!.tradeDTO!['buyNowPrice']?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
+                                         '${artwork!.tradeDTO!['nowBuy']?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
                                           style: Theme.of(context).textTheme.titleMedium,
                                        ),
                                     ]

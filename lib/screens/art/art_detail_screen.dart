@@ -228,17 +228,15 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
 
     try {
       final headers = await _getHeaders();
-      final uri = Uri.parse('$baseUrl/trades/bid');
-      debugPrint('입찰 API 요청 URL: $uri');
-      debugPrint('입찰 API 요청 헤더: $headers');
-
-      // artwork.tradeDTO가 dynamic이므로 tradeId에 안전하게 접근
-      final tradeId = artwork?.tradeDTO?.tradeId; // TradeDTO 모델 속성 접근
+      final tradeId = artwork?.tradeDTO?.tradeId;
 
       if (tradeId == null) {
         throw Exception('거래 정보를 찾을 수 없습니다.');
       }
 
+      final uri = Uri.parse('$baseUrl/trades/$tradeId/bid');
+      debugPrint('입찰 API 요청 URL: $uri');
+      debugPrint('입찰 API 요청 헤더: $headers');
       debugPrint('입찰 API 요청 본문: {"tradeId": $tradeId, "bidAmount": $bidAmount}');
 
       final response = await http.post(
@@ -254,24 +252,39 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
       debugPrint('입찰 API 응답 본문: ${response.body}');
 
       if (response.statusCode == 200) {
-        final responseBody = jsonDecode(response.body);
-        final newHighestBid = responseBody['newHighestBid']; // 백엔드 응답에서 새로운 최고 입찰가 필드를 확인해야 함
+        //final responseBody = jsonDecode(response.body); // <-- JSON 파싱 시도 코드 (삭제 또는 주석 처리)
+        //final newHighestBid = responseBody['newHighestBid']; // <-- newHighestBid 접근 코드 (삭제 또는 주석 처리)
+
+        // 백엔드에서 반환한 문자열 메시지를 그대로 사용
+        final successMessage = response.body; // <-- 응답 본문을 문자열로 직접 사용
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('입찰이 성공적으로 완료되었습니다! 새로운 최고 입찰가: ${newHighestBid?.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원')),
+          // SnackBar(content: Text('입찰이 성공적으로 완료되었습니다! 새로운 최고 입찰가: ${newHighestBid?.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원')), // 이전 메시지 (newHighestBid 사용)
+          SnackBar(content: Text(successMessage)), // <-- 백엔드에서 받은 메시지를 직접 표시
         );
-        fetchArtworkDetails(); // 입찰 성공 후 상세 정보 새로고침
+
+        // 입찰 성공 후 상세 정보 새로고침
+        // 이 호출을 통해 최신 최고 입찰가 및 경매 상태 정보가 업데이트될 것입니다.
+        fetchArtworkDetails();
+
+        // 즉시 구매가와 입찰 금액이 동일한 경우 ("EQUALS_NOW_BUY" 응답) 별도 처리가 필요하다면 여기에 추가
+        if (successMessage == "EQUALS_NOW_BUY") {
+           // 예를 들어, 즉시 구매 처리 완료 메시지를 보여주거나, 즉시 구매 완료 페이지로 이동 등
+           debugPrint("백엔드에서 EQUALS_NOW_BUY 응답 받음");
+           // 필요에 따라 추가 UI/로직 처리
+        }
+
+
       } else if (response.statusCode == 403) {
         // 403 응답 처리 수정: 메시지 표시 후 페이지에 머물도록 변경
         // 비어있는 응답 본문 파싱 오류 방지
         String errorMessage = '입찰 권한이 없습니다. (서버 응답: 403)';
         if (response.body.isNotEmpty) {
           try {
-            final errorBody = jsonDecode(response.body);
+            final errorBody = jsonDecode(response.body); // <-- 403 응답 본문은 JSON일 수 있으므로 파싱 시도
             errorMessage = errorBody['message'] ?? errorMessage;
           } catch (e) {
             debugPrint('403 응답 본문 파싱 실패: $e');
-            // 파싱 실패 시 기본 메시지 사용
           }
         }
 
@@ -285,9 +298,24 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
           SnackBar(content: Text(errorMessage)),
         );
       } else {
-        throw Exception('입찰 실패: ${response.statusCode}');
+        // 기타 서버 오류 처리
+        String errorMessage = '입찰 실패: 서버 오류 (${response.statusCode})';
+         if (response.body.isNotEmpty) {
+          // 서버가 에러 응답 시에도 JSON 형태로 메시지를 줄 수 있으므로 시도
+          try {
+            final errorBody = jsonDecode(response.body);
+            errorMessage = errorBody['message'] ?? errorMessage;
+          } catch (e) {
+            debugPrint('기타 오류 응답 본문 파싱 실패: $e');
+             errorMessage = '$errorMessage: ${response.body}'; // 파싱 실패 시 원본 본문 포함
+          }
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
       }
     } catch (e) {
+      // 네트워크 오류 등 예외 처리
       debugPrint('입찰 요청 실패: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('입찰 실패: ${e.toString()}')),

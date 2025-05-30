@@ -14,7 +14,7 @@ class ArtListScreen extends StatefulWidget {
 
 class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateMixin {
   static const String baseUrl = "http://10.100.204.171:8080/ourlog";
-  static const int artworksPerPage = 15;
+  static const int artworksPerPage = 16;
 
   List<Post> artworks = [];
   bool isLoading = true;
@@ -440,7 +440,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                 // Ensure no underline on current price
                                 Text(
                                   // Corrected comma formatting logic
-                                  '현재가: ${(artwork.tradeDTO!['highestBid'] ?? artwork.tradeDTO!['startPrice'])?.toString().replaceAllMapped(RegExp(r'(?<!\d)(?:(?=\d{3})+(?!\d)|(?<=\d)(?=(?:\d{3})+(?!\d)))'), (m) => ',')}원',
+                                  '현재가: ${(artwork.tradeDTO!.highestBid ?? artwork.tradeDTO!.startPrice)?.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
@@ -534,11 +534,11 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
       return [...artworks]..sort((a, b) => (b.favoriteCnt ?? 0) - (a.favoriteCnt ?? 0));
     }
     return [...artworks]..sort((a, b) {
-      final timeA = a.tradeDTO?['startBidTime'] != null
-          ? DateTime.parse(a.tradeDTO!['startBidTime']).millisecondsSinceEpoch
+      final timeA = a.tradeDTO?.startBidTime != null
+          ? a.tradeDTO!.startBidTime.millisecondsSinceEpoch // Access startBidTime using .notation
           : 0;
-      final timeB = b.tradeDTO?['startBidTime'] != null
-          ? DateTime.parse(b.tradeDTO!['startBidTime']).millisecondsSinceEpoch
+      final timeB = b.tradeDTO?.startBidTime != null
+          ? b.tradeDTO!.startBidTime.millisecondsSinceEpoch // Access startBidTime using .notation
           : 0;
       return timeB - timeA;
     });
@@ -546,6 +546,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
 
   List<Post> getFilteredArtworks() {
     final sorted = getSortedArtworks();
+    // Filter only boardNo 5. Null check for boardNo.
     final onlyArt = sorted.where((art) => art.boardNo == 5).toList();
     if (searchTerm.isEmpty) return onlyArt;
     return onlyArt.where((art) =>

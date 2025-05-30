@@ -58,13 +58,12 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
     final post = widget.postData!;
     _titleController.text = post.title ?? '';
     _contentController.text = post.content ?? '';
-    _startPriceController.text = post.tradeDTO?['startPrice']?.toString() ?? '';
-    _nowBuyController.text = post.tradeDTO?['nowBuy']?.toString() ?? '';
+    _startPriceController.text = post.tradeDTO?.startPrice?.toString() ?? '';
+    _nowBuyController.text = post.tradeDTO?.nowBuy?.toString() ?? '';
     _tags = post.tag?.split(',') ?? [];
     _selectedThumbnailId = post.fileName;
     _startTime = DateTime.now();
     _endTime = _startTime!.add(const Duration(days: 7));
-    // 이미지는 재등록 시 수정 불가, 기존 이미지 정보만 유지
   }
 
   Future<void> _loadUserInfo() async {
@@ -127,40 +126,77 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // 재등록 모드일 때의 유효성 검사
     if (widget.isReregister) {
-      // 경매 재등록 로직: postId는 기존 값, tradeId만 새로 생성
-      final prefs = await SharedPreferences.getInstance();
-      final token = prefs.getString('token');
-      final tradeData = {
-        'postId': widget.postData!.postId,
-        'sellerId': _userId,
-        'startPrice': int.parse(_startPriceController.text),
-        'nowBuy': int.parse(_nowBuyController.text),
-        'startBidTime': _startTime!.toIso8601String(),
-        'lastBidTime': _endTime!.toIso8601String(),
-        'tradeStatus': false,
-      };
-      final response = await http.post(
-        Uri.parse('$baseUrl/trades/register'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(tradeData),
-      );
-      if (response.statusCode == 200) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('경매가 성공적으로 재등록되었습니다!')),
-          );
-          Navigator.pushReplacementNamed(context, '/art/${widget.postData!.postId}');
-        }
-      } else {
-        throw Exception('경매 재등록 실패: ${response.statusCode}');
+      if (widget.postData?.postId == null || widget.postData!.postId == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('재등록할 게시글 정보가 없습니다.')),
+        );
+        return;
       }
+      if (_userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('사용자 정보가 로딩되지 않았습니다.')),
+        );
+        return;
+      }
+
+      final startPrice = int.tryParse(_startPriceController.text);
+      final nowBuy = int.tryParse(_nowBuyController.text);
+
+      if (startPrice == null || startPrice <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('경매 시작가를 0보다 큰 값으로 입력해주세요.')),
+        );
+        return;
+      }
+      if (nowBuy == null || nowBuy <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('즉시 구매가를 0보다 큰 값으로 입력해주세요.')),
+        );
+        return;
+      }
+      if (startPrice % 1000 != 0 || nowBuy % 1000 != 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('시작가와 즉시구매가는 1,000원 단위로 입력해야 합니다.')),
+        );
+        return;
+      }
+      if (startPrice > 100000000 || nowBuy > 100000000) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('시작가와 즉시구매가는 1억원(100,000,000) 이하로 입력해야 합니다.')),
+        );
+        return;
+      }
+      if (nowBuy < startPrice) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('즉시구매가는 시작가보다 크거나 같아야 합니다.')),
+        );
+        return;
+      }
+      if (_startTime == null || _endTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('경매 시작 및 종료 시간을 설정해주세요.')),
+        );
+        return;
+      }
+
+      final maxEndTime = _startTime!.add(const Duration(days: 7));
+      if (_endTime!.isAfter(maxEndTime)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('경매 종료시간은 시작일로부터 최대 7일 이내여야 합니다.')),
+        );
+        return;
+      }
+
+      // 재등록 로직 실행
+      await _handleReregister();
       return;
     }
-    if (_imageFiles.isEmpty && !widget.isReregister) {
+
+    // 일반 등록 모드일 때의 유효성 검사
+    if (_imageFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('최소 한 개의 이미지를 업로드해주세요.')),
       );
@@ -194,38 +230,47 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
   }
 
   Future<void> _handleReregister() async {
-    // 경매 재등록 로직 구현
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
+    setState(() => _isLoading = true);
 
-    final tradeData = {
-      'postId': widget.postData!.postId,
-      'sellerId': _userId,
-      'startPrice': int.parse(_startPriceController.text),
-      'nowBuy': int.parse(_nowBuyController.text),
-      'startBidTime': _startTime!.toIso8601String(),
-      'lastBidTime': _endTime!.toIso8601String(),
-      'tradeStatus': false,
-    };
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/trades/register'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(tradeData),
-    );
+      final tradeData = {
+        'postId': widget.postData!.postId,
+        'sellerId': _userId,
+        'startPrice': int.parse(_startPriceController.text),
+        'nowBuy': int.parse(_nowBuyController.text),
+        'startBidTime': _startTime!.toIso8601String(),
+        'lastBidTime': _endTime!.toIso8601String(),
+        'tradeStatus': false,
+      };
 
-    if (response.statusCode == 200) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('경매가 성공적으로 재등록되었습니다!')),
-        );
-        Navigator.pushReplacementNamed(context, '/art/${widget.postData!.postId}');
+      final response = await http.post(
+        Uri.parse('$baseUrl/trades/register'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(tradeData),
+      );
+
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('경매가 성공적으로 재등록되었습니다!')),
+          );
+          Navigator.pushReplacementNamed(context, '/artWork');
+        }
+      } else {
+        throw Exception('경매 재등록 실패: ${response.statusCode}');
       }
-    } else {
-      throw Exception('경매 재등록 실패: ${response.statusCode}');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('경매 재등록 중 오류가 발생했습니다: $e')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -349,12 +394,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('작품이 성공적으로 등록되었습니다!')),
             );
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ArtDetailScreen(postId: postId),
-              ),
-            );
+            Navigator.pushReplacementNamed(context, '/artWork');
           }
         } else {
           // 경매 등록 API에서 200 OK가 아닌 다른 상태 코드를 반환한 경우
@@ -472,10 +512,8 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
                   children: [
                     _buildTitleField(),
                     const SizedBox(height: 24),
-                    if (!widget.isReregister) ...[
-                      _buildImageUploadSection(),
-                      const SizedBox(height: 24),
-                    ],
+                    _buildImageUploadSection(),
+                    const SizedBox(height: 24),
                     _buildContentField(),
                     const SizedBox(height: 24),
                     _buildPriceFields(),
@@ -939,9 +977,11 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
               if (price % 1000 != 0) {
                 return '1,000원 단위로 입력해주세요';
               }
+              if (price > 100000000) {
+                return '1억원 이하로 입력해주세요';
+              }
               return null;
             },
-            readOnly: false, // 재등록 시 시작가 수정 가능
           ),
         ),
         const SizedBox(width: 16),
@@ -974,20 +1014,20 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
               if (price == null || price <= 0) {
                 return '0보다 큰 값을 입력해주세요';
               }
-               // Check if _startPriceController text is not empty before parsing
-              if (_startPriceController.text.isNotEmpty) {
-                final startPrice = int.tryParse(_startPriceController.text);
-                 if (startPrice != null && price < startPrice) {
-                   return '시작가보다 커야 합니다';
-                 }
-              }
               if (price % 1000 != 0) {
                 return '1,000원 단위로 입력해주세요';
               }
-
+              if (price > 100000000) {
+                return '1억원 이하로 입력해주세요';
+              }
+              if (_startPriceController.text.isNotEmpty) {
+                final startPrice = int.tryParse(_startPriceController.text);
+                if (startPrice != null && price < startPrice) {
+                  return '시작가보다 커야 합니다';
+                }
+              }
               return null;
             },
-            readOnly: false, // 재등록 시 즉시구매가 수정 가능
           ),
         ),
       ],

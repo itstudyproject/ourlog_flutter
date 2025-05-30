@@ -64,7 +64,13 @@ class MyApp extends StatelessWidget {
         '/delete': (context) => const DeleteUserScreen(),
         '/mypage': (context) => const MyPageScreen(),
         '/artWork': (context) => const ArtListScreen(),
-        '/art/register': (context) => const ArtRegisterScreen(),
+        '/art/register': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          return ArtRegisterScreen(
+            postData: args?['postData'],
+            isReregister: args?['isReregister'] ?? false,
+          );
+        },
         '/Art': (context) {
           final postId = int.parse(
             ModalRoute.of(context)!.settings.arguments as String,

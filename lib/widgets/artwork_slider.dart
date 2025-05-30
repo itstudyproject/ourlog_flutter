@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -82,174 +83,232 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
   List<Artwork> artworks = [];
   List<Artwork> artists = [];
 
-  // ✅ 수정: 슬라이드 복제 리스트는 PageView용으로 사용 (실제 데이터 + 양 끝 복제)
-  List<Artwork> extendedArtworks = [];
-  List<Artwork> extendedArtists = [];
+  // ✅ 수정: 표시할 랜덤 목록
+  List<Artwork> displayedList = [];
 
-  // ✅ 수정: 화면에 표시될 무작위 Artwork 항목들을 저장하는 리스트
-  List<Artwork> displayedArtworks = [];
-  List<Artwork> displayedArtists = [];
-
+  // ✅ 수정: 랜덤 개수를 3으로 고정
+  static const int _randomCount = 3;
 
   Timer? _timer;
 
   // PageController 유지 및 초기 페이지 설정
-  final PageController _artworkPageController = PageController(initialPage: 1); // 초기 페이지를 복제된 첫 항목 다음인 1로 설정
-  final PageController _artistPageController = PageController(initialPage: 1); // 초기 페이지를 복제된 첫 항목 다음인 1로 설정
+  late PageController _artworkPageController;
+  late PageController _artistPageController;
 
-  // 현재 PageView 인덱스 추적 (리스너에서 사용)
-  int _currentArtworkPageIndex = 1;
-  int _currentArtistPageIndex = 1;
+  // 현재 PageView 인덱스 추적
+  int _currentPageIndex = 1;
 
-  static const int _displayCount = 3; // 한 번에 보여줄 항목 수
+  // ✅ 추가: 현재 사이클의 시작 인덱스 추적
+  int _currentRandomStart = 0;
+
+  // ✅ 수정: 현재 표시 중인 전체 랜덤 목록 (이제 두 개의 세트로 관리)
+  List<Artwork> currentArtworkDisplayList = [];
+  List<Artwork> currentArtistDisplayList = [];
+
+  // ✅ 추가: 슬라이더 표시를 위한 두 개의 아이템 세트
+  List<Artwork> artworkSet1 = [];
+  List<Artwork> artworkSet2 = [];
+  List<Artwork> artistSet1 = [];
+  List<Artwork> artistSet2 = [];
+
+  // ✅ 추가: 현재 페이지 인덱스
+  int _currentArtworkPageIndex = 0;
+  int _currentArtistPageIndex = 0;
+
+  // ✅ 수정: 아티스트 관련 변수들 (중복 제거)
+  // List<Artwork> displayedArtists1 = []; // 더 이상 사용 안함
+  // List<Artwork> displayedArtists2 = []; // 더 이상 사용 안함
+
+  // ✅ 추가: 중복 없이 랜덤 항목 선택 함수
+  List<T> getUniqueRandomItems<T>(List<T> sourceList, int count, {List<T> excludeItems = const []}) {
+    if (sourceList.isEmpty || count <= 0) return [];
+
+    // 제외할 항목 목록을 Set으로 변환하여 검색 성능 최적화
+    final excludeSet = excludeItems.toSet();
+
+    // 제외 항목을 제외한 실제 사용 가능한 항목 목록 생성
+    final availableItems = sourceList.where((item) => !excludeSet.contains(item)).toList();
+
+    if (count > availableItems.length) {
+      debugPrint('⚠️ 경고: 요청된 항목 수($count)가 제외 항목을 제외한 원본 목록 크기(${availableItems.length})보다 큽니다. 사용 가능한 전체 목록을 반환합니다.');
+      // 요청된 수가 사용 가능한 목록 크기보다 크면 사용 가능한 전체 반환
+      return availableItems;
+    }
+
+    final random = Random();
+    final List<T> shuffled = List<T>.from(availableItems)..shuffle(random);
+    return shuffled.take(count).toList(); // 요청된 개수만큼 반환
+  }
+
+  // ✅ 수정: PageView 리스너 - 내용 업데이트 및 점프 로직
+  void _artworkPageListener() {
+    if (_artworkPageController.page == null) return;
+
+    // 페이지 값이 변경될 때마다 리스너가 호출되므로, 정수 페이지에 도달했을 때만 로직 실행
+    if (_artworkPageController.page! % 1.0 == 0) {
+      final page = _artworkPageController.page!.round();
+
+      // 현재 페이지 인덱스 업데이트
+      _currentArtworkPageIndex = page;
+      // debugPrint('🎨 인기 작품 - 정수 페이지 도달, 현재 인덱스 업데이트: $page'); // 디버그용
+
+      // ✅ 수정: 인덱스 3에 도달 시 (두 번째 세트의 시작) Set1 업데이트 및 0으로 즉시 점프
+      if (page == 3) {
+        debugPrint('🎨 인기 작품 - 인덱스 3 도달, Set1 업데이트 및 0으로 즉시 점프');
+        setState(() {
+          // Set1을 Set2 내용으로 교체 (이전 set2의 내용이 새로운 set1이 됨)
+          artworkSet1 = [...artworkSet2];
+          // Set2는 Set1과 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
+          artworkSet2 = getUniqueRandomItems(artworks, _randomCount, excludeItems: artworkSet1);
+        });
+        // 인덱스 0으로 즉시 이동 (애니메이션 없음)
+        _artworkPageController.jumpToPage(0);
+        _currentArtworkPageIndex = 0; // 점프 후 인덱스 업데이트
+        debugPrint('🎨 인기 작품 - Set1 업데이트 및 0으로 점프 완료');
+      }
+      // ✅ 수정: 인덱스 0에 도달 시 (뒤로 스크롤 감지) Set2 업데이트 및 3으로 즉시 점프
+      else if (page == 0 && _artworkPageController.position.activity is! IdleScrollActivity) {
+        // IdleActivity가 아닐 때만 실행하여 jumpToPage(0)에 의해 발생하는 리스너 호출 무시
+        debugPrint('🎨 인기 작품 - 인덱스 0 도달 (뒤로 스크롤 감지), Set2 업데이트 및 3으로 즉시 점프');
+        setState(() {
+          // Set2를 Set1 내용으로 교체 (이전 set1의 내용이 새로운 set2가 됨)
+          artworkSet2 = [...artworkSet1];
+          // Set1은 Set2와 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
+          artworkSet1 = getUniqueRandomItems(artworks, _randomCount, excludeItems: artworkSet2);
+        });
+        // 인덱스 3으로 즉시 이동
+        _artworkPageController.jumpToPage(3);
+        _currentArtworkPageIndex = 3; // 점프 후 인덱스 업데이트
+        debugPrint('🎨 인기 작품 - Set2 업데이트 및 3으로 점프 완료');
+      }
+      // 그 외 일반 페이지 전환 시 인덱스 업데이트
+    }
+  }
+
+  // ✅ 수정: PageView 리스너 - 내용 업데이트 및 점프 로직
+  void _artistPageListener() {
+    if (_artistPageController.page == null) return;
+
+    // 페이지 값이 변경될 때마다 리스너가 호출되므로, 정수 페이지에 도달했을 때만 로직 실행
+    if (_artistPageController.page! % 1.0 == 0) {
+      final page = _artistPageController.page!.round();
+
+      // 현재 페이지 인덱스 업데이트
+      _currentArtistPageIndex = page;
+      // debugPrint('👨‍🎨 주요 아티스트 - 정수 페이지 도달, 현재 인덱스 업데이트: $page'); // 디버그용
+
+      // ✅ 수정: 인덱스 3에 도달 시 (두 번째 세트의 시작) Set1 업데이트 및 0으로 즉시 점프
+      if (page == 3) {
+        debugPrint('👨‍🎨 주요 아티스트 - 인덱스 3 도달, Set1 업데이트 및 0으로 즉시 점프');
+        setState(() {
+          // Set1을 Set2 내용으로 교체 (이전 set2의 내용이 새로운 set1이 됨)
+          artistSet1 = [...artistSet2];
+          // Set2는 Set1과 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
+          artistSet2 = getUniqueRandomItems(artists, _randomCount, excludeItems: artistSet1);
+        });
+        // 인덱스 0으로 즉시 이동 (애니메이션 없음)
+        _artistPageController.jumpToPage(0);
+        _currentArtistPageIndex = 0; // 점프 후 인덱스 업데이트
+        debugPrint('👨‍🎨 주요 아티스트 - Set1 업데이트 및 0으로 점프 완료');
+
+      }
+      // ✅ 수정: 인덱스 0에 도달 시 (뒤로 스크롤 감지) Set2 업데이트 및 3으로 즉시 점프
+      else if (page == 0 && _artistPageController.position.activity is! IdleScrollActivity) {
+        // IdleActivity가 아닐 때만 실행하여 jumpToPage(0)에 의해 발생하는 리스너 호출 무시
+        debugPrint('👨‍🎨 주요 아티스트 - 인덱스 0 도달 (뒤로 스크롤 감지), Set2 업데이트 및 3으로 즉시 점프');
+        setState(() {
+          // Set2를 Set1 내용으로 교체 (이전 set1의 내용이 새로운 set2가 됨)
+          artistSet2 = [...artistSet1];
+          // Set1은 Set2와 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
+          artistSet1 = getUniqueRandomItems(artists, _randomCount, excludeItems: artistSet2);
+        });
+        // 인덱스 3으로 즉시 이동
+        _artistPageController.jumpToPage(3);
+        _currentArtistPageIndex = 3; // 점프 후 인덱스 업데이트
+        debugPrint('👨‍🎨 주요 아티스트 - Set2 업데이트 및 3으로 점프 완료');
+      }
+      // 그 외 일반 페이지 전환 시 인덱스 업데이트
+    }
+  }
 
   @override
   void initState() {
     super.initState();
+    // PageController 초기화
+    _artworkPageController = PageController(initialPage: 0);
+    _artistPageController = PageController(initialPage: 0);
+
+    // 데이터 로드 후 초기화
     fetchData().then((_) {
-      // 데이터 로드 후 extended 리스트 및 초기 displayed 리스트 설정
       if (mounted) {
         setState(() {
-          // 데이터가 2개 이상일 때만 복제 리스트 생성
-          if (artworks.length >= 2) {
-            extendedArtworks = [
-              artworks.last, // 마지막 항목 복제
-              ...artworks,   // 원본 항목들
-              artworks.first,// 첫 번째 항목 복제
-            ];
-          } else {
-            extendedArtworks = List.from(artworks); // 데이터 부족 시 복제 없이 원본 사용
-          }
+          // ✅ 수정: 인기 작품 초기화 - 중복 없는 6개 항목 선택 후 두 개의 세트로 나눔
+          final initialArtworks = getUniqueRandomItems(artworks, 6);
+          artworkSet1 = initialArtworks.take(3).toList();
+          artworkSet2 = initialArtworks.skip(3).take(3).toList();
 
-          if (artists.length >= 2) {
-            extendedArtists = [
-              artists.last,  // 마지막 항목 복제
-              ...artists,    // 원본 항목들
-              artists.first, // 첫 번째 항목 복제
-            ];
-          } else {
-            extendedArtists = List.from(artists); // 데이터 부족 시 복제 없이 원본 사용
-          }
+          // ✅ 수정: 아티스트 초기화 - 중복 없는 6개 항목 선택 후 두 개의 세트로 나눔
+          final initialArtists = getUniqueRandomItems(artists, 6);
+          artistSet1 = initialArtists.take(3).toList();
+          artistSet2 = initialArtists.skip(3).take(3).toList();
 
-          // ✅ 초기 displayed 리스트 설정 (무작위 항목 선택)
-          displayedArtworks = getRandomArtworks(artworks, _displayCount);
-          displayedArtists = getRandomArtworks(artists, _displayCount);
+          // 기존의 displayedList, currentArtworkDisplayList, currentArtistDisplayList, extendedArtworks, extendedArtists 변수는 더 이상 사용하지 않음
         });
-
-        // PageView 리스너 추가: 부드러운 무한 스크롤 효과 구현
-        _artworkPageController.addListener(_artworkPageListener);
-        _artistPageController.addListener(_artistPageListener);
-
-        // Timer 동작: PageView 애니메이션 및 displayed 리스트 갱신 (그림 변경)
-        startTimer(); // Timer 시작 함수 호출
+      } else {
+        debugPrint('🎨👨‍🎨 initState: mounted == false. setState 호출 스킵.');
       }
+    });
+
+    _artworkPageController.addListener(_artworkPageListener);
+    _artistPageController.addListener(_artistPageListener);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      startTimer();
     });
   }
 
-  // PageView 리스너 함수 분리
-  void _artworkPageListener() {
-    if (_artworkPageController.page == null) return;
-    // jumpToPage는 애니메이션 없이 즉시 이동
-    if (_artworkPageController.page == extendedArtworks.length - 1 && extendedArtworks.length > 1) {
-      // 마지막 복제 항목에 도달하면 첫 번째 원본 항목으로 순간 이동
-      // jumpToPage에는 duration과 curve 매개변수 없음
-      _artworkPageController.jumpToPage(1);
-      _currentArtworkPageIndex = 1;
-    } else if (_artworkPageController.page == 0 && extendedArtworks.length > 1) {
-      // 첫 번째 복제 항목에 도달하면 마지막 원본 항목으로 순간 이동
-      // jumpToPage에는 duration과 curve 매개변수 없음
-      _artworkPageController.jumpToPage(extendedArtworks.length - 2);
-      _currentArtworkPageIndex = extendedArtworks.length - 2;
-    } else {
-      _currentArtworkPageIndex = _artworkPageController.page!.round();
-    }
-  }
-
-  void _artistPageListener() {
-    if (_artistPageController.page == null) return;
-    // jumpToPage는 애니메이션 없이 즉시 이동
-    if (_artistPageController.page == extendedArtists.length - 1 && extendedArtists.length > 1) {
-      // 마지막 복제 항목에 도달하면 첫 번째 원본 항목으로 순간 이동
-      // jumpToPage에는 duration과 curve 매개변수 없음
-      _artistPageController.jumpToPage(1);
-      _currentArtistPageIndex = 1;
-    } else if (_artistPageController.page == 0 && extendedArtists.length > 1) {
-      // 첫 번째 복제 항목에 도달하면 마지막 원본 항목으로 순간 이동
-      // jumpToPage에는 duration과 curve 매개변수 없음
-      _artistPageController.jumpToPage(extendedArtists.length - 2);
-      _currentArtistPageIndex = extendedArtists.length - 2;
-    } else {
-      _currentArtistPageIndex = _artistPageController.page!.round();
-    }
-  }
-
-
-  // ✅ 수정: Timer 시작 함수 - displayed 리스트 업데이트 및 PageView 애니메이션
+  // ✅ 수정: Timer 시작 함수 (인덱스 계산 로직 수정)
   void startTimer() {
-    _timer?.cancel(); // 기존 타이머가 있다면 취소
-    _timer = Timer.periodic(const Duration(seconds: 3), (_) { // 3초마다 실행
-      if (!mounted) return; // 위젯이 해제되면 타이머 중지
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
 
       // 인기 작품 슬라이드
-      if (extendedArtworks.length > 1) { // 복제 항목 포함 2개 이상일 때만 슬라이드
+      // 0, 1, 2 -> 1, 2, 3 (리스너에서 3 도달 감지 후 처리)
+      // 3, 4, 5 -> 4, 5 (다음 애니메이션은 리스너에서 3으로 점프 후 0, 1, 2로 이어짐)
+      if (_artworkPageController.hasClients) {
+        final nextPage = (_currentArtworkPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
+        debugPrint('🎨 인기 작품 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtworkPageIndex})');
         _artworkPageController.animateToPage(
-          // 다음 페이지로 이동. 리스너에서 순간 이동 처리하므로 인덱스 + 1
-          (_currentArtworkPageIndex + 1),
-          duration: const Duration(milliseconds: 800), // 애니메이션 시간
-          curve: Curves.easeInOut, // 애니메이션 커브
+          nextPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
         );
-
-        // ✅ displayedArtworks 리스트를 무작위 항목으로 갱신 (그림 변경)
-        setState(() {
-          displayedArtworks = getRandomArtworks(artworks, _displayCount);
-        });
       }
 
-      // 주요 아티스트 슬라이드
-      if (extendedArtists.length > 1) { // 복제 항목 포함 2개 이상일 때만 슬라이드
+      // ✅ 주요 아티스트 슬라이드
+      if (_artistPageController.hasClients) {
+        final nextPage = (_currentArtistPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
+        debugPrint('👨‍🎨 주요 아티스트 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtistPageIndex})');
         _artistPageController.animateToPage(
-          // 다음 페이지로 이동. 리스너에서 순간 이동 처리하므로 인덱스 + 1
-          (_currentArtistPageIndex + 1),
-          duration: const Duration(milliseconds: 800), // 애니메이션 시간
-          curve: Curves.easeInOut, // 애니메이션 커브
+          nextPage,
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeInOut,
         );
-
-        // ✅ displayedArtists 리스트를 무작위 항목으로 갱신 (그림 변경)
-        setState(() {
-          displayedArtists = getRandomArtworks(artists, _displayCount);
-        });
       }
     });
   }
-
 
   @override
   void dispose() {
-    _timer?.cancel(); // 타이머 해제
-    _artworkPageController.removeListener(_artworkPageListener); // 리스너 해제
-    _artistPageController.removeListener(_artistPageListener); // 리스너 해제
-    _artworkPageController.dispose(); // PageController 해제
-    _artistPageController.dispose(); // PageController 해제
+    _artworkPageController.removeListener(_artworkPageListener);
+    _artistPageController.removeListener(_artistPageListener);
+    _artworkPageController.dispose();
+    _artistPageController.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
-  // ✅ 수정: 무작위 Artwork 항목을 선택하는 함수
-  List<Artwork> getRandomArtworks(List<Artwork> sourceList, int count) {
-    if (sourceList.isEmpty) return [];
-    final List<Artwork> randomList = [];
-    final maxCount = sourceList.length < count ? sourceList.length : count;
-    final random = Random();
-    final List<int> usedIndexes = []; // 중복 방지를 위해 사용된 인덱스 저장
-
-    while (randomList.length < maxCount) {
-      final randIndex = random.nextInt(sourceList.length);
-      if (!usedIndexes.contains(randIndex)) {
-        randomList.add(sourceList[randIndex]);
-        usedIndexes.add(randIndex);
-      }
-    }
-    return randomList;
-  }
 
   Future<void> fetchData() async {
     // 기존 fetchData 함수 로직 유지 (데이터 로드만 수행)
@@ -258,10 +317,18 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
       if (resArtworks.statusCode == 200) {
         final List<dynamic> data = jsonDecode(resArtworks.body);
         final mapped = data.map((e) => Artwork.fromJson(e)).toList();
+        // ✅ 수정: 데이터 로드 후 artworkSet1, artworkSet2 초기화 (중복 없는 6개)
         if (mounted) {
           setState(() {
             artworks = mapped;
-            // ✅ 데이터 로드 후 초기 displayed 리스트 설정은 initState에서 하도록 변경됨
+            if (artworks.length >= 6) {
+              final initialArtworks = getUniqueRandomItems(artworks, 6);
+              artworkSet1 = initialArtworks.take(3).toList();
+              artworkSet2 = initialArtworks.skip(3).take(3).toList();
+            } else { // 데이터가 6개 미만일 경우 처리
+              artworkSet1 = List<Artwork>.from(artworks);
+              artworkSet2 = []; // 두 번째 세트는 비워둡니다.
+            }
           });
         }
       }
@@ -274,134 +341,145 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
       if (resArtists.statusCode == 200) {
         final List<dynamic> data = jsonDecode(resArtists.body);
         final mapped = data.map((e) => Artwork.fromJson(e, isArtist: true)).toList();
+        // ✅ 수정: 데이터 로드 후 artistSet1, artistSet2 초기화 (중복 없는 6개)
         if (mounted) {
           setState(() {
             artists = mapped;
-            // ✅ 데이터 로드 후 초기 displayed 리스트 설정은 initState에서 하도록 변경됨
+            if (artists.length >= 6) {
+              final initialArtists = getUniqueRandomItems(artists, 6);
+              artistSet1 = initialArtists.take(3).toList();
+              artistSet2 = initialArtists.skip(3).take(3).toList();
+            } else { // 데이터가 6개 미만일 경우 처리
+              artistSet1 = List<Artwork>.from(artists);
+              artistSet2 = []; // 두 번째 세트는 비워둡니다.
+            }
           });
         }
+      } else {
+        debugPrint('주요 아티스트 불러오기 실패: 상태 코드 ${resArtists.statusCode}');
       }
     } catch (e) {
       debugPrint("주요 아티스트 불러오기 실패: $e");
     }
   }
 
-  // buildSection 함수 (PageView 사용 및 displayed 리스트 사용)
-  Widget buildSection(String title, String subtitle, List<Artwork> data, List<Artwork> extendedData, List<Artwork> displayedData, PageController controller) {
-    // ✅ 수정: 데이터 로딩 중이거나 표시할 데이터가 없을 때 메시지 표시
-    if (data.isEmpty) { // 원본 데이터가 비어있으면 로딩 중
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          "데이터를 불러오는 중입니다...", // 로딩 중 메시지
-          style: const TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-      );
+  @override
+  Widget build(BuildContext context) {
+    // ✅ 수정: items 리스트는 더 이상 buildSection에서 사용되지 않음
+    // currentArtworkDisplayList, currentArtistDisplayList 변수는 제거됨
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ✅ 수정: 인기 작품 섹션 - items 리스트를 직접 전달하지 않음
+          _buildSection(
+            title: '인기 작품',
+            // items: currentArtworkDisplayList, // 더 이상 사용 안함
+            controller: _artworkPageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentArtworkPageIndex = index;
+              });
+            },
+            isArtist: false,
+          ),
+          const SizedBox(height: 32),
+          // ✅ 수정: 메인 작가 섹션 - items 리스트를 직접 전달하지 않음
+          _buildSection(
+            title: '메인 작가',
+            // items: currentArtistDisplayList, // 더 이상 사용 안함
+            controller: _artistPageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentArtistPageIndex = index;
+              });
+            },
+            isArtist: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSection({
+    required String title,
+    // required List<Artwork> items, // 더 이상 items 리스트를 직접 받지 않음
+    required PageController controller,
+    required Function(int) onPageChanged,
+    required bool isArtist,
+  }) {
+    // ✅ 수정: items 리스트 대신 isArtist에 따라 적절한 세트 리스트 사용
+    final List<Artwork> set1 = isArtist ? artistSet1 : artworkSet1;
+    final List<Artwork> set2 = isArtist ? artistSet2 : artworkSet2;
+
+    // 두 세트 중 하나라도 비어있으면 (초기 로딩 전 등) 빈 컨테이너 반환
+    if (set1.isEmpty) {
+      return Container();
     }
 
-    if (displayedData.isEmpty) { // 원본 데이터는 있지만 표시할 무작위 데이터가 없는 경우
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          title == "인기 작품 추천" ? "인기 작품이 없습니다." : "주요 아티스트가 없습니다.",
-          style: const TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-      );
-    }
-
-    // 데이터가 있지만 extendedData가 비어있는 경우 (데이터가 2개 미만이어서 복제가 안된 경우)
-    if (extendedData.isEmpty && data.isNotEmpty) {
-      extendedData = List.from(data); // 이 경우 원본 데이터를 extendedData로 사용
-    }
-
+    // ✅ 수정: itemCount를 6으로 고정
+    const int pageViewItemCount = 6;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(context, '/ranking');
-          },
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             title,
-            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.white),
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
-        const SizedBox(height: 40),
-        Text(
-          subtitle,
-          style: TextStyle(color: Colors.grey[400], fontSize: 18),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 50),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 400,
-          // ListView 대신 PageView 사용
+          height: 300,
           child: PageView.builder(
-            controller: controller, // PageController 연결
-            itemCount: extendedData.length, // 복제된 데이터 리스트 길이 사용
+            controller: controller,
+            onPageChanged: onPageChanged,
+            // ✅ 수정: itemCount를 6으로 고정
+            itemCount: pageViewItemCount,
             itemBuilder: (context, index) {
-              // ✅ 수정: extendedData의 index를 사용하여 표시될 displayedData 리스트의 인덱스를 계산
-              // PageView는 extendedData를 순회하므로, 각 페이지에 displayedData의 항목을 매핑해야 합니다.
-              // 복제된 항목(0번째와 마지막 항목) 처리 필요
-              int displayedDataIndex;
-              if (extendedData.length > data.length) { // 복제된 데이터가 있는 경우
-                if (index == 0) { // 복제된 첫 항목은 displayedData의 마지막 항목에 해당 (표시용)
-                  displayedDataIndex = displayedData.isNotEmpty ? displayedData.length - 1 : -1;
-                } else if (index == extendedData.length - 1) { // 복제된 마지막 항목은 displayedData의 첫 항목에 해당 (표시용)
-                  displayedDataIndex = displayedData.isNotEmpty ? 0 : -1;
-                } else { // 원본 항목 범위 (index 1 ~ extendedData.length - 2)
-                  // 이 인덱스를 displayedData의 인덱스 범위로 변환
-                  // displayedData는 _displayCount 길이이므로 modulo 연산 등을 사용
-                  // 간단하게는 index - 1을 _displayCount로 나눈 나머지 사용
-                  displayedDataIndex = (index - 1) % displayedData.length;
+              // ✅ 수정: 인덱스에 따라 Set1 또는 Set2에서 아이템 가져오기
+              Artwork item;
+              if (index >= 0 && index < 3) { // 첫 번째 세트 (인덱스 0, 1, 2)
+                if (index >= set1.length) { // 안전 장치
+                  debugPrint('🚫 오류: Set1 인덱스 범위를 벗어남: $index');
+                  return Container();
                 }
-              } else { // 복제된 데이터가 없는 경우 (데이터가 2개 미만)
-                displayedDataIndex = index; // extendedData와 displayedData의 길이가 같음
+                item = set1[index];
+              } else if (index >= 3 && index < 6) { // 두 번째 세트 (인덱스 3, 4, 5)
+                if (index - 3 >= set2.length) { // 안전 장치
+                  debugPrint('🚫 오류: Set2 인덱스 범위를 벗어남: ${index - 3}');
+                  return Container();
+                }
+                item = set2[index - 3];
+              } else { // 예상치 못한 인덱스
+                debugPrint('🚫 오류: 예상치 못한 PageView 인덱스: $index');
+                return Container();
               }
 
+              // ✅ 수정: items 리스트 인덱스 범위 검사 로직 변경
+              // 기존 로직 제거
+              // if (itemIndex < 0 || itemIndex >= items.length) {
+              //    debugPrint('🚫 오류: items 리스트 인덱스 범위를 벗어남: $itemIndex, index: $index, itemCount: $pageViewItemCount, items.length: ${items.length}');
+              //    // 유효하지 않은 인덱스일 경우 빈 컨테이너 반환
+              //    return Container();
+              // }
 
-              // ✅ 수정: displayedData 리스트에서 해당 인덱스의 Artwork 항목 사용
-              final item = (displayedDataIndex >= 0 && displayedDataIndex < displayedData.length)
-                  ? displayedData[displayedDataIndex]
-                  : null; // 유효하지 않으면 null
-
-
-              // 항목이 유효하지 않으면 빈 위젯 반환 (오류 상황)
-              if (item == null) {
-                return Container(
-                  width: 350, // PageView 내 항목의 너비
-                  height: 350, // PageView 내 항목의 높이
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white, width: 10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withOpacity(0.8),
-                        blurRadius: 20,
-                        spreadRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: const Center(child: Text('항목 표시 오류', style: TextStyle(color: Colors.red),)),
-                );
-              }
-
-
-              return Center( // PageView 중앙에 오도록 Center 추가
+              // 기존의 _buildArtworkCard 호출 로직 유지
+              return Center(
                 child: GestureDetector(
-                  onTap: () async { // async 키워드 추가
-                    // 다이얼로그를 띄우기 전에 타이머 중지
+                  onTap: () async {
                     _timer?.cancel();
-
-                    // 다이얼로그는 현재 표시된 item 정보를 사용
-                    await showArtworkInfoDialog(context, item); // await 키워드 추가
-
-                    // 다이얼로그가 닫힌 후 타이머 다시 시작
+                    await showArtworkInfoDialog(context, item);
                     startTimer();
                   },
                   child: Container(
-                    width: 350, // PageView 내 항목의 너비
-                    height: 350, // PageView 내 항목의 높이
+                    width: 350,
+                    height: 350,
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.white, width: 10),
                       boxShadow: [
@@ -413,13 +491,13 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
                       ],
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(0), // 모서리 둥글기 필요 시 조절
+                      borderRadius: BorderRadius.circular(0),
                       child: Image.network(
-                        item.imageUrl, // ✅ 수정: displayedData에서 가져온 item의 imageUrl 사용
-                        fit: BoxFit.cover, // 이미지 표시 방식
+                        item.imageUrl,
+                        fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) => Container(
                           color: Colors.grey[300],
-                          child: const Icon(Icons.broken_image, size: 40),
+                          child: const Icon(Icons.broken_image, size: 40), // 이미지 로드 실패 시 표시할 아이콘
                         ),
                       ),
                     ),
@@ -429,37 +507,41 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
             },
           ),
         ),
-        const SizedBox(height: 32),
       ],
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 12),
-      child: Column(
-        children: [
-          // buildSection 호출 시 displayed 리스트 추가 전달
-          buildSection(
-            "인기 작품 추천",
-            "사람들의 마음을 사로잡은 그림들을 소개합니다",
-            artworks, // 원본 데이터
-            extendedArtworks, // PageView용 복제 데이터
-            displayedArtworks, // ✅ 표시될 무작위 데이터
-            _artworkPageController, // PageController 전달
+  Widget _buildArtworkCard(Artwork item, bool isArtist) {
+    return GestureDetector(
+      onTap: () async {
+        _timer?.cancel();
+        await showArtworkInfoDialog(context, item);
+        startTimer();
+      },
+      child: Container(
+        width: 350,
+        height: 350,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.white, width: 10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.8),
+              blurRadius: 20,
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(0),
+          child: Image.network(
+            item.imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) => Container(
+              color: Colors.grey[300],
+              child: const Icon(Icons.broken_image, size: 40), // 이미지 로드 실패 시 표시할 아이콘
+            ),
           ),
-          const SizedBox(height: 40),
-          // buildSection 호출 시 displayed 리스트 추가 전달
-          buildSection(
-            "주요 아티스트",
-            "트렌드를 선도하는 아티스트들을 소개합니다",
-            artists, // 원본 데이터
-            extendedArtists, // PageView용 복제 데이터
-            displayedArtists, // ✅ 표시될 무작위 데이터
-            _artistPageController, // PageController 전달
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -562,7 +644,7 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                           Navigator.pushNamed(
                             context,
                             '/Art',
-                            arguments: item.link.split('/').last,
+                            arguments: item.link.length > 0 ? item.link.split('/').last : '',
                           );
                         }
                       },

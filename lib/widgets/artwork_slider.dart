@@ -486,9 +486,14 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
         const SizedBox(height: 50),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Text(
-            title,
-            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.pushNamed(context, '/ranking');
+            },
+            child: Text(
+              title,
+              style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
         if (subtitle != null) ...[

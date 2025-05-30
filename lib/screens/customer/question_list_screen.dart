@@ -130,12 +130,32 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white54,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: Colors.white54), // 글자색 조절
+            ),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.blue, // 수정 버튼 배경색
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('수정'),
+            child: const Text(
+              '수정',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -178,12 +198,32 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
         title: const Text('삭제하시겠습니까?', style: TextStyle(color: Colors.white)),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white54, // 취소 버튼 배경색 (연한 회색 등)
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: const Text(
+              '취소',
+              style: TextStyle(color: Colors.white54), // 글자색 조절
+            ),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.red, // 수정 버튼 배경색
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
+            child: const Text(
+              '삭제',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -315,13 +355,47 @@ class _QuestionListScreenState extends State<QuestionListScreen> {
                                       mainAxisAlignment: MainAxisAlignment.end,
                                       children: [
                                         if (!isAdmin) ...[
-                                          TextButton(
-                                            onPressed: () => _handleEdit(inquiry),
-                                            child: const Text('수정'),
+                                          // 수정 버튼
+                                          GestureDetector(
+                                            onTap: () => _handleEdit(inquiry),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                              margin: const EdgeInsets.only(right: 8), // 삭제 버튼과의 간격
+                                              decoration: BoxDecoration(
+                                                color: Colors.blue, // 수정 버튼 색상
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Row( // 아이콘이 없으므로 Row는 불필요하지만, 기존 디자인 유지 위해
+                                                children: [
+                                                  Text(
+                                                    "수정",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(color: Colors.white),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
-                                          TextButton(
-                                            onPressed: () => _handleDelete(inquiry.questionId),
-                                            child: const Text('삭제'),
+                                          // 삭제 버튼
+                                          GestureDetector(
+                                            onTap: () => _handleDelete(inquiry.questionId),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                                              // margin은 필요없음 (오른쪽 정렬 시)
+                                              decoration: BoxDecoration(
+                                                color: Colors.red, // 삭제 버튼 색상 (예: 빨간색)
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: const Row( // 아이콘이 없으므로 Row는 불필요하지만, 기존 디자인 유지 위해
+                                                children: [
+                                                  Text(
+                                                    "삭제",
+                                                    textAlign: TextAlign.center,
+                                                    style: TextStyle(color: Colors.white),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ),
                                         ],
                                       ],

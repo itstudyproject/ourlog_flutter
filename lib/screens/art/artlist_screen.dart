@@ -698,124 +698,102 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, // Changed from 3 to 2
-                          childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to reduce vertical space
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemCount: filteredArtworks.length,
-                        itemBuilder: (context, index) {
-                          final artwork = filteredArtworks[index];
-                          final GlobalKey _imageKey = GlobalKey(); // Add GlobalKey for the image
-                          return GestureDetector(
-                            // Changed onTap to show overlay
-                            onTap: () => _showExpandedArtworkOverlay(context, artwork, _imageKey),
-                            child: Card(
-                              // Removed Column, directly using Stack for larger image area
-                              clipBehavior: Clip.antiAlias, // Clip content to card shape
-                              child: Stack(
-                                children: [
-                                  Positioned.fill( // Make image fill the Card
-                                    child: Hero(
-                                      tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
-                                      child: Image.network(
-                                        artwork.getImageUrl(),
-                                        key: _imageKey, // Assign the GlobalKey to the image
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Container(
-                                          color: Colors.grey[300],
-                                          child: const Center(child: Text('이미지 없음')),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  setState(() {
+                    currentPage = 1;
+                  });
+                  await fetchArtworks();
+                },
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      children: [
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2, // Changed from 3 to 2
+                            childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to reduce vertical space
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
+                          itemCount: filteredArtworks.length,
+                          itemBuilder: (context, index) {
+                            final artwork = filteredArtworks[index];
+                            final GlobalKey _imageKey = GlobalKey(); // Add GlobalKey for the image
+                            return GestureDetector(
+                              // Changed onTap to show overlay
+                              onTap: () => _showExpandedArtworkOverlay(context, artwork, _imageKey),
+                              child: Card(
+                                // Removed Column, directly using Stack for larger image area
+                                clipBehavior: Clip.antiAlias, // Clip content to card shape
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill( // Make image fill the Card
+                                      child: Hero(
+                                        tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
+                                        child: Image.network(
+                                          artwork.getImageUrl(),
+                                          key: _imageKey, // Assign the GlobalKey to the image
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (context, error, stackTrace) => Container(
+                                            color: Colors.grey[300],
+                                            child: const Center(child: Text('이미지 없음')),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  Positioned(
-                                    top: 8,
-                                    right: 8,
-                                    child: GestureDetector(
-                                      onTap: () => handleLikeToggle(artwork.postId!),
-                                      child: Text(
-                                        artwork.liked ? '🧡' : '🤍',
-                                        style: const TextStyle(
-                                          fontSize: 24,
-                                          shadows: [
-                                            Shadow(
-                                              offset: Offset(0, 0),
-                                              blurRadius: 3.0,
-                                              color: Colors.black,
-                                            ),
-                                          ],
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () => handleLikeToggle(artwork.postId!),
+                                        child: Text(
+                                          artwork.liked ? '🧡' : '🤍',
+                                          style: const TextStyle(
+                                            fontSize: 24,
+                                            shadows: [
+                                              Shadow(
+                                                offset: Offset(0, 0),
+                                                blurRadius: 3.0,
+                                                color: Colors.black,
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      // Removed pagination Row
-                      // Row(
-                      //   mainAxisAlignment: MainAxisAlignment.center,
-                      //   children: [
-                      //     IconButton(
-                      //       onPressed: startPage > 1 ? () => handlePageClick(startPage - 10) : null,
-                      //       icon: const Text('<<'),
-                      //     ),
-                      //     IconButton(
-                      //       onPressed: currentPage > 1 ? () => handlePageClick(currentPage - 1) : null,
-                      //       icon: const Text('<'),
-                      //     ),
-                      //     ...pageNumbers.map((number) => TextButton(
-                      //       onPressed: () => handlePageClick(number),
-                      //       style: TextButton.styleFrom(
-                      //         backgroundColor: currentPage == number ? Colors.orange : null,
-                      //         foregroundColor: currentPage == number ? Colors.white : null,
-                      //       ),
-                      //       child: Text(number.toString()),
-                      //     )),
-                      //     IconButton(
-                      //       onPressed: currentPage < totalPages ? () => handlePageClick(currentPage + 1) : null,
-                      //       icon: const Text('>'),
-                      //     ),
-                      //     IconButton(
-                      //       onPressed: endPage < totalPages ? () => handlePageClick(endPage + 1) : null,
-                      //       icon: const Text('>>'),
-                      //     ),
-                      //   ],
-                      // ),
-                      if (currentPage < totalPages)
-                        ElevatedButton(
-                          onPressed: isLoading
-                              ? null // Disable button while loading
-                              : () {
-                            setState(() {
-                              currentPage++;
-                            });
-                            fetchArtworks();
+                            );
                           },
-                          child: isLoading
-                              ? const CircularProgressIndicator() // Show loading indicator on button
-                              : const Text('더보기'),
                         ),
-                      if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
-                        const Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                    ],
+                        const SizedBox(height: 16),
+                        if (currentPage < totalPages)
+                          ElevatedButton(
+                            onPressed: isLoading
+                                ? null // Disable button while loading
+                                : () {
+                              setState(() {
+                                currentPage++;
+                              });
+                              fetchArtworks();
+                            },
+                            child: isLoading
+                                ? const CircularProgressIndicator() // Show loading indicator on button
+                                : const Text('더보기'),
+                          ),
+                        if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
+                          const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: CircularProgressIndicator(),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -28,20 +28,28 @@ class Artwork {
     this.followers = 0,
   });
 
-  static const String _baseUrl = "http://10.100.204.54:8080/ourlog/picture/display/";
+  static const String _baseUrl =
+      "http://10.100.204.54:8080/ourlog/picture/display/";
 
   factory Artwork.fromJson(Map<String, dynamic> json, {bool isArtist = false}) {
     String getImageUrl(Map<String, dynamic> item) {
       if (item['pictureDTOList'] != null && item['pictureDTOList'].isNotEmpty) {
         final picData = item['pictureDTOList'][0];
-        if (picData['resizedImagePath'] != null) return "$_baseUrl${picData['resizedImagePath']}";
-        if (picData['thumbnailImagePath'] != null) return "$_baseUrl${picData['thumbnailImagePath']}";
-        if (picData['originImagePath'] != null) return "$_baseUrl${picData['originImagePath']}";
-        if (picData['fileName'] != null) return "$_baseUrl${picData['fileName']}";
+        if (picData['resizedImagePath'] != null)
+          return "$_baseUrl${picData['resizedImagePath']}";
+        if (picData['thumbnailImagePath'] != null)
+          return "$_baseUrl${picData['thumbnailImagePath']}";
+        if (picData['originImagePath'] != null)
+          return "$_baseUrl${picData['originImagePath']}";
+        if (picData['fileName'] != null)
+          return "$_baseUrl${picData['fileName']}";
       } else {
-        if (item['resizedImagePath'] != null) return "$_baseUrl${item['resizedImagePath']}";
-        if (item['thumbnailImagePath'] != null) return "$_baseUrl${item['thumbnailImagePath']}";
-        if (item['originImagePath'] != null) return "$_baseUrl${item['originImagePath']}";
+        if (item['resizedImagePath'] != null)
+          return "$_baseUrl${item['resizedImagePath']}";
+        if (item['thumbnailImagePath'] != null)
+          return "$_baseUrl${item['thumbnailImagePath']}";
+        if (item['originImagePath'] != null)
+          return "$_baseUrl${item['originImagePath']}";
         if (item['fileName'] != null) return "$_baseUrl${item['fileName']}";
       }
       return "${_baseUrl}default-image.jpg";
@@ -52,7 +60,8 @@ class Artwork {
         json['tradeDTO']['highestBid'] != null &&
         num.tryParse(json['tradeDTO']['highestBid'].toString()) != null &&
         num.parse(json['tradeDTO']['highestBid'].toString()) > 0) {
-      highestBidFormatted = "₩${int.parse(json['tradeDTO']['highestBid'].toString()).toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}";
+      highestBidFormatted =
+          "₩${int.parse(json['tradeDTO']['highestBid'].toString()).toString().replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}";
     }
 
     return Artwork(
@@ -60,11 +69,15 @@ class Artwork {
       title: json['title'] ?? (isArtist ? "대표작 없음" : ""),
       artist: json['nickname'] ?? "unknown",
       highestBid: highestBidFormatted,
-      link: isArtist
-          ? (json['userId'] != null ? "/worker/${json['userId']}" : "/worker/unknown")
-          : "/Art/${json['postId']}",
+      link:
+          isArtist
+              ? (json['userId'] != null
+                  ? "/worker/${json['userId']}"
+                  : "/worker/unknown")
+              : "/Art/${json['postId']}",
       isArtist: isArtist,
-      followers: isArtist && json['followers'] != null ? json['followers'] as int : 0,
+      followers:
+          isArtist && json['followers'] != null ? json['followers'] as int : 0,
     );
   }
 }
@@ -77,8 +90,10 @@ class ArtworkSlider extends StatefulWidget {
 }
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
-  static const String viewsApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=views";
-  static const String followersApiUrl = "http://10.100.204.54:8080/ourlog/ranking?type=followers";
+  static const String viewsApiUrl =
+      "http://10.100.204.54:8080/ourlog/ranking?type=views";
+  static const String followersApiUrl =
+      "http://10.100.204.54:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];
@@ -120,17 +135,24 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
   // List<Artwork> displayedArtists2 = []; // 더 이상 사용 안함
 
   // ✅ 추가: 중복 없이 랜덤 항목 선택 함수
-  List<T> getUniqueRandomItems<T>(List<T> sourceList, int count, {List<T> excludeItems = const []}) {
+  List<T> getUniqueRandomItems<T>(
+    List<T> sourceList,
+    int count, {
+    List<T> excludeItems = const [],
+  }) {
     if (sourceList.isEmpty || count <= 0) return [];
 
     // 제외할 항목 목록을 Set으로 변환하여 검색 성능 최적화
     final excludeSet = excludeItems.toSet();
 
     // 제외 항목을 제외한 실제 사용 가능한 항목 목록 생성
-    final availableItems = sourceList.where((item) => !excludeSet.contains(item)).toList();
+    final availableItems =
+        sourceList.where((item) => !excludeSet.contains(item)).toList();
 
     if (count > availableItems.length) {
-      debugPrint('⚠️ 경고: 요청된 항목 수($count)가 제외 항목을 제외한 원본 목록 크기(${availableItems.length})보다 큽니다. 사용 가능한 전체 목록을 반환합니다.');
+      debugPrint(
+        '⚠️ 경고: 요청된 항목 수($count)가 제외 항목을 제외한 원본 목록 크기(${availableItems.length})보다 큽니다. 사용 가능한 전체 목록을 반환합니다.',
+      );
       // 요청된 수가 사용 가능한 목록 크기보다 크면 사용 가능한 전체 반환
       return availableItems;
     }
@@ -159,7 +181,11 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           // Set1을 Set2 내용으로 교체 (이전 set2의 내용이 새로운 set1이 됨)
           artworkSet1 = [...artworkSet2];
           // Set2는 Set1과 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
-          artworkSet2 = getUniqueRandomItems(artworks, _randomCount, excludeItems: artworkSet1);
+          artworkSet2 = getUniqueRandomItems(
+            artworks,
+            _randomCount,
+            excludeItems: artworkSet1,
+          );
         });
         // 인덱스 0으로 즉시 이동 (애니메이션 없음)
         _artworkPageController.jumpToPage(0);
@@ -167,14 +193,19 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
         debugPrint('🎨 인기 작품 - Set1 업데이트 및 0으로 점프 완료');
       }
       // ✅ 수정: 인덱스 0에 도달 시 (뒤로 스크롤 감지) Set2 업데이트 및 3으로 즉시 점프
-      else if (page == 0 && _artworkPageController.position.activity is! IdleScrollActivity) {
+      else if (page == 0 &&
+          _artworkPageController.position.activity is! IdleScrollActivity) {
         // IdleActivity가 아닐 때만 실행하여 jumpToPage(0)에 의해 발생하는 리스너 호출 무시
         debugPrint('🎨 인기 작품 - 인덱스 0 도달 (뒤로 스크롤 감지), Set2 업데이트 및 3으로 즉시 점프');
         setState(() {
           // Set2를 Set1 내용으로 교체 (이전 set1의 내용이 새로운 set2가 됨)
           artworkSet2 = [...artworkSet1];
           // Set1은 Set2와 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
-          artworkSet1 = getUniqueRandomItems(artworks, _randomCount, excludeItems: artworkSet2);
+          artworkSet1 = getUniqueRandomItems(
+            artworks,
+            _randomCount,
+            excludeItems: artworkSet2,
+          );
         });
         // 인덱스 3으로 즉시 이동
         _artworkPageController.jumpToPage(3);
@@ -204,23 +235,33 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           // Set1을 Set2 내용으로 교체 (이전 set2의 내용이 새로운 set1이 됨)
           artistSet1 = [...artistSet2];
           // Set2는 Set1과 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
-          artistSet2 = getUniqueRandomItems(artists, _randomCount, excludeItems: artistSet1);
+          artistSet2 = getUniqueRandomItems(
+            artists,
+            _randomCount,
+            excludeItems: artistSet1,
+          );
         });
         // 인덱스 0으로 즉시 이동 (애니메이션 없음)
         _artistPageController.jumpToPage(0);
         _currentArtistPageIndex = 0; // 점프 후 인덱스 업데이트
         debugPrint('👨‍🎨 주요 아티스트 - Set1 업데이트 및 0으로 점프 완료');
-
       }
       // ✅ 수정: 인덱스 0에 도달 시 (뒤로 스크롤 감지) Set2 업데이트 및 3으로 즉시 점프
-      else if (page == 0 && _artistPageController.position.activity is! IdleScrollActivity) {
+      else if (page == 0 &&
+          _artistPageController.position.activity is! IdleScrollActivity) {
         // IdleActivity가 아닐 때만 실행하여 jumpToPage(0)에 의해 발생하는 리스너 호출 무시
-        debugPrint('👨‍🎨 주요 아티스트 - 인덱스 0 도달 (뒤로 스크롤 감지), Set2 업데이트 및 3으로 즉시 점프');
+        debugPrint(
+          '👨‍🎨 주요 아티스트 - 인덱스 0 도달 (뒤로 스크롤 감지), Set2 업데이트 및 3으로 즉시 점프',
+        );
         setState(() {
           // Set2를 Set1 내용으로 교체 (이전 set1의 내용이 새로운 set2가 됨)
           artistSet2 = [...artistSet1];
           // Set1은 Set2와 중복되지 않는 새로운 랜덤 3개 항목으로 업데이트
-          artistSet1 = getUniqueRandomItems(artists, _randomCount, excludeItems: artistSet2);
+          artistSet1 = getUniqueRandomItems(
+            artists,
+            _randomCount,
+            excludeItems: artistSet2,
+          );
         });
         // 인덱스 3으로 즉시 이동
         _artistPageController.jumpToPage(3);
@@ -277,8 +318,11 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
       // 0, 1, 2 -> 1, 2, 3 (리스너에서 3 도달 감지 후 처리)
       // 3, 4, 5 -> 4, 5 (다음 애니메이션은 리스너에서 3으로 점프 후 0, 1, 2로 이어짐)
       if (_artworkPageController.hasClients) {
-        final nextPage = (_currentArtworkPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
-        debugPrint('🎨 인기 작품 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtworkPageIndex})');
+        final nextPage =
+            (_currentArtworkPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
+        debugPrint(
+          '🎨 인기 작품 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtworkPageIndex})',
+        );
         _artworkPageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 800),
@@ -288,8 +332,11 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
 
       // ✅ 주요 아티스트 슬라이드
       if (_artistPageController.hasClients) {
-        final nextPage = (_currentArtistPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
-        debugPrint('👨‍🎨 주요 아티스트 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtistPageIndex})');
+        final nextPage =
+            (_currentArtistPageIndex + 1) % 6; // 전체 6페이지 기준으로 다음 페이지 계산
+        debugPrint(
+          '👨‍🎨 주요 아티스트 - 타이머: 다음 페이지 (${nextPage})로 이동 (현재 ${_currentArtistPageIndex})',
+        );
         _artistPageController.animateToPage(
           nextPage,
           duration: const Duration(milliseconds: 800),
@@ -309,7 +356,6 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
     super.dispose();
   }
 
-
   Future<void> fetchData() async {
     // 기존 fetchData 함수 로직 유지 (데이터 로드만 수행)
     try {
@@ -325,7 +371,8 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
               final initialArtworks = getUniqueRandomItems(artworks, 6);
               artworkSet1 = initialArtworks.take(3).toList();
               artworkSet2 = initialArtworks.skip(3).take(3).toList();
-            } else { // 데이터가 6개 미만일 경우 처리
+            } else {
+              // 데이터가 6개 미만일 경우 처리
               artworkSet1 = List<Artwork>.from(artworks);
               artworkSet2 = []; // 두 번째 세트는 비워둡니다.
             }
@@ -340,7 +387,8 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
       final resArtists = await http.get(Uri.parse(followersApiUrl));
       if (resArtists.statusCode == 200) {
         final List<dynamic> data = jsonDecode(resArtists.body);
-        final mapped = data.map((e) => Artwork.fromJson(e, isArtist: true)).toList();
+        final mapped =
+            data.map((e) => Artwork.fromJson(e, isArtist: true)).toList();
         // ✅ 수정: 데이터 로드 후 artistSet1, artistSet2 초기화 (중복 없는 6개)
         if (mounted) {
           setState(() {
@@ -349,7 +397,8 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
               final initialArtists = getUniqueRandomItems(artists, 6);
               artistSet1 = initialArtists.take(3).toList();
               artistSet2 = initialArtists.skip(3).take(3).toList();
-            } else { // 데이터가 6개 미만일 경우 처리
+            } else {
+              // 데이터가 6개 미만일 경우 처리
               artistSet1 = List<Artwork>.from(artists);
               artistSet2 = []; // 두 번째 세트는 비워둡니다.
             }
@@ -374,6 +423,7 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           // ✅ 수정: 인기 작품 섹션 - items 리스트를 직접 전달하지 않음
           _buildSection(
             title: '인기 작품',
+            subtitle: '사람들의 마음을 사로잡은 그림들을 소개합니다',
             // items: currentArtworkDisplayList, // 더 이상 사용 안함
             controller: _artworkPageController,
             onPageChanged: (index) {
@@ -386,8 +436,8 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           const SizedBox(height: 32),
           // ✅ 수정: 메인 작가 섹션 - items 리스트를 직접 전달하지 않음
           _buildSection(
-            title: '메인 작가',
-            // items: currentArtistDisplayList, // 더 이상 사용 안함
+            title: '주요 아티스트',
+            subtitle: '트렌드를 선도하는 아티스트들을 소개합니다',
             controller: _artistPageController,
             onPageChanged: (index) {
               setState(() {
@@ -403,6 +453,7 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
 
   Widget _buildSection({
     required String title,
+    String? subtitle,
     // required List<Artwork> items, // 더 이상 items 리스트를 직접 받지 않음
     required PageController controller,
     required Function(int) onPageChanged,
@@ -414,26 +465,44 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
 
     // 두 세트 중 하나라도 비어있으면 (초기 로딩 전 등) 빈 컨테이너 반환
     if (set1.isEmpty) {
-      return Container();
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Center(
+          child: Text(
+            title == "인기 작품 추천" ? "인기 작품이 없습니다." : "주요 아티스트가 없습니다.",
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
     }
 
     // ✅ 수정: itemCount를 6으로 고정
     const int pageViewItemCount = 6;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        const SizedBox(height: 50),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
           ),
         ),
-        const SizedBox(height: 16),
+        if (subtitle != null) ...[
+          const SizedBox(height: 50),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Text(
+              subtitle!,
+              style: const TextStyle(fontSize: 15, color: Colors.grey),
+            ),
+          ),
+        ],
+        const SizedBox(height: 50),
+
         SizedBox(
           height: 300,
           child: PageView.builder(
@@ -444,30 +513,27 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
             itemBuilder: (context, index) {
               // ✅ 수정: 인덱스에 따라 Set1 또는 Set2에서 아이템 가져오기
               Artwork item;
-              if (index >= 0 && index < 3) { // 첫 번째 세트 (인덱스 0, 1, 2)
-                if (index >= set1.length) { // 안전 장치
+              if (index >= 0 && index < 3) {
+                // 첫 번째 세트 (인덱스 0, 1, 2)
+                if (index >= set1.length) {
+                  // 안전 장치
                   debugPrint('🚫 오류: Set1 인덱스 범위를 벗어남: $index');
                   return Container();
                 }
                 item = set1[index];
-              } else if (index >= 3 && index < 6) { // 두 번째 세트 (인덱스 3, 4, 5)
-                if (index - 3 >= set2.length) { // 안전 장치
+              } else if (index >= 3 && index < 6) {
+                // 두 번째 세트 (인덱스 3, 4, 5)
+                if (index - 3 >= set2.length) {
+                  // 안전 장치
                   debugPrint('🚫 오류: Set2 인덱스 범위를 벗어남: ${index - 3}');
                   return Container();
                 }
                 item = set2[index - 3];
-              } else { // 예상치 못한 인덱스
+              } else {
+                // 예상치 못한 인덱스
                 debugPrint('🚫 오류: 예상치 못한 PageView 인덱스: $index');
                 return Container();
               }
-
-              // ✅ 수정: items 리스트 인덱스 범위 검사 로직 변경
-              // 기존 로직 제거
-              // if (itemIndex < 0 || itemIndex >= items.length) {
-              //    debugPrint('🚫 오류: items 리스트 인덱스 범위를 벗어남: $itemIndex, index: $index, itemCount: $pageViewItemCount, items.length: ${items.length}');
-              //    // 유효하지 않은 인덱스일 경우 빈 컨테이너 반환
-              //    return Container();
-              // }
 
               // 기존의 _buildArtworkCard 호출 로직 유지
               return Center(
@@ -495,10 +561,14 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
                       child: Image.network(
                         item.imageUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Container(
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.broken_image, size: 40), // 이미지 로드 실패 시 표시할 아이콘
-                        ),
+                        errorBuilder:
+                            (context, error, stackTrace) => Container(
+                              color: Colors.grey[300],
+                              child: const Icon(
+                                Icons.broken_image,
+                                size: 40,
+                              ), // 이미지 로드 실패 시 표시할 아이콘
+                            ),
                       ),
                     ),
                   ),
@@ -508,41 +578,6 @@ class _ArtworkSliderState extends State<ArtworkSlider> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildArtworkCard(Artwork item, bool isArtist) {
-    return GestureDetector(
-      onTap: () async {
-        _timer?.cancel();
-        await showArtworkInfoDialog(context, item);
-        startTimer();
-      },
-      child: Container(
-        width: 350,
-        height: 350,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.white.withOpacity(0.8),
-              blurRadius: 20,
-              spreadRadius: 0,
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(0),
-          child: Image.network(
-            item.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image, size: 40), // 이미지 로드 실패 시 표시할 아이콘
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -568,11 +603,12 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                     item.imageUrl,
                     width: double.infinity,
                     fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      width: double.infinity,
-                      color: Colors.grey[300],
-                      child: const Center(child: Text('이미지 없음')),
-                    ),
+                    errorBuilder:
+                        (context, error, stackTrace) => Container(
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Center(child: Text('이미지 없음')),
+                        ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -627,9 +663,16 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                     ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        final currentUserId = Provider.of<AuthProvider>(context, listen: false).userId;
+                        final currentUserId =
+                            Provider.of<AuthProvider>(
+                              context,
+                              listen: false,
+                            ).userId;
 
                         if (item.isArtist) {
+                          print("Tapped!"); // <- 로그 확인
+                          final userIdFromLink = item.link.split('/').last;
+                          print("Extracted userId: $userIdFromLink"); // <- 여기서 출력
                           // 주요 아티스트인 경우
                           Navigator.pushNamed(
                             context,
@@ -644,7 +687,10 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
                           Navigator.pushNamed(
                             context,
                             '/Art',
-                            arguments: item.link.length > 0 ? item.link.split('/').last : '',
+                            arguments:
+                                item.link.length > 0
+                                    ? item.link.split('/').last
+                                    : '',
                           );
                         }
                       },
@@ -673,4 +719,3 @@ Future<void> showArtworkInfoDialog(BuildContext context, Artwork item) async {
     },
   );
 }
-

@@ -163,11 +163,12 @@ class Footer extends StatelessWidget {
           const SizedBox(height: 5),
           Center(
             child: Text(
-              '© ${DateTime.now().year} OurLog. All rights reserved.',
+              '© 2025 OurLog. All rights reserved.\n'
+                  'Designed by React Spring Team',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 12,
-              ),
+              ),    textAlign: TextAlign.center,
             ),
           ),
         ],

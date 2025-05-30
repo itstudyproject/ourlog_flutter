@@ -108,10 +108,10 @@ class Post {
 
     if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
       final picData = pictureDTOList![0];
-      if (picData['originImagePath'] != null) {
-        return "$baseUrl/picture/display/${picData['originImagePath']}";
-      } else if (picData['resizedImagePath'] != null) {
+      if (picData['resizedImagePath'] != null) {
         return "$baseUrl/picture/display/${picData['resizedImagePath']}";
+      } else if (picData['originImagePath'] != null) {
+        return "$baseUrl/picture/display/${picData['originImagePath']}";
       } else if (picData['thumbnailImagePath'] != null) {
         return "$baseUrl/picture/display/${picData['thumbnailImagePath']}";
       } else if (picData['fileName'] != null) {

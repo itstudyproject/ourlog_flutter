@@ -1,5 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 class AuthService {
   static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
@@ -200,18 +203,122 @@ class AuthService {
     }
   }
 
+  // 특정 userId의 프로필 정보 가져오기
+  static Future<Map<String, dynamic>> fetchProfile(int userId, String? token) async {
+    final path = '/profile/get/$userId';
+    try {
+      print('프로필 조회 요청 시작 (상대 경로): $path');
+      final response = await authenticatedGet(path, token);
+
+      print('프로필 조회 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return {'success': false, 'message': '프로필 조회 응답이 비어있습니다.'};
+        }
+        try {
+          final data = jsonDecode(response.body);
+          print('프로필 정보 파싱 성공: $data');
+          return {'success': true, 'profile': data};
+        } catch (parseError) {
+          print('프로필 응답 JSON 파싱 오류: $parseError');
+          return {'success': false, 'message': '프로필 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      } else if (response.statusCode == 404) {
+         print('프로필을 찾을 수 없습니다 (404)');
+         return {'success': false, 'message': '프로필을 찾을 수 없습니다.', 'statusCode': 404};
+      }
+
+      print('프로필 조회 실패: ${response.statusCode}');
+       String errorMessage = '프로필 조회에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+           final errorData = jsonDecode(response.body);
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else {
+              errorMessage = '프로필 조회 실패: ${response.body}';
+            }
+         } catch (e) {
+            // JSON 파싱 실패 시 원본 응답 본문 사용
+            errorMessage = '프로필 조회 실패: ${response.body}';
+         }
+
+      return {'success': false, 'message': errorMessage};
+    } catch (e) {
+      print('프로필 조회 요청 오류: $e');
+      return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
+    }
+  }
+
+  // 새로운 사용자 프로필 생성
+  static Future<Map<String, dynamic>> createProfile(int userId, String nickname, String? token) async {
+    final path = '/profile/create';
+    try {
+      print('프로필 생성 요청 시작 (상대 경로): $path, userId: $userId, nickname: $nickname');
+      final response = await authenticatedPost(
+        path,
+        token,
+        body: {
+          'userId': userId,
+          'nickname': nickname,
+          'introduction': '안녕하세요,$nickname입니다.', // 기본값 추가
+          'originImagePath': '/images/mypage.png',
+          'thumbnailImagePath': '/images/mypage.png',
+          'followCnt': 0,
+          'followingCnt': 0,
+        }, // ❌ jsonEncode 제거
+      );
+
+
+      print('프로필 생성 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          return {'success': false, 'message': '프로필 생성 응답이 비어있습니다.'};
+        }
+        try {
+          final data = jsonDecode(response.body);
+          print('프로필 생성 응답 파싱 성공: $data');
+          return {'success': true, 'profile': data};
+        } catch (parseError) {
+          print('프로필 생성 응답 JSON 파싱 오류: $parseError');
+          return {'success': false, 'message': '프로필 생성 응답 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      } else {
+        // 오류 응답 본문 디버깅
+        String errorMessage = '프로필 생성에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+          final errorData = jsonDecode(response.body);
+           if (errorData is Map && errorData.containsKey('message')) {
+             errorMessage = errorData['message'];
+           } else {
+             errorMessage = '프로필 생성 실패: ${response.body}';
+           }
+        } catch (e) {
+           // JSON 파싱 실패 시 원본 응답 본문 사용
+           errorMessage = '프로필 생성 실패: ${response.body}';
+        }
+        return {'success': false, 'message': errorMessage};
+      }
+    } catch (e) {
+      print('프로필 생성 요청 오류: $e');
+      return {'success': false, 'message': '서버 연결에 실패했습니다: $e'};
+    }
+  }
+
   // 회원가입
-  static Future<Map<String, dynamic>> register(String email, String password, String name, String nickname, String mobile, bool fromSocial) async {
+  static Future<Map<String, dynamic>> register(String email, String password, String passwordConfirm, String name, String nickname, String mobile, bool fromSocial) async {
     final url = '$_baseUrl/user/register';
-    
+
     try {
       print('회원가입 요청 시작: $url');
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'email': email, 
+          'email': email,
           'password': password,
+          'passwordConfirm': passwordConfirm,
           'name': name,
           'nickname': nickname,
           'mobile': mobile,
@@ -225,29 +332,41 @@ class AuthService {
           return http.Response('{"message": "서버 응답 시간이 초과되었습니다."}', 408);
         },
       );
-      
+
       print('회원가입 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
-      
+
       if (response.statusCode == 200) {
         // 성공 시 서버에서 반환된 userId 반환
         if (response.body.isEmpty) {
           print('회원가입 응답이 비어있습니다');
           return {'success': false, 'message': '서버 응답이 비어있습니다. 관리자에게 문의하세요.'};
         }
-        
-        final userId = int.tryParse(response.body);
+
+        // userId를 응답 본문에서 직접 파싱
+        final parsedBody = jsonDecode(response.body);
+        final userId = parsedBody['userId']; // 또는 서버에서 반환하는 userId 키
+
         if (userId != null) {
-          return {'success': true, 'userId': userId};
+           // userId가 String으로 올 경우 int로 변환
+           int? intUserId = userId is int ? userId : int.tryParse(userId.toString());
+
+          if (intUserId != null) {
+             print('회원가입 성공, userId: $intUserId');
+             return {'success': true, 'userId': intUserId};
+          } else {
+             print('회원가입 성공 응답에서 userId를 int로 파싱하는데 실패했습니다: $userId');
+             return {'success': false, 'message': '회원가입은 성공했지만 사용자 ID 파싱 오류가 발생했습니다.'};
+          }
         }
       }
-      
+
       // 응답 내용을 디버깅하여 오류 메시지 설정
       try {
         if (response.body.isEmpty) {
           print('회원가입 실패 응답이 비어있습니다');
           return {'success': false, 'message': '서버 응답이 비어있습니다. 서버 관리자에게 문의하세요.'};
         }
-        
+
         final errorData = jsonDecode(response.body);
         return {'success': false, 'message': errorData['message'] ?? '회원가입에 실패했습니다.'};
       } catch (decodeError) {
@@ -282,7 +401,7 @@ class AuthService {
       // 전체 헤더 정보 디버깅 출력
       print('요청 헤더:');
       headers.forEach((key, value) {
-        print('  $key: ${value.length > 30 ? value.substring(0, 30) + "..." : value}');
+        print('  $key: ${value.length > 30 ? "${value.substring(0, 30)}..." : value}');
       });
       
       // 모든 응답 내용 로깅하기 위한 세부 요청 과정
@@ -327,52 +446,178 @@ class AuthService {
   }
 
   // JWT 토큰을 사용한 API 요청 헬퍼 메서드
-  static Future<http.Response> authenticatedGet(String path, String token) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
+  static Future<http.Response> authenticatedGet(String path, String? token, {Map<String, String>? headers}) async {
+    String authToken = '';
+    if (token != null) {
       authToken = 'Bearer $token';
     }
-    
-    print('API 요청: GET $_baseUrl$path');
+
+    // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+    final url = Uri.parse('$_baseUrl$path');
+
+    print('API 요청: GET $url');
     print('인증 헤더: ${authToken.substring(0, authToken.length > 30 ? 30 : authToken.length)}...');
-    
+
+    final headersToUse = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
+       headersToUse['Authorization'] = authToken;
+    }
+
+    if (headers != null) {
+      headersToUse.addAll(headers);
+    }
+
     return http.get(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authToken,
-      },
+      url,
+      headers: headersToUse,
     );
   }
 
-  static Future<http.Response> authenticatedPost(String path, String token, dynamic body) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
+  static Future<http.Response> authenticatedPost(String path, String? token, {dynamic body}) async {
+    String authToken = '';
+    if (token != null) {
       authToken = 'Bearer $token';
     }
-    
+
+    // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+    final url = Uri.parse('$_baseUrl$path');
+
+    print('API 요청: POST $url'); // POST 요청임을 명확히 표시
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (token != null) {
+       headers['Authorization'] = authToken;
+    }
+
     return http.post(
-      Uri.parse('$_baseUrl$path'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authToken,
-      },
-      body: jsonEncode(body),
+      url,
+      headers: headers,
+      body: body != null ? jsonEncode(body) : null,
     );
   }
 
-  static Future<http.Response> authenticatedDelete(String path, String token) async {
-    String authToken = token;
-    if (!token.startsWith('Bearer ')) {
-      authToken = 'Bearer $token';
-    }
-    
+  static Future<http.Response> authenticatedDelete(String path, String? token) async {
+     String authToken = '';
+     if (token != null) {
+       authToken = 'Bearer $token';
+     }
+
+     // URL 구성 수정: _baseUrl과 path를 올바르게 결합
+     final url = Uri.parse('$_baseUrl$path');
+
+     print('API 요청: DELETE $url'); // DELETE 요청임을 명확히 표시
+     final headers = <String, String>{'Content-Type': 'application/json'};
+     if (token != null) {
+       headers['Authorization'] = authToken;
+     }
+
     return http.delete(
-      Uri.parse('$_baseUrl$path'),
+      url,
+      headers: headers,
+    );
+  }
+  Future<bool> checkIsAdmin() async {
+    print('checkIsAdmin 호출됨');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) return false;
+
+    final response = await http.get(
+      Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
       headers: {
+        'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
-        'Authorization': authToken,
       },
     );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print("Check Admin Response: $data"); // 👈 추가
+
+      return data['isAdmin'] == true;
+    } else {
+      print("Admin check failed: ${response.statusCode}, ${response.body}"); // 👈 추가
+
+      return false;
+    }
+  }
+
+  // 백엔드로부터 Sendbird 액세스 토큰 가져오기
+  static Future<Map<String, dynamic>?> fetchSendbirdToken(String jwtToken, int? backendUserId) async {
+    final path = '/chat/token';
+    try {
+      debugPrint('Sendbird token 요청 시작 (상대 경로): $path');
+
+      // X-Request-ID 헤더 추가
+      final uuid = Uuid();
+      final customHeaders = <String, String>{
+        'X-Request-ID': uuid.v4(), // 고유 UUID 생성
+      };
+
+      final response = await authenticatedGet(path, jwtToken, headers: customHeaders);
+
+      debugPrint('Sendbird token 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          debugPrint('Sendbird token 응답이 비어있습니다');
+          return null;
+        }
+        try {
+          final data = jsonDecode(response.body);
+          debugPrint('Sendbird token 응답 파싱 성공: $data');
+
+          // 응답 구조에 따라 userId와 accessToken 키를 확인합니다.
+          String? sendbirdAccessToken = data['accessToken'];
+          String? sendbirdUserIdFromResponse = data['userId']?.toString(); // 백엔드에서 Sendbird userId를 제공하는 경우
+
+          if (sendbirdAccessToken != null) {
+             // Sendbird userId가 응답에 없으면 JWT 토큰에서 추출하거나 다른 곳에서 가져옵니다.
+             String? finalSendbirdUserId = sendbirdUserIdFromResponse;
+             if (finalSendbirdUserId == null) {
+               // 백엔드 userId 인자를 Sendbird userId로 사용
+               if (backendUserId != null) {
+                 finalSendbirdUserId = backendUserId.toString();
+                 debugPrint('Sendbird userId가 응답에 없어 백엔드 userId(\${backendUserId}) 사용');
+               } else {
+                 debugPrint('Sendbird userId를 응답에서도 백엔드 userId에서도 얻을 수 없습니다.');
+                 return {'message': 'Sendbird 사용자 ID를 가져오는데 실패했습니다.'}; // 백엔드 userId도 없는 경우 오류 반환
+               }
+             }
+
+             return {
+                'userId': finalSendbirdUserId,
+                'accessToken': sendbirdAccessToken
+             };
+
+          } else {
+            debugPrint('Sendbird token 응답에 accessToken이 없습니다.');
+            return {'message': 'Sendbird 액세스 토큰을 가져오는데 실패했습니다.'};
+          }
+        } catch (parseError) {
+          debugPrint('Sendbird token 응답 JSON 파싱 오류: $parseError');
+          return {'message': 'Sendbird 토큰 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      }
+
+      // 에러 응답 상세 파싱
+       String errorMessage = 'Sendbird 토큰 조회에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+           final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else {
+              errorMessage = 'Sendbird 토큰 조회 실패: ${response.body}';
+            }
+         } catch (e) {
+            errorMessage = 'Sendbird 토큰 조회 실패: ${response.body}';
+         }
+      debugPrint('Sendbird token 조회 실패: $errorMessage');
+      return {'message': errorMessage};
+
+    } catch (e) {
+      debugPrint('Sendbird token 요청 오류: $e');
+      return {'message': '서버 연결에 실패했습니다: $e'};
+    }
   }
 }

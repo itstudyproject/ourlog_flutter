@@ -42,12 +42,10 @@ class AppTheme {
     colorScheme: ColorScheme.fromSwatch().copyWith(
       primary: primaryColor,
       secondary: secondaryColor,
-      background: backgroundColor,
       surface: backgroundColor,
-      onBackground: textColor,
       onSurface: textColor,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: Colors.black.withOpacity(0.2),
       elevation: 0,
       shape: RoundedRectangleBorder(

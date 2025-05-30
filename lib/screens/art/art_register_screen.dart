@@ -64,6 +64,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
     _selectedThumbnailId = post.fileName;
     _startTime = DateTime.now();
     _endTime = _startTime!.add(const Duration(days: 7));
+    // 이미지는 재등록 시 수정 불가, 기존 이미지 정보만 유지
   }
 
   Future<void> _loadUserInfo() async {
@@ -126,6 +127,39 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
+    if (widget.isReregister) {
+      // 경매 재등록 로직: postId는 기존 값, tradeId만 새로 생성
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final tradeData = {
+        'postId': widget.postData!.postId,
+        'sellerId': _userId,
+        'startPrice': int.parse(_startPriceController.text),
+        'nowBuy': int.parse(_nowBuyController.text),
+        'startBidTime': _startTime!.toIso8601String(),
+        'lastBidTime': _endTime!.toIso8601String(),
+        'tradeStatus': false,
+      };
+      final response = await http.post(
+        Uri.parse('$baseUrl/trades/register'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(tradeData),
+      );
+      if (response.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('경매가 성공적으로 재등록되었습니다!')),
+          );
+          Navigator.pushReplacementNamed(context, '/art/${widget.postData!.postId}');
+        }
+      } else {
+        throw Exception('경매 재등록 실패: ${response.statusCode}');
+      }
+      return;
+    }
     if (_imageFiles.isEmpty && !widget.isReregister) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('최소 한 개의 이미지를 업로드해주세요.')),
@@ -144,7 +178,6 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
       if (_userId == null || _nickname == null) {
          throw Exception("사용자 정보를 불러오는데 실패했습니다.");
       }
-
 
       if (widget.isReregister) {
         await _handleReregister();
@@ -465,6 +498,51 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
   }
 
   Widget _buildImageUploadSection() {
+    // 재등록 모드에서는 이미지 업로드/삭제/썸네일 변경 불가, 기존 이미지만 보여줌
+    if (widget.isReregister && widget.postData != null && widget.postData!.pictureDTOList != null) {
+      final List<dynamic> pics = widget.postData!.pictureDTOList!;
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white10,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white54),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('작품 이미지 (수정 불가)', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: pics.length,
+                itemBuilder: (context, index) {
+                  final pic = pics[index];
+                  final imageUrl = pic['originImagePath'] != null
+                      ? 'http://10.100.204.171:8080/ourlog/picture/display/${pic['originImagePath']}'
+                      : null;
+                  return Container(
+                    width: 120,
+                    margin: const EdgeInsets.only(right: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: imageUrl != null
+                          ? Image.network(imageUrl, fit: BoxFit.cover)
+                          : Container(color: Colors.grey[300], child: const Center(child: Text('이미지 없음'))),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text('이미지는 수정할 수 없습니다.', style: TextStyle(color: Colors.white70, fontSize: 13)),
+          ],
+        ),
+      );
+    }
+    // ... 기존 코드 (신규 등록 모드)
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -793,7 +871,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
         }
         return null;
       },
-      readOnly: widget.isReregister,
+      readOnly: widget.isReregister, // 재등록 시 제목 수정 불가
     );
   }
 
@@ -822,7 +900,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
         }
         return null;
       },
-      readOnly: widget.isReregister,
+      readOnly: false, // 재등록 시 설명은 수정 가능
     );
   }
 
@@ -863,6 +941,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
               }
               return null;
             },
+            readOnly: false, // 재등록 시 시작가 수정 가능
           ),
         ),
         const SizedBox(width: 16),
@@ -908,6 +987,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
 
               return null;
             },
+            readOnly: false, // 재등록 시 즉시구매가 수정 가능
           ),
         ),
       ],

@@ -114,7 +114,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
             isLoading = false;
             // 판매자 및 최고 입찰자 상태 업데이트
             _isSeller = _currentUserId != null && artwork?.userId == _currentUserId;
-            _isSuccessfulBidder = _currentUserId != null && artwork?.tradeDTO?.bidderId == _currentUserId && artwork?.isEnded == true; // 경매 종료 상태일 때만 최고 입찰자
+            // 경매 종료 상태일 때만 최고 입찰자인지 확인 (tradeStatus 사용)
+            _isSuccessfulBidder = _currentUserId != null && artwork?.tradeDTO?.bidderId == _currentUserId && artwork?.tradeDTO?.tradeStatus == true;
 
             debugPrint('Is Seller: $_isSeller');
             debugPrint('Is Successful Bidder: $_isSuccessfulBidder');
@@ -140,7 +141,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
     // 기존 타이머가 있다면 취소
     _timer?.cancel();
 
-    if (artwork?.tradeDTO != null && !(artwork!.isEnded)) { // 경매 정보가 있고, 종료되지 않았다면 타이머 시작
+    // 백엔드 tradeStatus가 false (진행 중 또는 유찰)일 때만 타이머 시작
+    if (artwork?.tradeDTO != null && !(artwork!.tradeDTO!.tradeStatus)) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (!mounted) { // 위젯이 마운트 해제되면 타이머 중지
           timer.cancel();
@@ -152,17 +154,26 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
           countdown = timeLeft;
         });
 
-        // 경매 종료 시간이 되었는지 다시 확인하고 상태 업데이트 (필요 시 서버와 통신)
-        if (artwork!.isEnded) {
-          timer.cancel();
-          setState(() {
-            countdown = '경매 종료';
-            // TODO: 경매 상태 업데이트 API 호출 로직 추가 (React 코드 참고)
-          });
-        }
+        // 경매 종료 시간이 지났거나 tradeStatus가 true가 되면 타이머 중지
+        // 여기서는 이미 경매 종료 상태이면 타이머가 시작되지 않도록 위에서 걸러주므로 시간만 체크
+        if (artwork!.isEnded) { // isEnded는 경매 시간만 체크하는 getter
+             timer.cancel();
+             setState(() {
+                countdown = '경매 종료';
+                // TODO: 경매 상태 업데이트 API 호출 로직 추가 (React 코드 참고)
+                // 만약 시간은 지났는데 아직 tradeStatus가 false라면 백엔드에 종료 요청
+                if (artwork!.tradeDTO!.tradeStatus == false) {
+                    // 여기서 백엔드 tradeStatus를 true로 업데이트하는 API를 호출할 수 있습니다.
+                    // 예: updateAuctionStatus(artwork!.tradeDTO!.tradeId, true);
+                    // 다만, 이 로직은 백엔드에서 처리하는 것이 더 안전하고 일관적입니다.
+                    // 백엔드 로그에서처럼 `/trades/{tradeId}/close` 엔드포인트를 호출하여 상태를 업데이트합니다.
+                    // 현재는 fetchArtworkDetails()가 최신 상태를 가져오므로 별도 호출은 생략합니다.
+                }
+             });
+           }
       });
-    } else if (artwork?.tradeDTO != null && artwork!.isEnded) {
-      // 경매가 이미 종료된 경우
+    } else if (artwork?.tradeDTO != null && artwork!.tradeDTO!.tradeStatus) {
+      // 경매가 이미 종료된 경우 (tradeStatus가 true)
       setState(() {
         countdown = '경매 종료';
       });
@@ -174,6 +185,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
     }
   }
 
+
   // 입찰 로직
   Future<void> _placeBid() async {
     if (_isBidding) return; // 이미 입찰 중이면 중복 실행 방지
@@ -182,13 +194,13 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
     debugPrint('--- 입찰 시도 디버그 정보 ---');
     debugPrint('현재 사용자 ID: $_currentUserId');
     debugPrint('작품 판매자 ID: ${artwork?.userId}');
-    debugPrint('경매 종료 상태: ${artwork?.isEnded}');
+    // artwork?.isEnded 대신 artwork?.tradeDTO?.tradeStatus 사용
+    debugPrint('경매 종료 상태 (tradeStatus): ${artwork?.tradeDTO?.tradeStatus}');
 
     final bidAmount = int.tryParse(_bidAmountController.text);
     debugPrint('시도 입찰 금액: $bidAmount');
 
-    // 현재 입찰가보다 높은지 확인
-    // artwork.tradeDTO가 dynamic이므로 안전하게 접근
+    // 기본적인 입찰 금액 유효성 검사
     if (bidAmount == null || bidAmount <= 0 || bidAmount % 1000 != 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('유효한 입찰 금액(1,000원 단위)을 입력해주세요.')),
@@ -204,19 +216,80 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
       return;
     }
 
-    // 경매가 종료되었는지 확인 (UI 표시 조건과 별개로 로직에서 다시 확인)
-    if (artwork?.isEnded ?? true) {
+    // 경매가 종료되었는지 확인 (tradeStatus 사용)
+    if (artwork?.tradeDTO?.tradeStatus ?? true) { // tradeStatus가 null이거나 true이면 종료로 간주
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('종료된 경매에는 입찰할 수 없습니다.')),
       );
       return;
     }
 
-    // 이전에 입찰한 적이 있는지 확인
+    // 즉시 구매가와 입찰 금액 비교 검증 (추가 또는 수정된 부분)
+    final instantPurchasePrice = artwork?.tradeDTO?.nowBuy;
+    // 즉시 구매가를 초과하는 입찰 방지
+    if (instantPurchasePrice != null && bidAmount > instantPurchasePrice) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('입찰가는 즉시 구매가(${instantPurchasePrice.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원)를 초과할 수 없습니다.')),
+      );
+      return;
+    }
+    // 즉시 구매가와 입찰 금액이 동일한지 확인하고 즉시 구매 로직으로 연결 (웹 코드 참고)
+    if (instantPurchasePrice != null && bidAmount == instantPurchasePrice) {
+      // 확인 대화상자 표시
+      final bool confirmNowBuy = await showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('즉시 구매 확인'),
+            content: Text('현재 지정한 입찰 금액(${bidAmount.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원)은 즉시구매가와 동일합니다.\n즉시구매 페이지로 이동하시겠습니까?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('취소'),
+                onPressed: () {
+                  Navigator.of(context).pop(false); // 취소 결과 반환
+                },
+              ),
+              TextButton(
+                child: const Text('확인'),
+                onPressed: () {
+                  Navigator.of(context).pop(true); // 확인 결과 반환
+                },
+              ),
+            ],
+          );
+        },
+      ) ?? false; // 대화상자 닫기 시 null 방지
+
+      if (confirmNowBuy) {
+        // 즉시 구매 로직 호출
+        _handleInstantPurchase();
+        _bidAmountController.clear(); // 입력 필드 초기화
+         // setState를 여기서 호출하여 _isBidding 등을 false로 설정하지 않음
+         // _handleInstantPurchase 내부에서 로딩 상태 등을 관리할 수 있음
+        return; // 입찰 API 호출 방지
+      } else {
+         // 사용자가 취소를 눌렀으면 입찰 필드만 초기화하고 함수 종료
+        _bidAmountController.clear();
+        return;
+      }
+    }
+
+
+    // 이전에 입찰한 적이 있는지 확인 (즉시 구매 로직 통과 후에 확인)
     final previousBidderId = artwork?.tradeDTO?.bidderId; // TradeDTO 모델 속성 접근
     if (_currentUserId != null && previousBidderId != null && previousBidderId == _currentUserId) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미 최고 입찰자입니다.')),
+      );
+      return;
+    }
+
+    // 최소 입찰가 검증 (즉시 구매 로직 통과 후에 확인)
+    final currentHighestBid = artwork?.tradeDTO?.highestBid ?? artwork?.tradeDTO?.startPrice ?? 0;
+    final minBidAmount = currentHighestBid + 1000; // 최소 1000원 이상 높게
+    if (bidAmount < minBidAmount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('입찰가는 현재 최고가(${currentHighestBid.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원)보다 1000원 이상 높아야 합니다.')),
       );
       return;
     }
@@ -337,43 +410,31 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
       );
       return;
     }
-    // 경매가 종료되었으면 즉시 구매할 수 없습니다.
-    if (artwork?.isEnded ?? true) {
+    // 경매가 종료되었으면 즉시 구매할 수 없습니다. (tradeStatus 사용)
+    if (artwork?.tradeDTO?.tradeStatus ?? true) { // tradeStatus가 null이거나 true이면 종료로 간주
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('종료된 경매는 즉시 구매할 수 없습니다.')),
       );
       return;
     }
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('즉시 구매 확인'),
-          content: Text('즉시 구매가 ${artwork!.tradeDTO!.nowBuy?.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원에 진행됩니다. 결제 페이지로 이동하시겠습니까?'), // TradeDTO 모델 속성 접근
-          actions: <Widget>[
-            TextButton(
-              child: const Text('취소'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 대화상자 닫기
-              },
-            ),
-            TextButton(
-              child: const Text('확인'),
-              onPressed: () {
-                Navigator.of(context).pop(); // 대화상자 닫기
-                // PaymentScreen으로 이동하며 artwork 객체 전달
-                Navigator.pushNamed(
-                  context,
-                  '/art/payment', // PaymentScreen 라우트 이름
-                  arguments: artwork, // Post 객체 전체를 넘김
-                );
-              },
-            ),
-          ],
+    // 즉시 구매가 확인 대화상자는 _placeBid에서 이미 표시되었으므로 여기서는 생략
+    // 바로 PaymentScreen으로 이동합니다.
+
+    // tradeId가 null이 아닌지 Dart 방식으로 체크
+    if (artwork?.tradeDTO?.tradeId != null) {
+         // PaymentScreen으로 이동하며 artwork 객체 전달
+        Navigator.pushNamed(
+          context,
+          '/art/payment', // PaymentScreen 라우트 이름
+          arguments: artwork, // Post 객체 전체를 넘김
         );
-      },
-    );
+    } else {
+        debugPrint('Trade ID is null, cannot navigate to payment.');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('결제를 진행할 수 없습니다. 경매 정보가 올바르지 않습니다.')),
+        );
+    }
   }
 
   // 채팅 로직 (더미 함수)
@@ -387,27 +448,42 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
 
   // 경매 재등록 로직 (더미 함수)
   void _handleReregisterAuction() {
-    // TODO: 경매 재등록 페이지 이동 또는 로직 구현
-    debugPrint('경매 재등록');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('경매 재등록 기능은 아직 구현되지 않았습니다.')),
-    );
+     if (artwork?.postId != null) {
+       Navigator.pushNamed(
+         context,
+         '/art/register',
+         arguments: {
+           'postData': artwork,
+           'isReregister': true,
+         },
+       );
+     } else {
+       debugPrint('재등록할 게시글 정보(postId)가 없습니다.');
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text('재등록할 작품 정보를 찾을 수 없습니다.')),
+       );
+     }
   }
 
 
   @override
   Widget build(BuildContext context) {
     // isSeller, isSuccessfulBidder 등의 상태는 initState 또는 fetchArtworkDetails에서 설정됩니다.
-    final bool isAuctionEnded = artwork?.isEnded ?? false;
+
+    // 경매 진행 중 여부 (tradeStatus가 false일 때 진행 중 또는 유찰)
+    final bool isAuctionInProgress = artwork?.tradeDTO != null && (artwork!.tradeDTO!.tradeStatus == false);
+    // 경매 종료 여부 (tradeStatus가 true일 때 종료)
+    final bool isAuctionEndedBasedOnStatus = artwork?.tradeDTO?.tradeStatus == true;
+
+
     // 즉시구매 버튼을 보여줄지 결정: 경매 진행 중이고 판매자가 아닐 때
-    final bool showInstantPurchaseButton = !isAuctionEnded && !_isSeller && artwork?.tradeDTO?.nowBuy != null && (artwork?.tradeDTO?.nowBuy ?? 0) > 0; // TradeDTO 모델 속성 접근
+    final bool showInstantPurchaseButton = isAuctionInProgress && !_isSeller && artwork?.tradeDTO?.nowBuy != null && (artwork?.tradeDTO?.nowBuy ?? 0) > 0; // TradeDTO 모델 속성 접근
     // 입찰 관련 UI를 보여줄지 결정: 경매 진행 중이고 판매자가 아닐 때
-    final bool showBidSection = !isAuctionEnded && !_isSeller && artwork?.tradeDTO != null;
-    // 경매 종료 후 작가와 채팅 버튼을 보여줄지 결정: 경매 종료 && (판매자이거나 낙찰자인 경우)
-    // React 코드에서는 낙찰자만 채팅 버튼이 보임. 여기서는 낙찰자만 보이도록 구현.
-    final bool showChatAfterEnded = artwork?.isEnded == true && _isSuccessfulBidder; // isAuctionEnded 대신 artwork.isEnded 사용
+    final bool showBidSection = isAuctionInProgress && !_isSeller && artwork?.tradeDTO != null;
+    // 경매 종료 후 작가와 채팅 버튼을 보여줄지 결정: 경매 종료 && 낙찰자인 경우
+    final bool showChatAfterEnded = isAuctionEndedBasedOnStatus && _isSuccessfulBidder;
     // 경매 진행 중일 때 작가와 채팅 버튼을 보여줄지 결정: 경매 진행 중 && 판매자가 아닌 경우
-    final bool showChatDuringAuction = !isAuctionEnded && !_isSeller;
+    final bool showChatDuringAuction = isAuctionInProgress && !_isSeller;
 
 
     return Scaffold(
@@ -532,9 +608,18 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
 
             // 경매 정보 표시 (tradeDTO가 있을 경우)
             if (artwork!.tradeDTO != null) ...[
-              Text(
-                '경매 정보',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              Row( // 경매 정보 제목과 새로고침 아이콘을 위한 Row 추가
+                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                 children: [
+                   Text(
+                     '경매 정보',
+                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                   ),
+                   IconButton( // 새로고침 아이콘 버튼 추가
+                     icon: Icon(Icons.refresh, color: Theme.of(context).primaryColor),
+                     onPressed: fetchArtworkDetails, // 누르면 fetchArtworkDetails 호출
+                   ),
+                 ]
               ),
               const SizedBox(height: 8),
               // 시작가, 현재 입찰가, 즉시 구매가
@@ -588,26 +673,28 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                 ),
                 child: Row(
                     children: [
-                      Icon(Icons.timer, size: 20, color: Colors.black87),
+                      const Icon(Icons.timer, size: 20, color: Colors.black87),
                       const SizedBox(width: 8),
                       Text(
-                        isAuctionEnded ? '경매 종료' : countdown, // 경매 종료 여부에 따라 텍스트 표시
+                        // artwork.isEnded 대신 isAuctionEndedBasedOnStatus 사용
+                        isAuctionEndedBasedOnStatus ? '경매 종료' : countdown, // 경매 종료 여부에 따라 텍스트 표시
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: artwork?.isEnded == true ? Colors.red : Colors.black87, // isAuctionEnded 대신 artwork.isEnded 사용
+                          // artwork?.isEnded == true 대신 isAuctionEndedBasedOnStatus 사용
+                          color: isAuctionEndedBasedOnStatus ? Colors.red : Colors.black87,
                         ),
                       ),
-                      // 경매 종료 시 낙찰자와 1:1 채팅 버튼 추가 (React 코드 참고)
+                      // 경매 종료 시 낙찰자와 1:1 채팅 버튼 추가
                       if (showChatAfterEnded) ...[
                         const Spacer(),
                         ElevatedButton(
                           onPressed: _handleChat, // 채팅 로직 연결
-                          child: const Text('낙찰자와 1:1 채팅'),
+                          child: const Text('작가와 1:1 채팅'), // 텍스트 수정
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blueGrey,
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            textStyle: TextStyle(fontSize: 14),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            textStyle: const TextStyle(fontSize: 14),
                           ),
                         ),
                       ]
@@ -616,7 +703,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
               ),
               const SizedBox(height: 24),
 
-              // 입찰/구매 버튼 섹션 (경매 진행 중, 판매자 아닐 때 표시)
+              // 입찰/구매 버튼 섹션 (showBidSection 사용)
               if (showBidSection) ...[
                 // 입찰 금액 입력 (React 코드 참고하여 UI 구성)
                 TextField(
@@ -652,8 +739,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.orange,
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -667,8 +754,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.grey, // 색상 변경 (React 참고)
                               foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 12),
-                              textStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                           ),
                         ),
@@ -683,7 +770,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                   Center(
                     child: TextButton.icon(
                       onPressed: _handleChat, // 채팅 로직 연결
-                      icon: Icon(Icons.chat_bubble_outline, size: 20, color: Colors.black87), // 채팅 아이콘
+                      icon: const Icon(Icons.chat_bubble_outline, size: 20, color: Colors.black87), // 채팅 아이콘
                       label: const Text('작가와 1:1 채팅', style: TextStyle(color: Colors.black87)),
                     ),
                   ),
@@ -725,7 +812,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
               ),
               const SizedBox(width: 16),
               // 경매 재등록 버튼 (판매자 && 경매 종료 시)
-              if (_isSeller && artwork?.isEnded == true) // 판매자이고 경매 종료 시 재등록 버튼 표시 (isAuctionEnded 대신 artwork.isEnded 사용)
+              // artwork?.isEnded == true 대신 isAuctionEndedBasedOnStatus 사용
+              if (_isSeller && isAuctionEndedBasedOnStatus)
                 Expanded(
                   flex: 1,
                   child: ElevatedButton(

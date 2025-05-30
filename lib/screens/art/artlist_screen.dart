@@ -29,6 +29,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
   bool _isSearching = false;
   Timer? _timer; // Add Timer instance
   OverlayEntry? _overlayEntry; // Add OverlayEntry instance
+  Timer? _modalTimer; // 모달창 타이머
   late AnimationController _fadeController; // Change to late
   late Animation<double> _fadeAnimation; // Change to late
 
@@ -48,6 +49,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
     _scrollController.dispose();
     _timer?.cancel(); // Cancel the timer
     _fadeController.dispose(); // Dispose the fade controller
+    _modalTimer?.cancel(); // 모달 타이머 해제
     super.dispose();
   }
 
@@ -379,8 +381,9 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
     final RenderBox? renderBox = imageKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox == null) return; // Return if render box is not found
 
-    // final size = renderBox.size; // Not needed for Hero animation positioning
-    // final position = renderBox.localToGlobal(Offset.zero); // Not needed for Hero animation positioning
+    // 모달 내 경매 남은 시간 실시간 갱신용 State 변수
+    String timeLeft = artwork.getTimeLeft();
+    bool isAuctionEnded = artwork.isEnded || (artwork.tradeDTO != null && artwork.tradeDTO.tradeStatus == true);
 
     _overlayEntry = OverlayEntry(
       builder: (context) => FadeTransition( // Add FadeTransition for the overlay
@@ -400,18 +403,38 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                   children: [
                     // Expanded Image using Hero animation
                     Hero(
-                      tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
-                      child: Material( // Wrap Image with Material for Hero
-                        color: Colors.transparent, // Make Material transparent
-                        child: Image.network(
-                          artwork.getImageUrl(), // artwork.originImagePath ?? artwork.resizedImagePath ?? artwork.thumbnailImagePath ?? artwork.getImageUrl(), // artwork.getImageUrl() 사용
-                          fit: BoxFit.contain, // Use contain to show full image without cropping
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            height: MediaQuery.of(context).size.width * 0.6, // Example fallback height
-                            color: Colors.grey[300],
-                            child: const Center(child: Text('이미지 없음')),
-                          ),
+                      tag: 'artwork-${artwork.postId}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Image.network(
+                              artwork.getImageUrl(),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) => Container(
+                                width: MediaQuery.of(context).size.width * 0.9,
+                                height: MediaQuery.of(context).size.width * 0.6,
+                                color: Colors.grey[300],
+                                child: const Center(child: Text('이미지 없음')),
+                              ),
+                            ),
+                            Positioned.fill(
+                              child: Center(
+                                child: Text(
+                                  'OurLog',
+                                  style: TextStyle(
+                                    fontFamily: 'NanumSquareNeo',
+                                    fontSize: 48,
+                                    color: Colors.white.withOpacity(0.35),
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -424,57 +447,72 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                         color: Colors.grey[800], // Dark background for info
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: StatefulBuilder( // Use StatefulBuilder for real-time time update
+                      child: StatefulBuilder(
                         builder: (BuildContext context, StateSetter setStateInOverlay) {
+                          // 모달 타이머 시작 (최초 1회만)
+                          _modalTimer?.cancel();
+                          _modalTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+                            if (_overlayEntry == null) {
+                              _modalTimer?.cancel();
+                              return;
+                            }
+                            // 경매 종료 조건: isEnded 또는 tradeStatus==true
+                            final ended = artwork.isEnded || (artwork.tradeDTO != null && artwork.tradeDTO.tradeStatus == true);
+                            if (!ended) {
+                              setStateInOverlay(() {
+                                timeLeft = artwork.getTimeLeft();
+                                isAuctionEnded = ended;
+                              });
+                            } else {
+                              setStateInOverlay(() {
+                                isAuctionEnded = true;
+                              });
+                              _modalTimer?.cancel();
+                            }
+                          });
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Ensure no underline on title
                               Text(artwork.title ?? '제목 없음', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, decoration: TextDecoration.none)),
                               const SizedBox(height: 8),
-                              // Ensure no underline on author nickname
                               Text('작가: ${artwork.nickname ?? '알 수 없음'}', style: TextStyle(color: Colors.white70, fontSize: 14, decoration: TextDecoration.none)),
                               const SizedBox(height: 8),
                               if (artwork.tradeDTO != null) ...[
-                                // Ensure no underline on current price
                                 Text(
-                                  // Corrected comma formatting logic
                                   '현재가: ${(artwork.tradeDTO!.highestBid ?? artwork.tradeDTO!.startPrice)?.toString().replaceAllMapped(RegExp(r'(?<!\\d)(?:(?=\\d{3})+(?!\\d)|(?<=\\d)(?=(?:\\d{3})+(?!\\d)))'), (m) => ',')}원',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                     color: Colors.white,
-                                    decoration: TextDecoration.none, // Ensure no underline
+                                    decoration: TextDecoration.none,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                if (artwork.isEnded) // Use isEnded getter
-                                  const Text(
-                                    '경매 종료',
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 14,
-                                      decoration: TextDecoration.none, // Ensure no underline
+                                isAuctionEnded
+                                  ? const Text(
+                                      '경매 종료',
+                                      style: TextStyle(
+                                        color: Colors.red,
+                                        fontSize: 14,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    )
+                                  : Text(
+                                      '남은 시간: $timeLeft',
+                                      style: TextStyle(
+                                        color: artwork.isEndingSoon ? Colors.red : Colors.white,
+                                        fontSize: 14,
+                                        decoration: TextDecoration.none,
+                                      ),
                                     ),
-                                  )
-                                else // Only show time left if not ended
-                                // Ensure no underline on time left
-                                  Text(
-                                    '남은 시간: ${artwork.getTimeLeft()}', // Display time from getTimeLeft()
-                                    style: TextStyle(
-                                      color: artwork.isEndingSoon ? Colors.red : Colors.white,
-                                      fontSize: 14,
-                                      decoration: TextDecoration.none, // Ensure no underline
-                                    ),
-                                  ),
                               ] else
                                 const Text(
                                   '경매 정보 없음',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 14,
-                                    decoration: TextDecoration.none, // Ensure no underline
+                                    decoration: TextDecoration.none,
                                   ),
                                 ),
                               const SizedBox(height: 16),
@@ -482,7 +520,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                 child: ElevatedButton(
                                   child: const Text('상세보기', style: TextStyle(color: Colors.white)),
                                   onPressed: () {
-                                    // 오버레이 숨김 애니메이션 완료 후 페이지 이동
+                                    _modalTimer?.cancel();
                                     _fadeController.reverse().then((_) {
                                       _overlayEntry?.remove();
                                       _overlayEntry = null;
@@ -494,7 +532,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                     });
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange, // Customer folder reference
+                                    backgroundColor: Colors.orange,
                                     foregroundColor: Colors.white,
                                   ),
                                 ),
@@ -523,6 +561,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
   }
 
   void _hideExpandedArtworkOverlay() {
+    _modalTimer?.cancel();
     _fadeController.reverse().then((_) {
       _overlayEntry?.remove();
       _overlayEntry = null;

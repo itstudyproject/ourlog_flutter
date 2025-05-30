@@ -503,20 +503,40 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
             // 작품 이미지
             Center(
               child: artwork!.getImageUrl() != "http://10.100.204.171:8080/ourlog/picture/display/default-image.jpg"
-                  ? Image.network(
-                artwork!.getImageUrl(),
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) => Container(
-                  color: Colors.grey[300],
-                  height: 300, // 이미지 높이 조정
-                  child: const Center(child: Text('이미지 로드 실패')),
-                ),
-              )
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Image.network(
+                          artwork!.getImageUrl(),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: Colors.grey[300],
+                            height: 300, // 이미지 높이 조정
+                            child: const Center(child: Text('이미지 로드 실패')),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: Center(
+                            child: Text(
+                              'OurLog',
+                              style: TextStyle(
+                                fontFamily: 'NanumSquareNeo',
+                                fontSize: 48,
+                                color: Colors.white.withOpacity(0.35),
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 2,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
                   : Container(
-                color: Colors.grey[300],
-                height: 300, // 이미지 높이 조정
-                child: const Center(child: Text('이미지 없음')),
-              ),
+                      color: Colors.grey[300],
+                      height: 300, // 이미지 높이 조정
+                      child: const Center(child: Text('이미지 없음')),
+                    ),
             ),
             const SizedBox(height: 24), // 간격 조정
 

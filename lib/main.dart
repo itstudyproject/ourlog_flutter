@@ -7,6 +7,7 @@ import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/post/community_post_detail_screen.dart';
 import 'package:ourlog/screens/post/community_post_list_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
@@ -100,6 +101,15 @@ class MyApp extends StatelessWidget {
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
           final boardType = args?['boardType'] as String?;
           return CommunityPostListScreen(boardType: boardType);
+        },
+
+        '/community/detail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final postId = args?['postId'] as int?;
+          if (postId == null) {
+            return const Scaffold(body: Center(child: Text('게시글 정보를 찾을 수 없습니다.')));
+          }
+          return CommunityPostDetailScreen(postId: postId);
         },
 
         '/ranking': (context) => const RankingScreen(),

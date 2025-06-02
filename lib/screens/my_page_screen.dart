@@ -1,5 +1,3 @@
-// lib/screens/my_page_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -53,15 +51,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Color(0xFF1A1A1A),
         body: Center(child: CircularProgressIndicator()),
       );
     }
     if (_profile == null) {
       return Scaffold(
-        backgroundColor: const Color(0xFF1A1A1A),
-        body: const Center(
+        backgroundColor: Color(0xFF1A1A1A),
+        body: Center(
           child: Text(
             '프로필을 불러올 수 없습니다.',
             style: TextStyle(color: Colors.grey, fontSize: 16),
@@ -71,14 +69,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
     return MainLayout(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildProfileCard(),
-            const SizedBox(height: 30),
-            const _SectionTitle('메뉴'),
-            const SizedBox(height: 10),
+            SizedBox(height: 30),
+            _SectionTitle('메뉴'),
+            SizedBox(height: 10),
             _menuButton('구매/입찰목록', '/mypage/purchase-bid'),
             _menuButton('판매목록/현황', '/mypage/sale'),
             _menuButton('북마크', '/mypage/bookmark'),
@@ -91,10 +89,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Widget _buildProfileCard() {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF232323),
+        color: Color(0xFF232323),
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Row(
         children: [
           CircleAvatar(
@@ -106,43 +104,42 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 'Authorization': 'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}',
               },
             ) as ImageProvider,
+
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _profile!.nickname,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   '팔로워: ${_profile!.followCnt}   팔로잉: ${_profile!.followingCnt}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.grey,
                     fontSize: 14,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Row(
                   children: [
-                    // ↘ 여기만 바꼈습니다!
                     Expanded(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF333333),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: Color(0xFF333333),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
                         onPressed: () async {
-                          print('▶ 프로필수정 버튼 눌림');
                           if (_userId == null) {
                             Navigator.pushNamed(context, '/login');
                             return;
@@ -152,20 +149,19 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             '/mypage/edit',
                             arguments: _userId!,
                           ) as bool?;
-                          print('◀ EditScreen 반환값: $result');
                           if (result == true) {
                             _load();
                           }
                         },
-                        child: const Text(
+                        child: Text(
                           '프로필수정',
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _actionButton('회원정보수정', '/mypage/account/edit'),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8),
                     _actionButton(
                       '회원탈퇴',
                       '/mypage/account/delete',
@@ -187,7 +183,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(vertical: 12),
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
@@ -202,20 +198,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
             arguments: _userId!,
           );
         },
-        child: Text(label, style: const TextStyle(color: Colors.white)),
+        child: Text(label, style: TextStyle(color: Colors.white)),
       ),
     );
   }
 
   Widget _menuButton(String label, String route) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: EdgeInsets.symmetric(vertical: 6),
       child: OutlinedButton(
         style: OutlinedButton.styleFrom(
-          backgroundColor: const Color(0xFF232323),
+          backgroundColor: Color(0xFF232323),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          side: const BorderSide(color: Color(0xFF333333)),
+          padding: EdgeInsets.symmetric(vertical: 16),
+          side: BorderSide(color: Color(0xFF333333)),
           shape:
           RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
@@ -232,7 +228,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         },
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Text(label, style: const TextStyle(fontSize: 16)),
+          child: Text(label, style: TextStyle(fontSize: 16)),
         ),
       ),
     );
@@ -246,15 +242,15 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.only(bottom: 4),
-      decoration: const BoxDecoration(
+      padding: EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(color: Color(0xFFF8C147), width: 2),
         ),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
           fontSize: 24,
           fontWeight: FontWeight.w600,

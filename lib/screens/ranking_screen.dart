@@ -102,15 +102,15 @@ class _RankingScreenState extends State<RankingScreen> {
       } else if (item.pictureDTOList != null &&
           item.pictureDTOList!.isNotEmpty) {
         final pic = item.pictureDTOList!.first;
-        if (pic['resizedImagePath'] != null &&
-            (pic['resizedImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['resizedImagePath']}";
-        } else if (pic['thumbnailImagePath'] != null &&
-            (pic['thumbnailImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['thumbnailImagePath']}";
-        } else if (pic['originImagePath'] != null &&
-            (pic['originImagePath'] as String).isNotEmpty) {
-          return "$baseUrl/${pic['originImagePath']}";
+        if (pic.resizedImagePath != null &&
+            (pic.resizedImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.resizedImagePath}";
+        } else if (pic.thumbnailImagePath != null &&
+            (pic.thumbnailImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.thumbnailImagePath}";
+        } else if (pic.originImagePath != null &&
+            (pic.originImagePath as String).isNotEmpty) {
+          return "$baseUrl/${pic.originImagePath}";
         }
       }
     } else {

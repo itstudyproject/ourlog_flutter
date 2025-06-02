@@ -383,7 +383,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
 
     // 모달 내 경매 남은 시간 실시간 갱신용 State 변수
     String timeLeft = artwork.getTimeLeft();
-    bool isAuctionEnded = artwork.isEnded || (artwork.tradeDTO != null && artwork.tradeDTO.tradeStatus == true);
+    bool isAuctionEnded = artwork.isEnded || (artwork.tradeDTO?.tradeStatus ?? true);
 
     _overlayEntry = OverlayEntry(
       builder: (context) => FadeTransition( // Add FadeTransition for the overlay
@@ -457,7 +457,7 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                               return;
                             }
                             // 경매 종료 조건: isEnded 또는 tradeStatus==true
-                            final ended = artwork.isEnded || (artwork.tradeDTO != null && artwork.tradeDTO.tradeStatus == true);
+                            final ended = artwork.isEnded || (artwork.tradeDTO?.tradeStatus ?? true);
                             if (!ended) {
                               setStateInOverlay(() {
                                 timeLeft = artwork.getTimeLeft();
@@ -573,12 +573,8 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
       return [...artworks]..sort((a, b) => (b.favoriteCnt ?? 0) - (a.favoriteCnt ?? 0));
     }
     return [...artworks]..sort((a, b) {
-      final timeA = a.tradeDTO?.startBidTime != null
-          ? a.tradeDTO!.startBidTime.millisecondsSinceEpoch // Access startBidTime using .notation
-          : 0;
-      final timeB = b.tradeDTO?.startBidTime != null
-          ? b.tradeDTO!.startBidTime.millisecondsSinceEpoch // Access startBidTime using .notation
-          : 0;
+      final timeA = a.tradeDTO?.startBidTime?.millisecondsSinceEpoch ?? 0;
+      final timeB = b.tradeDTO?.startBidTime?.millisecondsSinceEpoch ?? 0;
       return timeB - timeA;
     });
   }

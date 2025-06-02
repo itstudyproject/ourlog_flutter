@@ -8,29 +8,7 @@ import 'dart:convert';
 import './picture.dart'; // 실제 경로에 맞게 조정하세요.
 
 /// UserDTO 정의 (백엔드에서 전달되는 형태에 맞게 사용합니다).
-class UserDTO {
-  final int? userId;
-  final String? nickname;
-
-  UserDTO({
-    this.userId,
-    this.nickname,
-  });
-
-  factory UserDTO.fromJson(Map<String, dynamic> json) {
-    return UserDTO(
-      userId: json['userId'] as int?,
-      nickname: json['nickname'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'userId': userId,
-      'nickname': nickname,
-    };
-  }
-}
+import './trade.dart'; // TradeDTO 모델 import 추가
 
 /// Post 모델 클래스
 class Post {
@@ -56,7 +34,7 @@ class Post {
   final int? followers;
   final int? downloads;
   int? favoriteCnt;
-  final dynamic tradeDTO;
+  final TradeDTO? tradeDTO;
 
   /// pictureDTOList는 백엔드에서 내려주는 JSON 배열을 `Picture.fromJson`으로 파싱한 리스트입니다.
   /// nullable 허용. 비어 있을 수도 있고, null일 수도 있습니다.
@@ -107,6 +85,12 @@ class Post {
           .toList();
     }
 
+    // tradeDTO 파싱: null 체크 후 존재하면 TradeDTO.fromJson으로 변환
+    TradeDTO? trade;
+    if (json['tradeDTO'] != null) {
+      trade = TradeDTO.fromJson(json['tradeDTO'] as Map<String, dynamic>);
+    }
+
     return Post(
       postId: json['postId'] as int?,
       userId: json['userId'] as int?,
@@ -123,7 +107,7 @@ class Post {
       followers: json['followers'] as int?,
       downloads: json['downloads'] as int?,
       favoriteCnt: json['favoriteCnt'] as int?,
-      tradeDTO: json['tradeDTO'],
+      tradeDTO: trade,
       pictureDTOList: pics,
       profileImage: json['profileImage'] as String?,
       replyCnt: json['replyCnt'] as int?,
@@ -155,7 +139,7 @@ class Post {
       'followers': followers,
       'downloads': downloads,
       'favoriteCnt': favoriteCnt,
-      'tradeDTO': tradeDTO,
+      'tradeDTO': tradeDTO?.toJson(),
       'pictureDTOList': pictureDTOList
           ?.map((pic) => pic.toJson())
           .toList(), // Picture 모델의 toJson 호출
@@ -179,7 +163,7 @@ class Post {
   /// 반환 예시:
   ///   "http://서버주소/ourlog/picture/display/2025/06/02/파일명.jpg"
   String getImageUrl() {
-    const String baseUrl = "http://10.100.204.157:8080/ourlog";
+    const String baseUrl = "http://10.100.204.171:8080/ourlog";
 
     // 1) pictureDTOList가 있으면, 리스트[0]에서 우선 순위대로 이미지 경로 확인
     if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
@@ -253,12 +237,11 @@ class Post {
   ///
   /// tradeDTO에서 'lastBidTime' 키가 String 형태(ISO 8601)로 넘어온다고 가정
   String getTimeLeft() {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO?.lastBidTime == null) {
       return "경매 정보 없음";
     }
 
-    // DateTime.parse가 가능한 형태로 가정
-    final end = DateTime.parse(tradeDTO!['lastBidTime'] as String);
+    final end = tradeDTO!.lastBidTime!;
     final now = DateTime.now();
     final diff = end.difference(now);
 
@@ -286,11 +269,11 @@ class Post {
   /// (3) 경매 종료 임박 여부 (1시간 이내) 여부
   /// --------------------------------------
   bool get isEndingSoon {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO?.lastBidTime == null) {
       return false;
     }
 
-    final end = DateTime.parse(tradeDTO!['lastBidTime'] as String);
+    final end = tradeDTO!.lastBidTime!;
     final now = DateTime.now();
     final diff = end.difference(now);
 
@@ -301,12 +284,18 @@ class Post {
   /// (4) 경매가 이미 끝났는지 여부
   /// --------------------------------------
   bool get isEnded {
-    if (tradeDTO == null || tradeDTO!['lastBidTime'] == null) {
+    if (tradeDTO?.lastBidTime == null) {
       return false;
     }
 
-    final end = DateTime.parse(tradeDTO!['lastBidTime'] as String);
+    final end = tradeDTO!.lastBidTime!;
     final now = DateTime.now();
     return end.isBefore(now);
   }
+}
+
+// Simple placeholder for UserDTO to resolve compiler error
+class UserDTO {
+  // Add fields if needed based on actual backend structure
+  // For now, an empty class is sufficient to resolve the definition error.
 }

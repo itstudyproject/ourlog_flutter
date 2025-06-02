@@ -621,7 +621,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
             const SizedBox(height: 8),
             // 등록일
             Text(
-              '등록일: ${artwork!.regDate != null ? artwork!.regDate!.toIso8601String().split('T')[0] : '날짜 정보 없음'}',
+              '등록일: ${artwork!.regDate != null ? '${artwork!.regDate!.year}-${artwork!.regDate!.month.toString().padLeft(2, '0')}-${artwork!.regDate!.day.toString().padLeft(2, '0')}' : '날짜 정보 없음'}', // 날짜 부분만 표시
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 24),

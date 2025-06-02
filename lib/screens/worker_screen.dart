@@ -373,6 +373,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                 child: GestureDetector(
                                   onTap: () => toggleLike(post.postId!, index),
                                   child: Container(
+                                    constraints: const BoxConstraints(maxWidth: 80), // ✅ 너비 제한 추가
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
@@ -383,12 +384,16 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                       children: [
                                         Text(
                                           liked ? '🧡' : '🤍',
-                                          style: const TextStyle(fontSize: 18),
+                                          style: const TextStyle(fontSize: 16),
+                                          overflow: TextOverflow.ellipsis, // ✅ 이모지가 넘칠 경우 방지
                                         ),
                                         const SizedBox(width: 4),
-                                        Text(
-                                          '$likesCount',
-                                          style: const TextStyle(color: Colors.white, fontSize: 14),
+                                        Flexible( // ✅ 긴 숫자 overflow 방지
+                                          child: Text(
+                                            '$likesCount',
+                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ],
                                     ),

@@ -517,24 +517,40 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
                                 ),
                               const SizedBox(height: 16),
                               Center(
-                                child: ElevatedButton(
-                                  child: const Text('상세보기', style: TextStyle(color: Colors.white)),
-                                  onPressed: () {
-                                    _modalTimer?.cancel();
-                                    _fadeController.reverse().then((_) {
-                                      _overlayEntry?.remove();
-                                      _overlayEntry = null;
-                                      Navigator.pushNamed(
-                                        context,
-                                        '/Art',
-                                        arguments: artwork.postId.toString(),
-                                      );
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.orange,
-                                    foregroundColor: Colors.white,
-                                  ),
+                                child: Row( // Row로 감싸서 버튼 두 개를 나란히 배치
+                                  mainAxisAlignment: MainAxisAlignment.center, // 중앙 정렬
+                                  children: [
+                                    ElevatedButton(
+                                      child: const Text('상세보기', style: TextStyle(color: Colors.white)),
+                                      onPressed: () {
+                                        _modalTimer?.cancel();
+                                        _fadeController.reverse().then((_) {
+                                          _overlayEntry?.remove();
+                                          _overlayEntry = null;
+                                          Navigator.pushNamed(
+                                            context,
+                                            '/Art',
+                                            arguments: artwork.postId.toString(),
+                                          );
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.orange,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16), // 두 버튼 사이 간격 추가
+                                    ElevatedButton( // 닫기 버튼 추가
+                                      child: const Text('닫기', style: TextStyle(color: Colors.black87)),
+                                      onPressed: () {
+                                        _hideExpandedArtworkOverlay(); // 모달 닫는 함수 호출
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[300], // 회색 배경
+                                        foregroundColor: Colors.black87, // 검정색 글씨
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -593,11 +609,6 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final filteredArtworks = getFilteredArtworks();
-    // Remove pagination variables
-    // final pageGroup = (currentPage - 1) ~/ 10;
-    // final startPage = pageGroup * 10 + 1;
-    // final endPage = (startPage + 9).clamp(1, totalPages);
-    // final pageNumbers = List.generate(endPage - startPage + 1, (i) => startPage + i);
 
     if (isLoading && artworks.isEmpty) { // Show loading only on initial load
       return const Scaffold(
@@ -623,217 +634,226 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _isSearching
-            ? TextField(
-          controller: _searchController,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: '검색어를 입력하세요...',
-            hintStyle: const TextStyle(color: Colors.grey),
-            border: InputBorder.none,
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.clear, color: Colors.white),
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  searchInput = "";
-                  searchTerm = "";
-                });
-                if (!_isSearching) {
-                  fetchArtworks();
-                } else {
-                  setState(() {
-                    _isSearching = true;
-                    searchTerm = "";
-                    currentPage = 1;
-                  });
-                  fetchArtworks();
-                }
-              },
-            ),
-          ),
-          onSubmitted: (_) {
-            setState(() {
-              searchInput = _searchController.text;
-              _isSearching = false;
-            });
-            handleSearchSubmit();
-          },
-        )
-            : const Text('아트 게시판'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
-            onPressed: () {
-              setState(() {
-                _isSearching = !_isSearching;
-                if (!_isSearching) {
+    return WillPopScope(
+      onWillPop: () async {
+        if (_overlayEntry != null) {
+          _hideExpandedArtworkOverlay();
+          return Future.value(false);
+        }
+        return Future.value(true);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: _isSearching
+              ? TextField(
+            controller: _searchController,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: '검색어를 입력하세요...',
+              hintStyle: const TextStyle(color: Colors.grey),
+              border: InputBorder.none,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.clear, color: Colors.white),
+                onPressed: () {
                   _searchController.clear();
-                  searchInput = "";
-                  searchTerm = "";
-                  currentPage = 1;
-                  fetchArtworks();
-                }
-              });
-            },
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            sortType = 'popular';
-                            currentPage = 1;
-                          });
-                          fetchArtworks();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: sortType == 'popular' ? Colors.orange : Colors.white,
-                          foregroundColor: sortType == 'popular' ? Colors.white : Colors.black,
-                        ),
-                        child: const Text('인기순'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            sortType = 'latest';
-                            currentPage = 1;
-                          });
-                          fetchArtworks();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: sortType == 'latest' ? Colors.orange : Colors.white,
-                          foregroundColor: sortType == 'latest' ? Colors.white : Colors.black,
-                        ),
-                        child: const Text('최신순'),
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: handleRegisterClick,
-                    child: const Text('아트 등록'),
-                  ),
-                ],
+                  setState(() {
+                    searchInput = "";
+                    searchTerm = "";
+                  });
+                  if (!_isSearching) {
+                    fetchArtworks();
+                  } else {
+                    setState(() {
+                      _isSearching = true;
+                      searchTerm = "";
+                      currentPage = 1;
+                    });
+                    fetchArtworks();
+                  }
+                },
               ),
             ),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  setState(() {
+            onSubmitted: (_) {
+              setState(() {
+                searchInput = _searchController.text;
+                _isSearching = false;
+              });
+              handleSearchSubmit();
+            },
+          )
+              : const Text('아트 게시판'),
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchController.clear();
+                    searchInput = "";
+                    searchTerm = "";
                     currentPage = 1;
-                  });
-                  await fetchArtworks();
-                },
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
+                    fetchArtworks();
+                  }
+                });
+              },
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
                       children: [
-                        GridView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2, // Changed from 3 to 2
-                            childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to reduce vertical space
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                          itemCount: filteredArtworks.length,
-                          itemBuilder: (context, index) {
-                            final artwork = filteredArtworks[index];
-                            final GlobalKey _imageKey = GlobalKey(); // Add GlobalKey for the image
-                            return GestureDetector(
-                              // Changed onTap to show overlay
-                              onTap: () => _showExpandedArtworkOverlay(context, artwork, _imageKey),
-                              child: Card(
-                                // Removed Column, directly using Stack for larger image area
-                                clipBehavior: Clip.antiAlias, // Clip content to card shape
-                                child: Stack(
-                                  children: [
-                                    Positioned.fill( // Make image fill the Card
-                                      child: Hero(
-                                        tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
-                                        child: Image.network(
-                                          artwork.getImageUrl(),
-                                          key: _imageKey, // Assign the GlobalKey to the image
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) => Container(
-                                            color: Colors.grey[300],
-                                            child: const Center(child: Text('이미지 없음')),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: GestureDetector(
-                                        onTap: () => handleLikeToggle(artwork.postId!),
-                                        child: Text(
-                                          artwork.liked ? '🧡' : '🤍',
-                                          style: const TextStyle(
-                                            fontSize: 24,
-                                            shadows: [
-                                              Shadow(
-                                                offset: Offset(0, 0),
-                                                blurRadius: 3.0,
-                                                color: Colors.black,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              sortType = 'popular';
+                              currentPage = 1;
+                            });
+                            fetchArtworks();
                           },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: sortType == 'popular' ? Colors.orange : Colors.white,
+                            foregroundColor: sortType == 'popular' ? Colors.white : Colors.black,
+                          ),
+                          child: const Text('인기순'),
                         ),
-                        const SizedBox(height: 16),
-                        if (currentPage < totalPages)
-                          ElevatedButton(
-                            onPressed: isLoading
-                                ? null // Disable button while loading
-                                : () {
-                              setState(() {
-                                currentPage++;
-                              });
-                              fetchArtworks();
-                            },
-                            child: isLoading
-                                ? const CircularProgressIndicator() // Show loading indicator on button
-                                : const Text('더보기'),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              sortType = 'latest';
+                              currentPage = 1;
+                            });
+                            fetchArtworks();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: sortType == 'latest' ? Colors.orange : Colors.white,
+                            foregroundColor: sortType == 'latest' ? Colors.white : Colors.black,
                           ),
-                        if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: CircularProgressIndicator(),
-                          ),
+                          child: const Text('최신순'),
+                        ),
                       ],
+                    ),
+                    const Spacer(),
+                    ElevatedButton(
+                      onPressed: handleRegisterClick,
+                      child: const Text('아트 등록'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      currentPage = 1;
+                    });
+                    await fetchArtworks();
+                  },
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2, // Changed from 3 to 2
+                              childAspectRatio: 0.7, // Adjusted from 0.8 to 0.7 to reduce vertical space
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 16,
+                            ),
+                            itemCount: filteredArtworks.length,
+                            itemBuilder: (context, index) {
+                              final artwork = filteredArtworks[index];
+                              final GlobalKey _imageKey = GlobalKey(); // Add GlobalKey for the image
+                              return GestureDetector(
+                                // Changed onTap to show overlay
+                                onTap: () => _showExpandedArtworkOverlay(context, artwork, _imageKey),
+                                child: Card(
+                                  // Removed Column, directly using Stack for larger image area
+                                  clipBehavior: Clip.antiAlias, // Clip content to card shape
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill( // Make image fill the Card
+                                        child: Hero(
+                                          tag: 'artwork-${artwork.postId}', // Unique tag for Hero animation
+                                          child: Image.network(
+                                            artwork.getImageUrl(),
+                                            key: _imageKey, // Assign the GlobalKey to the image
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) => Container(
+                                              color: Colors.grey[300],
+                                              child: const Center(child: Text('이미지 없음')),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: GestureDetector(
+                                          onTap: () => handleLikeToggle(artwork.postId!),
+                                          child: Text(
+                                            artwork.liked ? '🧡' : '🤍',
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              shadows: [
+                                                Shadow(
+                                                  offset: Offset(0, 0),
+                                                  blurRadius: 3.0,
+                                                  color: Colors.black,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          if (currentPage < totalPages)
+                            ElevatedButton(
+                              onPressed: isLoading
+                                  ? null // Disable button while loading
+                                  : () {
+                                setState(() {
+                                  currentPage++;
+                                });
+                                fetchArtworks();
+                              },
+                              child: isLoading
+                                  ? const CircularProgressIndicator() // Show loading indicator on button
+                                  : const Text('더보기'),
+                            ),
+                          if (isLoading && artworks.isNotEmpty) // Show loading indicator below button if loading more
+                            const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

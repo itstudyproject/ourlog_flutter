@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/post.dart';
 import 'package:provider/provider.dart';
 import 'package:ourlog/providers/chat_provider.dart';
+import 'package:ourlog/providers/auth_provider.dart';
 
 class WorkerScreen extends StatefulWidget {
   final int userId;
@@ -298,20 +299,22 @@ class _WorkerScreenState extends State<WorkerScreen> {
                             Flexible( // 버튼의 텍스트가 길어질 경우
                               child: ElevatedButton(
                                 onPressed: () async {
-                                  final chatProvider =
-                                  Provider.of<ChatProvider>(context, listen: false);
-                                  final prefs = await SharedPreferences.getInstance();
-                                  final jwtToken = prefs.getString('token');
+                                  // 1:1 채팅 로직
+                                  final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                  final jwtToken = authProvider.token;
+                                  final currentUserId = authProvider.userId;
 
-                                  if (jwtToken == null || jwtToken.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('채팅을 시작하려면 로그인하세요.')),
-                                    );
-                                    return;
+                                  if (jwtToken == null || currentUserId == null) {
+                                     debugPrint('JWT token or current user ID is null. Cannot create channel.');
+                                     ScaffoldMessenger.of(context).showSnackBar(
+                                       const SnackBar(content: Text('사용자 인증 정보를 불러올 수 없습니다. 다시 로그인해주세요.')),
+                                     );
+                                     return;
                                   }
 
                                   final channel = await chatProvider
-                                      .create1to1Channel(widget.userId.toString());
+                                      .create1to1Channel(widget.userId.toString(), jwtToken, currentUserId);
 
                                   if (channel != null) {
                                     Navigator.pushNamed(context, '/chat', arguments: channel);

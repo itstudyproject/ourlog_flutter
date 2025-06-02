@@ -436,7 +436,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               } else if (item == '자유게시판') {
                 Navigator.pushNamed(context, '/free');
               } else if (item == '홍보 게시판') {
-                Navigator.pushNamed(context, '/advertise');
+                Navigator.pushNamed(context, '/promotion');
               } else if (item == '요청 게시판') {
                 Navigator.pushNamed(context, '/request');
               }

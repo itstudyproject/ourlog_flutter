@@ -111,6 +111,19 @@ class MyApp extends StatelessWidget {
             );
           }
         },
+
+        '/profile': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final userId = int.parse(args as String); // 문자열로 넘어오므로 파싱 필요
+
+          final currentUserId = Provider.of<AuthProvider>(context, listen: false).userId;
+          if (currentUserId == null) {
+            return const LoginScreen(); // 로그인 안 되어 있으면 로그인 페이지로
+          }
+
+          return WorkerScreen(userId: userId, currentUserId: currentUserId);
+        },
+
         '/worker': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           if (args == null || args is! Map<String, dynamic>) {

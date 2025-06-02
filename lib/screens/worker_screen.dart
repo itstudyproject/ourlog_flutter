@@ -107,27 +107,23 @@ class _WorkerScreenState extends State<WorkerScreen> {
   }
 
   Future<void> toggleLike(int postId, int index) async {
-    final wasLiked = posts[index].liked ?? false;
-    final wasCount = posts[index].favoriteCnt ?? 0;
-
-    setState(() {
-      posts[index].liked = !wasLiked;
-      posts[index].favoriteCnt = !wasLiked ? wasCount + 1 : (wasCount > 0 ? wasCount - 1 : 0);
-    });
+    final oldLiked = posts[index].liked ?? false;
+    final oldCount = posts[index].favoriteCnt ?? 0;
 
     try {
       final isLikedNow = await WorkerService.toggleLike(widget.currentUserId, postId);
+
       setState(() {
         posts[index].liked = isLikedNow;
         posts[index].favoriteCnt = isLikedNow
-            ? (!wasLiked ? wasCount + 1 : wasCount)
-            : (wasLiked ? (wasCount > 0 ? wasCount - 1 : 0) : wasCount);
+            ? oldCount + (oldLiked ? 0 : 1) // 좋아요가 새로 눌렸다면 +1
+            : oldCount - (oldLiked ? 1 : 0); // 좋아요가 취소됐다면 -1
       });
     } catch (e) {
       print('좋아요 토글 에러: $e');
       setState(() {
-        posts[index].liked = wasLiked;
-        posts[index].favoriteCnt = wasCount;
+        posts[index].liked = oldLiked;
+        posts[index].favoriteCnt = oldCount;
       });
     }
   }
@@ -426,6 +422,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                 top: 8,
                                 right: 8,
                                 child: GestureDetector(
+                                  behavior: HitTestBehavior.translucent,
                                   onTap: () => toggleLike(post.postId!, index),
                                   child: Container(
                                     constraints: const BoxConstraints(

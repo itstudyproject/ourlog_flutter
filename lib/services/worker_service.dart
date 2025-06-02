@@ -107,10 +107,18 @@ class WorkerService {
       body: body,
     );
 
+    print('좋아요 토글 응답: ${response.body}'); // 여기서 응답 내용 확인
+
     if (response.statusCode == 200) {
       final data = json.decode(response.body) as Map<String, dynamic>;
-      // 백엔드 응답 구조에 따라 이 부분 조정 (liked 여부 포함 시)
-      return data['liked'] as bool? ?? true; // true면 좋아요 됨
+
+      if (data.containsKey('favorited') && data['favorited'] is bool) {
+        return data['favorited'] as bool;
+      } else {
+        // liked 필드 없을 때 응답 데이터 전체 출력
+        print('서버 응답에 liked 필드가 없거나 잘못됨: $data');
+        throw Exception('서버 응답에 liked 필드가 없거나 잘못됨');
+      }
     } else {
       throw Exception('좋아요 처리 실패 상태 코드: ${response.statusCode}');
     }

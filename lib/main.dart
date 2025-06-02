@@ -86,9 +86,9 @@ class MyApp extends StatelessWidget {
           // "자유게시판"
           return const CommunityPostListScreen(boardType: 'free');
         },
-        '/advertise': (context) {
+        '/promotion': (context) {
           // "홍보 게시판"
-          return const CommunityPostListScreen(boardType: 'advertise');
+          return const CommunityPostListScreen(boardType: 'promotion');
         },
         '/request': (context) {
           // "요청 게시판"

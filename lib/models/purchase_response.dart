@@ -1,8 +1,8 @@
 import 'trade.dart';
 
 class PurchaseResponse {
-  final List<Trade> currentBids;
-  final List<Trade> wonTrades;
+  final List<TradeDTO> currentBids;
+  final List<TradeDTO> wonTrades;
 
   PurchaseResponse({
     required this.currentBids,
@@ -12,10 +12,10 @@ class PurchaseResponse {
   factory PurchaseResponse.fromJson(Map<String, dynamic> json) {
     return PurchaseResponse(
       currentBids: (json['currentBids'] as List<dynamic>)
-          .map((e) => Trade.fromJson(e as Map<String, dynamic>))
+          .map((e) => TradeDTO.fromJson(e as Map<String, dynamic>))
           .toList(),
       wonTrades: (json['wonTrades'] as List<dynamic>)
-          .map((e) => Trade.fromJson(e as Map<String, dynamic>))
+          .map((e) => TradeDTO.fromJson(e as Map<String, dynamic>))
           .toList(),
     );
   }

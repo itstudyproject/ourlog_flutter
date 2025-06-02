@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Footer extends StatelessWidget {
-  const Footer({Key? key}) : super(key: key);
+  const Footer({super.key});
 
   Widget _buildFooterLink(String text, BuildContext context) {
     String route = '';
@@ -60,17 +60,17 @@ class Footer extends StatelessWidget {
                     const Text(
                       'OurLog',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
                     Text(
-                      '아티스트를 위한 최고의 커뮤니티!\n작품 공유와 피드백을 통해 창작 여정을 응원합니다.',
+                      '아티스트를 위한 최고의 커뮤니티!\n작품 공유와 피드백을 통해 창작 여정을\n응원합니다.',
                       style: TextStyle(
                         color: Colors.grey[400],
-                        fontSize: 14,
+                        fontSize: 12,
                         height: 1.5,
                       ),
                     ),
@@ -118,7 +118,7 @@ class Footer extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -144,7 +144,7 @@ class Footer extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 15),
 
           // SNS 아이콘 가운데 정렬
           Center(
@@ -158,16 +158,17 @@ class Footer extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           Divider(color: Colors.grey[800]),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           Center(
             child: Text(
-              '© ${DateTime.now().year} OurLog. All rights reserved.',
+              '© 2025 OurLog. All rights reserved.\n'
+                  'Designed by React Spring Team',
               style: TextStyle(
                 color: Colors.grey[500],
                 fontSize: 12,
-              ),
+              ),    textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -185,7 +186,7 @@ class Footer extends StatelessWidget {
         child: Icon(
           icon,
           color: Colors.grey[400],
-          size: 22,
+          size: 20,
         ),
       ),
     );

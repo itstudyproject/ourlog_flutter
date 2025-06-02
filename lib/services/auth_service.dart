@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
   
   // JWT 토큰으로 로그인
   static Future<Map<String, dynamic>> login(String email, String password) async {
@@ -258,7 +261,7 @@ class AuthService {
         body: {
           'userId': userId,
           'nickname': nickname,
-          'introduction': '', // 기본값 추가
+          'introduction': '안녕하세요,$nickname입니다.', // 기본값 추가
           'originImagePath': '/images/mypage.png',
           'thumbnailImagePath': '/images/mypage.png',
           'followCnt': 0,
@@ -443,7 +446,7 @@ class AuthService {
   }
 
   // JWT 토큰을 사용한 API 요청 헬퍼 메서드
-  static Future<http.Response> authenticatedGet(String path, String? token) async {
+  static Future<http.Response> authenticatedGet(String path, String? token, {Map<String, String>? headers}) async {
     String authToken = '';
     if (token != null) {
       authToken = 'Bearer $token';
@@ -455,14 +458,18 @@ class AuthService {
     print('API 요청: GET $url');
     print('인증 헤더: ${authToken.substring(0, authToken.length > 30 ? 30 : authToken.length)}...');
 
-    final headers = <String, String>{'Content-Type': 'application/json'};
+    final headersToUse = <String, String>{'Content-Type': 'application/json'};
     if (token != null) {
-       headers['Authorization'] = authToken;
+       headersToUse['Authorization'] = authToken;
+    }
+
+    if (headers != null) {
+      headersToUse.addAll(headers);
     }
 
     return http.get(
       url,
-      headers: headers,
+      headers: headersToUse,
     );
   }
 
@@ -507,5 +514,110 @@ class AuthService {
       url,
       headers: headers,
     );
+  }
+  Future<bool> checkIsAdmin() async {
+    print('checkIsAdmin 호출됨');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    if (token == null) return false;
+
+    final response = await http.get(
+      Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print("Check Admin Response: $data"); // 👈 추가
+
+      return data['isAdmin'] == true;
+    } else {
+      print("Admin check failed: ${response.statusCode}, ${response.body}"); // 👈 추가
+
+      return false;
+    }
+  }
+
+  // 백엔드로부터 Sendbird 액세스 토큰 가져오기
+  static Future<Map<String, dynamic>?> fetchSendbirdToken(String jwtToken, int? backendUserId) async {
+    final path = '/chat/token';
+    try {
+      debugPrint('Sendbird token 요청 시작 (상대 경로): $path');
+
+      // X-Request-ID 헤더 추가
+      final uuid = Uuid();
+      final customHeaders = <String, String>{
+        'X-Request-ID': uuid.v4(), // 고유 UUID 생성
+      };
+
+      final response = await authenticatedGet(path, jwtToken, headers: customHeaders);
+
+      debugPrint('Sendbird token 응답 상태 코드: ${response.statusCode}, 응답 본문: ${response.body}');
+
+      if (response.statusCode == 200) {
+        if (response.body.isEmpty) {
+          debugPrint('Sendbird token 응답이 비어있습니다');
+          return null;
+        }
+        try {
+          final data = jsonDecode(response.body);
+          debugPrint('Sendbird token 응답 파싱 성공: $data');
+
+          // 응답 구조에 따라 userId와 accessToken 키를 확인합니다.
+          String? sendbirdAccessToken = data['accessToken'];
+          String? sendbirdUserIdFromResponse = data['userId']?.toString(); // 백엔드에서 Sendbird userId를 제공하는 경우
+
+          if (sendbirdAccessToken != null) {
+             // Sendbird userId가 응답에 없으면 JWT 토큰에서 추출하거나 다른 곳에서 가져옵니다.
+             String? finalSendbirdUserId = sendbirdUserIdFromResponse;
+             if (finalSendbirdUserId == null) {
+               // 백엔드 userId 인자를 Sendbird userId로 사용
+               if (backendUserId != null) {
+                 finalSendbirdUserId = backendUserId.toString();
+                 debugPrint('Sendbird userId가 응답에 없어 백엔드 userId(\${backendUserId}) 사용');
+               } else {
+                 debugPrint('Sendbird userId를 응답에서도 백엔드 userId에서도 얻을 수 없습니다.');
+                 return {'message': 'Sendbird 사용자 ID를 가져오는데 실패했습니다.'}; // 백엔드 userId도 없는 경우 오류 반환
+               }
+             }
+
+             return {
+                'userId': finalSendbirdUserId,
+                'accessToken': sendbirdAccessToken
+             };
+
+          } else {
+            debugPrint('Sendbird token 응답에 accessToken이 없습니다.');
+            return {'message': 'Sendbird 액세스 토큰을 가져오는데 실패했습니다.'};
+          }
+        } catch (parseError) {
+          debugPrint('Sendbird token 응답 JSON 파싱 오류: $parseError');
+          return {'message': 'Sendbird 토큰 데이터 파싱에 실패했습니다: $parseError'};
+        }
+      }
+
+      // 에러 응답 상세 파싱
+       String errorMessage = 'Sendbird 토큰 조회에 실패했습니다. (상태 코드: ${response.statusCode})';
+        try {
+           final errorData = response.body.isNotEmpty ? jsonDecode(response.body) : null;
+            if (errorData is Map && errorData.containsKey('message')) {
+              errorMessage = errorData['message'];
+            } else {
+              errorMessage = 'Sendbird 토큰 조회 실패: ${response.body}';
+            }
+         } catch (e) {
+            errorMessage = 'Sendbird 토큰 조회 실패: ${response.body}';
+         }
+      debugPrint('Sendbird token 조회 실패: $errorMessage');
+      return {'message': errorMessage};
+
+    } catch (e) {
+      debugPrint('Sendbird token 요청 오류: $e');
+      return {'message': '서버 연결에 실패했습니다: $e'};
+    }
   }
 }

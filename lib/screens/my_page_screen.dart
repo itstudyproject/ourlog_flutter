@@ -7,7 +7,7 @@ import '../services/profile_service.dart';
 import '../widgets/main_layout.dart';
 
 class MyPageScreen extends StatefulWidget {
-  const MyPageScreen({Key? key}) : super(key: key);
+  const MyPageScreen({super.key});
 
   @override
   _MyPageScreenState createState() => _MyPageScreenState();
@@ -41,7 +41,10 @@ class _MyPageScreenState extends State<MyPageScreen> {
     } catch (_) {
       // 에러 처리
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        debugPrint('★★★ fetchProfile 성공, 이미지 URL 확인: thumbnailImagePath=${_profile?.thumbnailImagePath}, profileImageUrl=${_profile?.profileImageUrl}');
+        setState(() => _loading = false);
+      }
     }
   }
 
@@ -94,16 +97,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
         children: [
           CircleAvatar(
             radius: 40,
-            backgroundColor: Color(0xFF333333),
-            backgroundImage: () {
-              final path = _profile!.thumbnailImagePath;
-              if (path.isEmpty || path == '/images/mypage.png') {
-                return AssetImage('assets/images/mypage.png');
-              }
-              return NetworkImage(
-                'http://10.100.204.189:8080/ourlog$path',
-              );
-            }() as ImageProvider,
+            backgroundColor: const Color(0xFF333333),
+            backgroundImage: NetworkImage(
+              'http://10.100.204.124:8080' + (_profile?.thumbnailImagePath ?? ''),
+              headers: {
+                'Authorization': 'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}',
+              },
+            ) as ImageProvider,
+
           ),
           SizedBox(width: 16),
           Expanded(

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../constants/theme.dart';
 import '../providers/auth_provider.dart';
 
 class Header extends StatefulWidget {
-  const Header({Key? key}) : super(key: key);
+  const Header({super.key});
 
   @override
   State<Header> createState() => _HeaderState();
@@ -26,10 +25,9 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     _slideAnimation = Tween<Offset>(
       begin: const Offset(-1, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
   }
 
   @override
@@ -43,12 +41,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     return SizedBox(
       width: MediaQuery.of(context).size.width,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildHeader(),
-        ],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [_buildHeader()]),
     );
   }
 
@@ -59,104 +52,51 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
       height: 130,
       color: Colors.black.withOpacity(0.9),
       padding: const EdgeInsets.symmetric(horizontal: 50),
-      child: Row(
-        mainAxisSize: MainAxisSize.max,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          // 왼쪽: 햄버거 메뉴
-          IconButton(
-            icon: const Icon(
-              Icons.menu,
-              color: Colors.white,
-              size: 32,
+          // 왼쪽: 햄버거 메뉴 (좌측 끝에 정렬)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              icon: const Icon(Icons.menu, color: Colors.white, size: 32),
+              onPressed: () {
+                _showSidebar();
+              },
             ),
-            onPressed: () {
-              _showSidebar();
-            },
           ),
 
-          // 중앙: 로고
-          GestureDetector(
-            onTap: () {
-              // 홈으로 이동
-              Navigator.pushReplacementNamed(context, '/');
-            },
-            child: Image.asset('assets/images/OurLog.png', height: 55,)
+          // 중앙: 로고 (Stack의 중앙에 정렬)
+          Align(
+            alignment: Alignment.center,
+            child: GestureDetector(
+              onTap: () {
+                // 홈으로 이동
+                Navigator.pushReplacementNamed(context, '/');
+              },
+              child: Image.asset('assets/images/OurLog.png', height: 55),
+            ),
           ),
 
-          // 오른쪽: 검색 및 사용자 메뉴
-          Flexible(
+          // 오른쪽: 검색 및 사용자 메뉴 (우측 끝에 정렬)
+          Align(
+            alignment: Alignment.centerRight,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 // 화면이 좁으면 검색창 숨기기
                 final bool showSearch = constraints.maxWidth > 300;
 
                 return Row(
-                  mainAxisSize: MainAxisSize.min,
+                  // mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    if (showSearch) ...[
-                      // 검색 레이블
-                      const Text(
-                        'SEARCH',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-
-                      // 검색창
-                      Container(
-                        width: 160,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.white,
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                style: const TextStyle(color: Colors.white, fontSize: 14),
-                                decoration: const InputDecoration(
-                                  hintText: '검색',
-                                  hintStyle: TextStyle(color: Colors.white70),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.symmetric(vertical: 8),
-                                ),
-                              ),
-                            ),
-                            const Icon(
-                              Icons.search,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 24),
-                    ],
-
                     // MyPage 아이콘: 로그인 시에만 표시
                     if (authProvider.isLoggedIn) ...[
                       IconButton(
                         icon: Image.asset('assets/images/mypage.png'),
-                        onPressed: () => Navigator.pushNamed(context, '/mypage'),
-                      ),
-                    ] else ...[
-                      IconButton(
-                        icon: Image.asset('assets/images/mypage.png', color: Colors.white24),
-                        onPressed: () => Navigator.pushNamed(context, '/login'),
+                        onPressed:
+                            () => Navigator.pushNamed(context, '/mypage'),
                       ),
                     ],
-
 
                     // 로그인/로그아웃 버튼
                     GestureDetector(
@@ -183,7 +123,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                     ),
                   ],
                 );
-              }
+              },
             ),
           ),
         ],
@@ -210,9 +150,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
               Positioned.fill(
                 child: GestureDetector(
                   onTap: _closeSidebar,
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
-                  ),
+                  child: Container(color: Colors.black.withOpacity(0.5)),
                 ),
               ),
 
@@ -238,7 +176,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                             children: [
                               // 사이드바 헤더
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -256,41 +195,98 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               if (authProvider.isLoggedIn) ...[
                                 Row(
                                   children: [
+                                    // 프로필 이미지
                                     const CircleAvatar(
                                       backgroundColor: Colors.grey,
                                       radius: 30,
-                                      child: Icon(Icons.person, size: 40, color: Colors.white),
+                                      child: Icon(
+                                        Icons.person,
+                                        size: 40,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                     const SizedBox(width: 16),
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          authProvider.userEmail ?? '사용자',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        GestureDetector(
-                                          onTap: () {
-                                            _closeSidebar();
-                                            Navigator.pushNamed(context, '/mypage');
-                                          },
-                                          child: const Text(
-                                            '마이페이지',
-                                            style: TextStyle(
-                                              color: Color(0xFF9BCABF),
-                                              fontSize: 14,
-                                              decoration: TextDecoration.underline,
+
+                                    // 사용자 정보 (닉네임, 마이페이지 링크)
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            authProvider.userNickname ??
+                                                authProvider.userEmail ??
+                                                '사용자',
+                                            // 닉네임 또는 이메일 표시
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
                                             ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _closeSidebar();
+                                              Navigator.pushNamed(
+                                                context,
+                                                '/mypage',
+                                              );
+                                            },
+                                            child: const Text(
+                                              '마이페이지',
+                                              style: TextStyle(
+                                                color: Color(0xFF9BCABF),
+                                                fontSize: 14,
+                                                decoration:
+                                                    TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16), // 사용자 정보 아래 간격
+                                // 채팅 버튼 추가
+                                GestureDetector(
+                                  onTap: () {
+                                    _closeSidebar(); // 사이드바 닫기
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/chatList',
+                                    ); // 채팅 목록 페이지로 이동 (새로운 라우트 사용)
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1),
+                                      // 배경색
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.chat_bubble_outline,
+                                          color: Colors.white70,
+                                          size: 20,
+                                        ),
+                                        // 채팅 아이콘
+                                        SizedBox(width: 10),
+                                        Text(
+                                          '채팅',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
                                           ),
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
                                 const SizedBox(height: 32),
                                 const Divider(color: Colors.white24),
@@ -298,10 +294,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               ],
 
                               // 아트 섹션
-                              _buildSidebarSection('아트', [
-                                '아트 등록',
-                                '아트 게시판',
-                              ]),
+                              _buildSidebarSection('아트', ['아트 등록', '아트 게시판']),
 
                               // 커뮤니티 섹션
                               _buildSidebarSection('커뮤니티', [
@@ -334,7 +327,8 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                   child: Container(
                                     margin: const EdgeInsets.only(top: 20),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -361,14 +355,18 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
 
                               // 하단 로고
                               Padding(
-                                padding: const EdgeInsets.only(top: 40, bottom: 70),
+                                padding: const EdgeInsets.only(
+                                  top: 40,
+                                  bottom: 70,
+                                ),
                                 child: Opacity(
                                   opacity: 0.7,
                                   child: Text(
                                     'OurLog',
-                                    style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                      fontSize: 40,
-                                    ),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineLarge
+                                        ?.copyWith(fontSize: 40),
                                   ),
                                 ),
                               ),
@@ -405,57 +403,59 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 30,
-            fontWeight: FontWeight.bold,
+        GestureDetector(
+          onTap: () async {
+            await _closeSidebar();
+            if (title == '랭킹') {
+              Navigator.pushNamed(context, '/ranking');
+            } else if (title == '마이페이지') {
+              Navigator.pushNamed(context, '/mypage');
+            }
+          },
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.5,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        Padding(
-          padding: const EdgeInsets.only(left: 10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: items.map((item) => _buildSidebarItem(item)).toList(),
+        ...items.map(
+          (item) => GestureDetector(
+            onTap: () async {
+              await _closeSidebar();
+              if (item == '아트 등록') {
+                Navigator.pushNamed(context, '/art/register');
+              } else if (item == '아트 게시판') {
+                Navigator.pushNamed(context, '/artWork');
+              } else if (item == '새소식') {
+                Navigator.pushNamed(context, '/news');
+              } else if (item == '자유게시판') {
+                Navigator.pushNamed(context, '/free');
+              } else if (item == '홍보 게시판') {
+                Navigator.pushNamed(context, '/advertise');
+              } else if (item == '요청 게시판') {
+                Navigator.pushNamed(context, '/request');
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12, bottom: 6),
+              child: Text(
+                item,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 20),
       ],
-    );
-  }
-
-  Widget _buildSidebarItem(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: GestureDetector(
-        onTap: () {
-          // 해당 메뉴로 이동
-          _closeSidebar();
-
-          // 메뉴 항목에 따른 라우팅 처리
-          switch (title) {
-            case '프로필 관리':
-              Navigator.pushNamed(context, '/mypage/profile');
-              break;
-            case '나의 작품':
-              Navigator.pushNamed(context, '/mypage/artworks');
-              break;
-            case '설정':
-              Navigator.pushNamed(context, '/mypage/settings');
-              break;
-            // 다른 메뉴 항목들에 대한 처리 추가
-          }
-        },
-        child: Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey[400],
-            fontSize: 18,
-          ),
-        ),
-      ),
     );
   }
 }

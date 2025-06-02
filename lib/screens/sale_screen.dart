@@ -7,7 +7,7 @@ import '../services/trade_service.dart';
 import '../models/trade.dart';
 
 class SaleScreen extends StatefulWidget {
-  const SaleScreen({Key? key}) : super(key: key);
+  const SaleScreen({super.key});
 
   @override
   _SaleScreenState createState() => _SaleScreenState();
@@ -17,8 +17,8 @@ class _SaleScreenState extends State<SaleScreen> {
   final _service = TradeService();
   bool _loading = true;
   String? _error;
-  List<Trade>? _sales;       // 전체 판매 목록
-  List<Trade>? _completed;   // 완료된 판매
+  List<TradeDTO>? _sales;       // 전체 판매 목록
+  List<TradeDTO>? _completed;   // 완료된 판매
 
   // true면 "판매 목록", false면 "판매 현황"
   bool _showPending = true;
@@ -42,9 +42,8 @@ class _SaleScreenState extends State<SaleScreen> {
     }
     try {
       final all = await _service.fetchSales(userId);
-      // 예시: Trade 객체에 상태 필드를 두고, pending/completed로 나눈다고 가정
-      final pending   = all.where((t) => t.tradeStatus == false).toList();
-      final completed = all.where((t) => t.tradeStatus == true).toList();
+      final pending = all.where((t) => t.tradeStatus).toList();
+      final completed = all.where((t) => !t.tradeStatus).toList();
 
       setState(() {
         _sales = pending;
@@ -145,7 +144,7 @@ class _SaleScreenState extends State<SaleScreen> {
     );
   }
 
-  Widget _buildListView(List<Trade> list, {required String emptyText}) {
+  Widget _buildListView(List<TradeDTO> list, {required String emptyText}) {
     if (list.isEmpty) {
       return Center(child: Text(emptyText, style: const TextStyle(color: Colors.white70)));
     }
@@ -163,19 +162,45 @@ class _SaleScreenState extends State<SaleScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  t.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '작품 #${t.postId}',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    if (t.bidderNickname != null)
+                      Text(
+                        '현재 입찰자: ${t.bidderNickname}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                  ],
                 ),
               ),
-              Text(
-                '₩${t.price.toString().replaceAllMapped(
-                    RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}',
-                style: const TextStyle(
-                  color: Color(0xFFF8C147),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₩${(t.highestBid ?? t.startPrice).toString().replaceAllMapped(
+                        RegExp(r'\B(?=(\d{3})+(?!\d))'), (m) => ',')}',
+                    style: const TextStyle(
+                      color: Color(0xFFF8C147),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (t.bidAmount != null)
+                    Text(
+                      '입찰단위: ₩${t.bidAmount.toString().replaceAllMapped(
+                        RegExp(r'\B(?=(\d{3})+(?!\d))'),
+                            (m) => ',',
+                      )}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

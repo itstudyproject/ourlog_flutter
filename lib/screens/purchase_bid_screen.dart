@@ -8,7 +8,7 @@ import '../models/purchase_response.dart';
 import '../models/trade.dart';
 
 class PurchaseBidScreen extends StatefulWidget {
-  const PurchaseBidScreen({Key? key}) : super(key: key);
+  const PurchaseBidScreen({super.key});
 
   @override
   _PurchaseBidScreenState createState() => _PurchaseBidScreenState();
@@ -20,7 +20,7 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
   String? _error;
   PurchaseResponse? _data;
 
-  // true → “구매”, false → “입찰목록”
+  // true → "구매", false → "입찰목록"
   bool _showCurrent = true;
 
   @override
@@ -128,7 +128,7 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
     );
   }
 
-  Widget _buildList(List<Trade> items, String emptyText) {
+  Widget _buildList(List<TradeDTO> items, String emptyText) {
     if (items.isEmpty) {
       return Center(child: Text(emptyText, style: const TextStyle(color: Colors.white70)));
     }
@@ -146,21 +146,47 @@ class _PurchaseBidScreenState extends State<PurchaseBidScreen> {
           child: Row(
             children: [
               Expanded(
-                child: Text(
-                  t.title,
-                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '작품 #${t.postId}',
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                    if (t.bidderNickname != null)
+                      Text(
+                        '현재 입찰자: ${t.bidderNickname}',
+                        style: const TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                  ],
                 ),
               ),
-              Text(
-                '₩${t.price.toString().replaceAllMapped(
-                  RegExp(r'\B(?=(\d{3})+(?!\d))'),
-                      (m) => ',',
-                )}',
-                style: const TextStyle(
-                  color: Color(0xFFF8C147),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '₩${(t.highestBid ?? t.startPrice).toString().replaceAllMapped(
+                      RegExp(r'\B(?=(\d{3})+(?!\d))'),
+                          (m) => ',',
+                    )}',
+                    style: const TextStyle(
+                      color: Color(0xFFF8C147),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (t.bidAmount != null)
+                    Text(
+                      '입찰단위: ₩${t.bidAmount.toString().replaceAllMapped(
+                        RegExp(r'\B(?=(\d{3})+(?!\d))'),
+                            (m) => ',',
+                      )}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

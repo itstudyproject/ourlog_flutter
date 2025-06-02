@@ -8,6 +8,7 @@ import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
 
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/post/community_post_list_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
 
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
@@ -80,8 +81,18 @@ class MyApp extends StatelessWidget {
         ),
         '/admin/answer': (context) => AnswerScreen(),
         // ✅ 추가
+        // New route for community post list
+
+        '/community/list': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final boardType = args?['boardType'] as String?;
+          // Pass boardType to CommunityPostListScreen
+          return CommunityPostListScreen(boardType: boardType);
+        },
+
         '/ranking': (context) => const RankingScreen(),
         '/chatList': (context) => const ChatListScreen(),
+
 
         // <-- ChatListScreen 라우트 추가
         '/chat': (context) {

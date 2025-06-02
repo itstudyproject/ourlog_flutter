@@ -4,8 +4,8 @@ import 'package:http/http.dart' as http;
 import 'package:ourlog/services/worker_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/post.dart';
-import 'package:provider/provider.dart'; // Provider 사용을 위한 패키지
-import 'package:ourlog/providers/chat_provider.dart'; // ChatProvider 경로 확인!
+import 'package:provider/provider.dart';
+import 'package:ourlog/providers/chat_provider.dart';
 
 class WorkerScreen extends StatefulWidget {
   final int userId;
@@ -68,7 +68,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
     setState(() => isLoading = true);
 
     try {
-      final postsData = await WorkerService.fetchUserPosts(widget.userId, page, size);
+      final postsData =
+      await WorkerService.fetchUserPosts(widget.userId, page, size);
       final newPostsJson = postsData['pageResultDTO']?['dtoList'] ?? [];
 
       final newPosts = newPostsJson
@@ -90,7 +91,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> toggleFollow() async {
     try {
-      await WorkerService.toggleFollow(widget.currentUserId, widget.userId, isFollowing);
+      await WorkerService.toggleFollow(
+          widget.currentUserId, widget.userId, isFollowing);
       setState(() {
         isFollowing = !isFollowing;
         if (isFollowing) {
@@ -103,6 +105,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
       print('팔로우 토글 에러: $e');
     }
   }
+
   Future<void> toggleLike(int postId, int index) async {
     final wasLiked = posts[index].liked ?? false;
     final wasCount = posts[index].favoriteCnt ?? 0;
@@ -150,7 +153,10 @@ class _WorkerScreenState extends State<WorkerScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 100) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 100 &&
+        !isLoading &&
+        hasMore) {
       fetchPosts();
     }
   }
@@ -166,16 +172,16 @@ class _WorkerScreenState extends State<WorkerScreen> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 16), // ✅ AppBar 아래 여백
+          const SizedBox(height: 16),
 
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0), // 좌우 여백
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
             child: Column(
               children: [
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // 👤 프로필 이미지
+                    // 👤 프로필 이미지 (고정 크기)
                     CircleAvatar(
                       radius: 40,
                       backgroundColor: Colors.grey[800],
@@ -183,10 +189,14 @@ class _WorkerScreenState extends State<WorkerScreen> {
                           ? FutureBuilder<Uint8List?>(
                         future: fetchImageBytes(profileImageUrl),
                         builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const CircularProgressIndicator(color: Colors.white);
-                          } else if (snapshot.hasError || snapshot.data == null) {
-                            return const Icon(Icons.person, size: 40, color: Colors.white);
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator(
+                                color: Colors.white);
+                          } else if (snapshot.hasError ||
+                              snapshot.data == null) {
+                            return const Icon(Icons.person,
+                                size: 40, color: Colors.white);
                           } else {
                             return ClipOval(
                               child: Image.memory(
@@ -201,23 +211,31 @@ class _WorkerScreenState extends State<WorkerScreen> {
                       )
                           : const Icon(Icons.person, size: 40, color: Colors.white),
                     ),
-                    const SizedBox(width: 16),
-                    // 🔤 닉네임 + 팔로워/팔로잉
+                    const SizedBox(width: 16), // 프로필 이미지와 다음 요소 사이 간격
+
+                    // 🔤 닉네임 + 팔로워/팔로잉 (남은 공간의 일부를 차지)
+                    // 이 부분을 Expanded로 감싸서 남은 공간을 유연하게 사용하도록 합니다.
                     Expanded(
+                      flex: 3, // 이 부분이 더 많은 공간을 차지하도록 flex 값을 줍니다.
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            // 닉네임과 팔로워/팔로잉 숫자를 포함하는 Row
                             children: [
-                              Text(
-                                nickname,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                              Flexible( // 닉네임이 길어질 때 오버플로우 방지
+                                child: Text(
+                                  nickname,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis, // 텍스트가 길어지면 ...으로 표시
                                 ),
                               ),
-                              const SizedBox(width: 24),
+                              const SizedBox(width: 16), // 닉네임과 팔로우/팔로잉 텍스트 사이 간격
+                              // 팔로우/팔로잉 카운트 그룹 (고정된 공간을 가집니다)
                               Column(
                                 children: [
                                   Row(
@@ -256,50 +274,76 @@ class _WorkerScreenState extends State<WorkerScreen> {
                         ],
                       ),
                     ),
+
+                    // 팔로우/채팅 버튼 (남은 공간의 일부를 차지)
                     if (widget.userId != widget.currentUserId) ...[
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: toggleFollow,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(color: Colors.white),
+                      const SizedBox(width: 8), // 프로필 정보와 버튼 사이 간격
+                      Expanded( // 이 부분도 Expanded로 감싸서 남은 공간을 유연하게 사용
+                        flex: 2, // 닉네임/카운트 부분보다 적은 공간을 차지하도록 flex 값을 줍니다.
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end, // 버튼을 오른쪽으로 정렬
+                          children: [
+                            Flexible( // 버튼의 텍스트가 길어질 경우
+                              child: OutlinedButton(
+                                onPressed: toggleFollow,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8), // 패딩 줄이기
+                                  textStyle: const TextStyle(fontSize: 12), // 폰트 크기 줄이기
+                                ),
+                                child: Text(
+                                  isFollowing ? '언팔로우' : '팔로우',
+                                  overflow: TextOverflow.ellipsis, // 텍스트 오버플로우 방지
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4), // 버튼들 사이 간격 줄이기
+                            Flexible( // 버튼의 텍스트가 길어질 경우
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final chatProvider =
+                                  Provider.of<ChatProvider>(context, listen: false);
+                                  final prefs = await SharedPreferences.getInstance();
+                                  final jwtToken = prefs.getString('token');
+
+                                  if (jwtToken == null || jwtToken.isEmpty) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('채팅을 시작하려면 로그인하세요.')),
+                                    );
+                                    return;
+                                  }
+
+                                  final channel = await chatProvider
+                                      .create1to1Channel(widget.userId.toString());
+
+                                  if (channel != null) {
+                                    Navigator.pushNamed(context, '/chat', arguments: channel);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('채팅 채널을 생성할 수 없습니다.')),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFF8C147),
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8), // 패딩 줄이기
+                                  textStyle: const TextStyle(fontSize: 12), // 폰트 크기 줄이기
+                                ),
+                                child: const Text(
+                                  '채팅창',
+                                  overflow: TextOverflow.ellipsis, // 텍스트 오버플로우 방지
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        child: Text(isFollowing ? '언팔로우' : '팔로우'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: () async {
-                          final chatProvider = Provider.of<ChatProvider>(context, listen: false);
-                          final prefs = await SharedPreferences.getInstance();
-                          final jwtToken = prefs.getString('token');
-
-                          if (jwtToken == null || jwtToken.isEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('채팅을 시작하려면 로그인하세요.')),
-                            );
-                            return;
-                          }
-
-                          final channel = await chatProvider.create1to1Channel(widget.userId.toString());
-
-                          if (channel != null) {
-                            Navigator.pushNamed(context, '/chat', arguments: channel);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('채팅 채널을 생성할 수 없습니다.')),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF8C147),
-                          foregroundColor: Colors.black,
-                        ),
-                        child: const Text('채팅창'),
                       ),
                     ],
                   ],
                 ),
-                const SizedBox(height: 16), // ✅ 프로필과 Divider 사이 여백
+                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -318,12 +362,18 @@ class _WorkerScreenState extends State<WorkerScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.85,
+                childAspectRatio: 0.8, // 이전과 동일하게 유지
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
-              itemCount: posts.length,
+              itemCount: posts.length + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == posts.length) {
+                  return isLoading
+                      ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white))
+                      : const SizedBox.shrink();
+                }
                 final post = posts[index];
                 final imageUrl = post.getImageUrl();
                 final title = post.title;
@@ -333,7 +383,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
                 return GestureDetector(
                   onTap: () {
                     if (post.postId != null) {
-                      Navigator.pushNamed(context, '/postDetail', arguments: post.postId);
+                      Navigator.pushNamed(context, '/postDetail',
+                          arguments: post.postId);
                     }
                   },
                   child: Card(
@@ -349,13 +400,17 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                   ? FutureBuilder<Uint8List?>(
                                 future: fetchImageBytes(imageUrl),
                                 builder: (context, snapshot) {
-                                  if (snapshot.connectionState == ConnectionState.waiting) {
-                                    return const Center(child: CircularProgressIndicator());
-                                  } else if (snapshot.hasError || snapshot.data == null) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError ||
+                                      snapshot.data == null) {
                                     return _placeholderImage();
                                   } else {
                                     return ClipRRect(
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius:
+                                      BorderRadius.circular(12),
                                       child: Image.memory(
                                         snapshot.data!,
                                         fit: BoxFit.cover,
@@ -373,8 +428,10 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                 child: GestureDetector(
                                   onTap: () => toggleLike(post.postId!, index),
                                   child: Container(
-                                    constraints: const BoxConstraints(maxWidth: 80), // ✅ 너비 제한 추가
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                    constraints: const BoxConstraints(
+                                        maxWidth: 80),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 3),
                                     decoration: BoxDecoration(
                                       color: Colors.black54,
                                       borderRadius: BorderRadius.circular(20),
@@ -385,13 +442,15 @@ class _WorkerScreenState extends State<WorkerScreen> {
                                         Text(
                                           liked ? '🧡' : '🤍',
                                           style: const TextStyle(fontSize: 16),
-                                          overflow: TextOverflow.ellipsis, // ✅ 이모지가 넘칠 경우 방지
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(width: 4),
-                                        Flexible( // ✅ 긴 숫자 overflow 방지
+                                        Flexible(
                                           child: Text(
                                             '$likesCount',
-                                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -419,11 +478,6 @@ class _WorkerScreenState extends State<WorkerScreen> {
               },
             ),
           ),
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
         ],
       ),
     );

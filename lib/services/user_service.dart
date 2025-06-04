@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 
 class UserService {
-  static const String _baseUrl = 'http://10.100.204.124:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.189:8080/ourlog';
 
   /// 1) 회원 기본 정보 조회
   ///    - mobile만 필요하시면, DTO에서 mobile만 꺼내쓰시면 됩니다.

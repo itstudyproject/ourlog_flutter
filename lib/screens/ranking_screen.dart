@@ -79,7 +79,7 @@ class _RankingScreenState extends State<RankingScreen> {
 
   // 이미지 URL 얻는 함수 (포트폴리오와 아티스트 랭킹에 따라 다름)
   String getImageUrl(Post item, bool isArtistRanking) {
-    const baseUrl = "http://10.100.204.54:8080/ourlog/picture/display";
+    const baseUrl = "http://10.100.204.189:8080/ourlog/picture/display";
     if (isArtistRanking) {
       if (item.profileImage != null && item.profileImage!.isNotEmpty) {
         return "$baseUrl/${item.profileImage}";

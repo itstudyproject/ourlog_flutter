@@ -21,7 +21,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   String _selectedMethod = "카카오페이"; // 기본 결제 방법
   bool _agreement = false; // 구매 조건 동의
 
-  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
 
   @override
   void initState() {

@@ -55,7 +55,7 @@ class AuthProvider extends ChangeNotifier {
   /// Google 로그인: 백엔드에 인증 코드 전송 및 리다이렉트 처리
   // Future<Map<String, dynamic>> googleLoginWithCode(String code) async {
   //   // 백엔드 콜백 엔드포인트 URL (쿼리 파라미터로 code 전송)
-  //   final url = Uri.parse('http://10.100.204.124:8080/ourlog/google/callback?code=$code');
+  //   final url = Uri.parse('http://10.100.204.189:8080/ourlog/google/callback?code=$code');
   //
   //   try {
   //     // 백엔드 콜백 엔드포인트는 GET 요청을 기대합니다.

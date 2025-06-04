@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class WorkerService {
-  static const String baseUrl = 'http://10.100.204.47:8080/ourlog'; // 실제 API URL
+  static const String baseUrl = 'http://10.100.204.189:8080/ourlog'; // 실제 API URL
 
   // 공통 헤더 빌드 (토큰 포함)
   static Future<Map<String, String>> _buildHeaders() async {

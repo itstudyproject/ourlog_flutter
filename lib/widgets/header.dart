@@ -310,11 +310,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 마이페이지 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
                                 _buildSidebarSection('마이페이지', [
-                                  '프로필 관리',
-                                  '나의 작품',
-                                  '좋아요 목록',
-                                  '구매 내역',
-                                  '설정',
+                                  // '프로필 관리',
+                                  // '나의 작품',
+                                  // '좋아요 목록',
+                                  // '구매 내역',
+                                  // '설정',
                                 ]),
 
                               // 회원탈퇴 섹션 (로그인 시에만 표시)

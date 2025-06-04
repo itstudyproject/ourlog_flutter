@@ -491,7 +491,7 @@ class AuthProvider extends ChangeNotifier {
       final token = prefs.getString('token');
 
     final response = await http.get(
-      Uri.parse('http://10.100.204.124:8080/ourlog/user/check-admin'),
+      Uri.parse('http://10.100.204.189:8080/ourlog/user/check-admin'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -526,7 +526,7 @@ class AuthProvider extends ChangeNotifier {
       // React 코드의 performSocialLogin 함수 참고하여 구현
       // HTTP 클라이언트 (http 패키지 사용)
   
-      final url = Uri.parse('http://10.100.204.124:8080/ourlog/user/flutter/googleLogin'); // 백엔드 엔드포인트 URL
+      final url = Uri.parse('http://10.100.204.189:8080/ourlog/user/flutter/googleLogin'); // 백엔드 엔드포인트 URL
   
       final response = await http.post(
         url,

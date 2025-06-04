@@ -559,7 +559,7 @@ class _ArtRegisterScreenState extends State<ArtRegisterScreen> {
                 itemBuilder: (context, index) {
                   final pic = pics[index];
                   final imageUrl = pic.originImagePath != null
-                      ? 'http://10.100.204.171:8080/ourlog/picture/display/${pic.originImagePath}'
+                      ? 'http://10.100.204.189:8080/ourlog/picture/display/${pic.originImagePath}'
                       : null;
                   return Container(
                     width: 120,

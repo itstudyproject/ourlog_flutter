@@ -5,7 +5,7 @@ import 'package:ourlog/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PostService {
-  static const String baseUrl = 'http://10.100.204.157:8080/ourlog';
+  static const String baseUrl = 'http://10.100.204.189:8080/ourlog';
 
   /// 저장된 JWT 토큰을 SharedPreferences에서 가져옵니다.
   static Future<String?> _getToken() async {

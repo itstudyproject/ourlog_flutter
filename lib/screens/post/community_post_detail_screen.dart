@@ -416,7 +416,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                   Widget imageWidget;
                   if (path != null && path.isNotEmpty) {
                     imageWidget = Image.network(
-                      "http://10.100.204.157:8080/ourlog/picture/display/$path",
+                      "http://10.100.204.189:8080/ourlog/picture/display/$path",
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey[800],
@@ -596,15 +596,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     String? thumbnailUrl;
     final allPics = post.pictureDTOList ?? [];
     if (post.thumbnailImagePath != null && post.thumbnailImagePath!.isNotEmpty) {
-      thumbnailUrl = "http://10.100.204.157:8080/ourlog/picture/display/${post.thumbnailImagePath}";
+      thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${post.thumbnailImagePath}";
     } else if (allPics.isNotEmpty) {
       final first = allPics.first;
       if (first.resizedImagePath != null && first.resizedImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.157:8080/ourlog/picture/display/${first.resizedImagePath}";
+        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.resizedImagePath}";
       } else if (first.thumbnailImagePath != null && first.thumbnailImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.157:8080/ourlog/picture/display/${first.thumbnailImagePath}";
+        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.thumbnailImagePath}";
       } else if (first.originImagePath != null && first.originImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.157:8080/ourlog/picture/display/${first.originImagePath}";
+        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.originImagePath}";
       } else {
         thumbnailUrl = null;
       }
@@ -652,11 +652,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             final pic = allPics[idx];
             String? imageUrl;
             if (pic.resizedImagePath != null && pic.resizedImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.157:8080/ourlog/picture/display/${pic.resizedImagePath}";
+              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.resizedImagePath}";
             } else if (pic.thumbnailImagePath != null && pic.thumbnailImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.157:8080/ourlog/picture/display/${pic.thumbnailImagePath}";
+              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.thumbnailImagePath}";
             } else if (pic.originImagePath != null && pic.originImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.157:8080/ourlog/picture/display/${pic.originImagePath}";
+              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.originImagePath}";
             }
             if (imageUrl == null) {
               return Container(

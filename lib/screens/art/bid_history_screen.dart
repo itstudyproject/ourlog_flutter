@@ -26,7 +26,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
   Timer? _timer; // 남은 시간 표시를 위한 타이머
   DateTime _currentTime = DateTime.now(); // 남은 시간 계산 기준 시간
 
-  static const String baseUrl = "http://10.100.204.171:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
 
   @override
   void initState() {
@@ -166,7 +166,9 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
               tradeDTO: tradeDto, // <-- 파싱된 tradeDto 객체 전달
               // 그 외 필드는 응답에 없거나 기본값 사용
               tag: null, followers: 0, downloads: 0,
-              profileImage: null, replyCnt: 0, regDate: null, modDate: null,
+              profileImage: null, replyCnt: 0,
+              regDate: DateTime.now(),
+              modDate:  DateTime.now(),
               liked: false, // 구매/입찰 목록에서는 좋아요 상태 정보 불필요
            );
         }).toList();

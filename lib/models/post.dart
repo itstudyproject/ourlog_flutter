@@ -42,8 +42,8 @@ class Post {
 
   final String? profileImage;
   final int? replyCnt;
-  final DateTime? regDate;
-  final DateTime? modDate;
+  final DateTime regDate;
+  final DateTime modDate;
 
   /// 현재 사용자가 좋아요를 눌렀는지 여부 (Back에서 내려주지 않으면 기본 false)
   bool liked;
@@ -69,8 +69,8 @@ class Post {
     this.pictureDTOList,
     this.profileImage,
     this.replyCnt,
-    this.regDate,
-    this.modDate,
+    required this.regDate,
+    required this.modDate,
     this.liked = false,
   });
 
@@ -111,12 +111,8 @@ class Post {
       pictureDTOList: pics,
       profileImage: json['profileImage'] as String?,
       replyCnt: json['replyCnt'] as int?,
-      regDate: json['regDate'] != null
-          ? DateTime.parse(json['regDate'] as String)
-          : null,
-      modDate: json['modDate'] != null
-          ? DateTime.parse(json['modDate'] as String)
-          : null,
+      regDate: DateTime.parse(json['regDate'] as String),
+      modDate: DateTime.parse(json['modDate'] as String),
       liked: json['liked'] as bool? ?? false,
     );
   }
@@ -163,7 +159,7 @@ class Post {
   /// 반환 예시:
   ///   "http://서버주소/ourlog/picture/display/2025/06/02/파일명.jpg"
   String getImageUrl() {
-    const String baseUrl = "http://10.100.204.171:8080/ourlog";
+    const String baseUrl = "http://10.100.204.189:8080/ourlog";
 
     // 1) pictureDTOList가 있으면, 리스트[0]에서 우선 순위대로 이미지 경로 확인
     if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {

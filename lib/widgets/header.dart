@@ -177,7 +177,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 사이드바 헤더
                               Row(
                                 mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                MainAxisAlignment.spaceBetween,
                                 children: [
                                   IconButton(
                                     icon: const Icon(
@@ -211,7 +211,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     Expanded(
                                       child: Column(
                                         crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             authProvider.userNickname ??
@@ -239,7 +239,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                                 color: Color(0xFF9BCABF),
                                                 fontSize: 14,
                                                 decoration:
-                                                    TextDecoration.underline,
+                                                TextDecoration.underline,
                                               ),
                                             ),
                                           ),
@@ -310,11 +310,11 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                               // 마이페이지 섹션 (로그인 시에만 표시)
                               if (authProvider.isLoggedIn)
                                 _buildSidebarSection('마이페이지', [
-                                  '프로필 관리',
-                                  '나의 작품',
-                                  '좋아요 목록',
-                                  '구매 내역',
-                                  '설정',
+                                  // '프로필 관리',
+                                  // '나의 작품',
+                                  // '좋아요 목록',
+                                  // '구매 내역',
+                                  // '설정',
                                 ]),
 
                               // 회원탈퇴 섹션 (로그인 시에만 표시)
@@ -328,7 +328,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                     margin: const EdgeInsets.only(top: 20),
                                     child: Column(
                                       crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
@@ -424,7 +424,7 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
         ),
         const SizedBox(height: 10),
         ...items.map(
-          (item) => GestureDetector(
+              (item) => GestureDetector(
             onTap: () async {
               await _closeSidebar();
               if (item == '아트 등록') {

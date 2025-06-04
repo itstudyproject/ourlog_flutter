@@ -209,8 +209,8 @@ class _CommunityPostRegisterScreenState
         pictureDTOList: combinedPictures,
         profileImage: widget.postToEdit?.profileImage,
         replyCnt: widget.postToEdit?.replyCnt,
-        regDate: widget.postToEdit?.regDate,
-        modDate: widget.postToEdit?.modDate,
+        regDate: widget.postToEdit!.regDate,
+        modDate: widget.postToEdit!.modDate,
         liked: widget.postToEdit?.liked ?? false,
       );
 
@@ -334,8 +334,8 @@ class _CommunityPostRegisterScreenState
                         runSpacing: 8,
                         children: _existingPictures.map((pic) {
                           final imageUrl = pic.thumbnailImagePath != null
-                              ? "http://10.100.204.157:8080/ourlog/picture/display/${pic.thumbnailImagePath}"
-                              : "http://10.100.204.157:8080/ourlog/picture/display/default-image.jpg";
+                              ? "http://10.100.204.144:8080/ourlog/picture/display/${pic.thumbnailImagePath}"
+                              : "http://10.100.204.144:8080/ourlog/picture/display/default-image.jpg";
                           final bool isSelected =
                           (pic.picId == _selectedThumbnailId);
 

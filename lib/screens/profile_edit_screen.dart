@@ -241,7 +241,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                               final token = authProvider.token;
 
                               return Image.network(
-                                'http://10.100.204.124:8080' +
+                                'http://10.100.204.144:8080' +
                                     _initialImageUrl!,
                                 fit: BoxFit.cover,
                                 headers:

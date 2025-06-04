@@ -172,7 +172,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
             radius: 40,
             backgroundColor: const Color(0xFF333333),
             backgroundImage: NetworkImage(
-              'http://10.100.204.189:8080' + (_profile?.thumbnailImagePath ?? ''),
+              'http://10.100.204.144:8080' + (_profile?.thumbnailImagePath ?? ''),
               headers: {
                 'Authorization': 'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}'
               },
@@ -303,7 +303,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
   Timer? _timer;
   DateTime _currentTime = DateTime.now();
 
-  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.144:8080/ourlog";
 
   @override
   void initState() {
@@ -720,7 +720,7 @@ class __UserPostGridState extends State<_UserPostGrid> {
   List<Post> _posts = [];
   String? _errorMessage;
 
-  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.144:8080/ourlog";
   static const String imageBaseUrl = "$baseUrl/picture/display/";
 
   @override

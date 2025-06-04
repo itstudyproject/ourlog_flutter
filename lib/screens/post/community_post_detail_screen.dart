@@ -3,15 +3,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:provider/provider.dart';
 
 import '../../models/post.dart';
 import '../../models/picture.dart';
-import '../../models/comment.dart';
 import '../../services/post_service.dart';
 import '../../services/picture_service.dart';
-import '../../services/comment_service.dart';
-import '../../providers/auth_provider.dart';
 
 class CommunityPostDetailScreen extends StatefulWidget {
   final int postId;
@@ -28,29 +24,26 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
   bool _isEditing = false;
   bool _isPickingImage = false;
 
-  // ── 댓글 관련 상태 ─────────────────────────────────────────────
-  List<Comment> _comments = [];
-  bool _commentsLoading = true;
-  final TextEditingController _newCommentController = TextEditingController();
-  final Map<int, TextEditingController> _editCommentControllers = {};
-  final Map<int, bool> _isEditingComment = {};
-
-  // ── 게시글 수정 모드용 컨트롤러 ─────────────────────────────────
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
 
-  // ── 이미지 관련 상태 ─────────────────────────────────────────
+  /// 기존 서버에 있던 이미지 목록
   List<Picture> _existingPictures = [];
+
+  /// 로컬에서 새로 고른 이미지(File)
   List<File> _newAttachedImages = [];
+
+  /// 새로 서버에 업로드된 Picture 객체 리스트
   List<Picture> _uploadedNewPictures = [];
+
+  /// 선택된 썸네일 ID (nullable)
   int? _selectedThumbnailId;
 
   @override
   void initState() {
     super.initState();
     _fetchPostDetail();
-    _fetchComments();
   }
 
   @override
@@ -58,12 +51,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     _titleController.dispose();
     _contentController.dispose();
     _tagController.dispose();
-    _newCommentController.dispose();
-    _editCommentControllers.forEach((_, ctrl) => ctrl.dispose());
     super.dispose();
   }
 
-  /// 서버에서 게시글 상세 정보 가져오기
+  /// 서버에서 Post 상세 정보 가져오기
   Future<void> _fetchPostDetail() async {
     setState(() {
       _isLoading = true;
@@ -75,15 +66,10 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         _post = fetched;
         _isLoading = false;
 
-        // 수정 모드 진입 시 컨트롤러 초기화
-        _titleController.text = fetched.title ?? '';
-        _contentController.text = fetched.content ?? '';
-        _tagController.text = fetched.tag ?? '';
-
-        // 이미지 목록 복사
+        // 기존 서버 이미지 목록 복사
         _existingPictures = List<Picture>.from(fetched.pictureDTOList ?? []);
 
-        // 썸네일 ID 초기화
+        // 기존 썸네일 설정이 되어 있으면, 그 ID를 기억
         if (fetched.thumbnailImagePath != null) {
           final idx = _existingPictures.indexWhere(
                 (p) => p.thumbnailImagePath == fetched.thumbnailImagePath,
@@ -101,74 +87,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     }
   }
 
-  // ── 댓글 목록 불러오기 ─────────────────────────────────────────
-  Future<void> _fetchComments() async {
-    setState(() => _commentsLoading = true);
-    try {
-      final fetchedComments = await CommentService.getComments(widget.postId);
-      setState(() {
-        _comments = fetchedComments;
-      });
-    } catch (e) {
-      // 무시하거나 SnackBar 띄워도 됨
-    } finally {
-      setState(() => _commentsLoading = false);
-    }
-  }
-
-  /// 새 댓글 등록 (POST /reply/{postId})
-  Future<void> _addComment() async {
-    final text = _newCommentController.text.trim();
-    if (text.isEmpty) return;
-
-    try {
-      await CommentService.addComment(widget.postId, text);
-      _newCommentController.clear();
-      await _fetchComments();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글 등록 실패: ${e.toString()}')),
-      );
-    }
-  }
-
-  /// 댓글 수정 (PUT /reply/update/{replyId})
-  Future<void> _updateComment(int replyId) async {
-    final controller = _editCommentControllers[replyId];
-    if (controller == null) return;
-
-    final newText = controller.text.trim();
-    if (newText.isEmpty) return;
-
-    try {
-      final original = _comments.firstWhere((c) => c.replyId == replyId);
-      await CommentService.updateComment(replyId, original.postId, newText);
-      setState(() {
-        _isEditingComment[replyId] = false;
-      });
-      await _fetchComments();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글 수정 실패: ${e.toString()}')),
-      );
-    }
-  }
-
-  /// 댓글 삭제 (DELETE /reply/remove/{replyId})
-  Future<void> _deleteComment(int replyId) async {
-    try {
-      await CommentService.deleteComment(replyId);
-      await _fetchComments();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글 삭제 실패: ${e.toString()}')),
-      );
-    }
-  }
-
   /// 수정 모드 진입
   void _startEditing() {
     if (_post == null) return;
+    _titleController.text = _post!.title ?? '';
+    _contentController.text = _post!.content ?? '';
+    _tagController.text = _post!.tag ?? '';
     setState(() {
       _isEditing = true;
     });
@@ -203,15 +127,20 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     }
   }
 
-  /// 수정 모드: 기존 서버 이미지 삭제
-  Future<void> _removeExistingPicture(Picture pic) async {
+  /// 수정 모드: 기존 서버 이미지를 삭제
+  Future<void> _removeExistingPicture(final Picture pic) async {
     try {
       await PictureService.deletePicture(pic.picId!);
       setState(() {
+        // 1) 기존 리스트에서 제거
         _existingPictures.removeWhere((p) => p.picId == pic.picId);
+
+        // 2) 만약 썸네일 설정된 사진이었다면 해제
         if (_selectedThumbnailId == pic.picId) {
           _selectedThumbnailId = null;
         }
+
+        // 3) _post 객체 내부 리스트에서도 제거
         _post?.pictureDTOList?.removeWhere((p) => p.picId == pic.picId);
       });
       ScaffoldMessenger.of(context).showSnackBar(
@@ -224,7 +153,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     }
   }
 
-  /// 수정 모드: 로컬 이미지 업로드
+  /// 수정 모드: 로컬에서 고른 새 이미지를 서버에 업로드
   Future<void> _uploadNewImagesForEdit() async {
     if (_newAttachedImages.isEmpty) return;
     setState(() {
@@ -237,6 +166,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         final pic = Picture.fromJson(result);
         _uploadedNewPictures.add(pic);
 
+        // 만약 로컬 파일 hashCode를 썸네일 ID로 사용했다면 치환
         if (file.hashCode == _selectedThumbnailId) {
           _selectedThumbnailId = pic.picId;
         }
@@ -280,15 +210,15 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     });
 
     try {
-      // 1) 로컬 이미지 업로드
+      // 1) 새로 고른 로컬 이미지를 서버에 업로드
       await _uploadNewImagesForEdit();
 
-      // 2) 기존 + 새 이미지 합치기
+      // 2) 기존 서버 이미지 + 새로 업로드된 이미지 합치기
       final combinedPictures = <Picture>[];
       combinedPictures.addAll(_existingPictures);
       combinedPictures.addAll(_uploadedNewPictures);
 
-      // 3) 썸네일 경로 결정
+      // 3) 선택된 썸네일 ID로부터 실제 thumbnailImagePath 찾아 저장
       String? newThumbnailPath;
       if (_selectedThumbnailId != null) {
         final selPic = combinedPictures.firstWhere(
@@ -298,7 +228,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         newThumbnailPath = selPic.thumbnailImagePath;
       }
 
-      // 4) 수정된 Post 객체 생성
+      // 4) 새로운 Post 객체 생성 후 수정 요청
       final updatedPost = Post(
         postId: _post!.postId,
         userId: _post!.userId,
@@ -325,13 +255,13 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         liked: _post!.liked,
       );
 
-      // 5) 서버로 수정 요청
+      // 5) 서버로 실제 업데이트 요청 (void 반환)
       await PostService.updatePost(updatedPost);
 
-      // 6) 최신 데이터 다시 가져오기
+      // 6) 업데이트가 끝나면, 최신 데이터를 다시 받아온다
       await _fetchPostDetail();
 
-      // 7) 수정 모드 종료
+      // 7) 수정 모드 종료 및 로컬 상태 정리
       setState(() {
         _isEditing = false;
         _isLoading = false;
@@ -390,111 +320,6 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     }
   }
 
-  /// 댓글 항목을 그리는 위젯
-  Widget _buildCommentItem(Comment comment) {
-    final currentUserId = Provider.of<AuthProvider>(context, listen: false).userId;
-    final isAuthor = currentUserId != null && comment.userId == currentUserId;
-
-    // edit 컨트롤러 초기화
-    if (!_editCommentControllers.containsKey(comment.replyId)) {
-      _editCommentControllers[comment.replyId] = TextEditingController(text: comment.content);
-    }
-    if (!_isEditingComment.containsKey(comment.replyId)) {
-      _isEditingComment[comment.replyId] = false;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── 상단: 작성자 닉네임, 작성일, (작성자면) 수정/삭제 ───────────────────
-          Row(
-            children: [
-              Text(
-                comment.userNickname,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                // regDate를 로컬 문자열로 변환 (예: "2025-06-03T12:00:00" → "2025-06-03 12:00:00")
-                DateTime.tryParse(comment.regDate) != null
-                    ? DateTime.parse(comment.regDate).toLocal().toString().split('.')[0]
-                    : comment.regDate,
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-              const Spacer(),
-              if (isAuthor)
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, size: 20, color: Colors.white70),
-                      onPressed: () {
-                        setState(() {
-                          _isEditingComment[comment.replyId] = true;
-                        });
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, size: 20, color: Colors.white70),
-                      onPressed: () => _deleteComment(comment.replyId),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-
-          const SizedBox(height: 4),
-
-          // ── 수정 모드 TextField / 일반 모드 댓글 본문 ─────────────────────
-          if (_isEditingComment[comment.replyId] == true)
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _editCommentControllers[comment.replyId],
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: '댓글을 수정하세요',
-                      hintStyle: TextStyle(color: Colors.white54),
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white54),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.check, color: Colors.green),
-                  onPressed: () => _updateComment(comment.replyId),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.red),
-                  onPressed: () {
-                    setState(() {
-                      _isEditingComment[comment.replyId] = false;
-                    });
-                  },
-                ),
-              ],
-            )
-          else
-            Text(
-              comment.content, // 반드시 “content”를 출력
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-            ),
-
-          const Divider(color: Colors.white24),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -521,12 +346,12 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         ),
       )
           : _isEditing
-          ? _buildEditView()    // 게시글 수정 모드 화면 (아래에서 정의)
-          : _buildDetailView(), // 게시글 & 댓글 상세 뷰 (아래에서 정의)
+          ? _buildEditView()
+          : _buildDetailView(),
     );
   }
 
-  // ── 게시글 수정 모드 화면 ─────────────────────────────────────────
+  /// 수정 모드 화면
   Widget _buildEditView() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -591,7 +416,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                   Widget imageWidget;
                   if (path != null && path.isNotEmpty) {
                     imageWidget = Image.network(
-                      "http://10.100.204.189:8080/ourlog/picture/display/$path",
+                      "http://10.100.204.144:8080/ourlog/picture/display/$path",
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey[800],
@@ -737,7 +562,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
                     _isEditing = false;
                     _newAttachedImages.clear();
                     _uploadedNewPictures.clear();
-                    // _selectedThumbnailId는 그대로 둠
+                    // _selectedThumbnailId는 그대로 둡니다.
                   });
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.grey),
@@ -755,7 +580,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
     );
   }
 
-  // ── 게시글 상세 화면 + 댓글 섹션 ───────────────────────────────────
+  /// 상세 모드 화면
   Widget _buildDetailView() {
     final post = _post;
     if (post == null) {
@@ -767,19 +592,19 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       );
     }
 
-    // ── 썸네일 결정 ─────────────────────────────────────────
+    // ① 썸네일로 지정된 경로가 있으면 그걸, 없으면 pictureDTOList 첫 번째를 사용
     String? thumbnailUrl;
     final allPics = post.pictureDTOList ?? [];
     if (post.thumbnailImagePath != null && post.thumbnailImagePath!.isNotEmpty) {
-      thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${post.thumbnailImagePath}";
+      thumbnailUrl = "http://10.100.204.144:8080/ourlog/picture/display/${post.thumbnailImagePath}";
     } else if (allPics.isNotEmpty) {
       final first = allPics.first;
       if (first.resizedImagePath != null && first.resizedImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.resizedImagePath}";
+        thumbnailUrl = "http://10.100.204.144:8080/ourlog/picture/display/${first.resizedImagePath}";
       } else if (first.thumbnailImagePath != null && first.thumbnailImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.thumbnailImagePath}";
+        thumbnailUrl = "http://10.100.204.144:8080/ourlog/picture/display/${first.thumbnailImagePath}";
       } else if (first.originImagePath != null && first.originImagePath!.isNotEmpty) {
-        thumbnailUrl = "http://10.100.204.189:8080/ourlog/picture/display/${first.originImagePath}";
+        thumbnailUrl = "http://10.100.204.144:8080/ourlog/picture/display/${first.originImagePath}";
       } else {
         thumbnailUrl = null;
       }
@@ -787,17 +612,22 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
       thumbnailUrl = null;
     }
 
-    // ── 이미지 섹션량 분기 ─────────────────────────────────────────
+    // ② 이미지 개수에 따라 UI 결정
     final hasMultiple = allPics.length > 1;
+
+    // ③ 이미지 섹션을 조건부로 만들어서, 이미지가 없으면 아예 빈 위젯으로 대체
     Widget imageSection;
     if (allPics.isEmpty) {
+      // 이미지가 없으면 빈 위젯으로
       imageSection = const SizedBox.shrink();
     } else if (!hasMultiple && thumbnailUrl != null) {
+      // 단일 이미지 보여주기: BoxFit.contain을 사용해서 전체 이미지가 잘리지 않고 보이도록 함
       imageSection = ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
           thumbnailUrl,
           width: double.infinity,
+          // height를 지정하지 않고, BoxFit.contain으로 전체가 보이게 함
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => Container(
             width: double.infinity,
@@ -811,6 +641,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
         ),
       );
     } else if (hasMultiple) {
+      // 여러 이미지 보여주기 (가로 스크롤) - 썸네일 크기는 120×120 고정
       imageSection = SizedBox(
         height: 120,
         child: ListView.separated(
@@ -821,11 +652,11 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             final pic = allPics[idx];
             String? imageUrl;
             if (pic.resizedImagePath != null && pic.resizedImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.resizedImagePath}";
+              imageUrl = "http://10.100.204.144:8080/ourlog/picture/display/${pic.resizedImagePath}";
             } else if (pic.thumbnailImagePath != null && pic.thumbnailImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.thumbnailImagePath}";
+              imageUrl = "http://10.100.204.144:8080/ourlog/picture/display/${pic.thumbnailImagePath}";
             } else if (pic.originImagePath != null && pic.originImagePath!.isNotEmpty) {
-              imageUrl = "http://10.100.204.189:8080/ourlog/picture/display/${pic.originImagePath}";
+              imageUrl = "http://10.100.204.144:8080/ourlog/picture/display/${pic.originImagePath}";
             }
             if (imageUrl == null) {
               return Container(
@@ -881,7 +712,7 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
           ),
           const SizedBox(height: 16),
 
-          // ■ 이미지 영역
+          // ■ 이미지 영역 (조건부 렌더링)
           imageSection,
           if (allPics.isNotEmpty) const SizedBox(height: 16),
 
@@ -891,50 +722,6 @@ class _CommunityPostDetailScreenState extends State<CommunityPostDetailScreen> {
             style: const TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 24),
-
-          // ■ 댓글(답글) 섹션 ───────────────────────────────────────────────
-          const Text(
-            '댓글',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-
-          // 댓글 목록 로딩 중 표시
-          _commentsLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.orange))
-              : Column(
-            children: _comments.map((c) => _buildCommentItem(c)).toList(),
-          ),
-
-          // ── 새 댓글 입력창 ─────────────────────────────────────
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _newCommentController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    hintText: '댓글 입력...',
-                    hintStyle: TextStyle(color: Colors.white54),
-                    enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white54)),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white)),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: _addComment,
-              ),
-            ],
-          ),
         ],
       ),
     );

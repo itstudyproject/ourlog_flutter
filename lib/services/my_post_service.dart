@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/post.dart';
 
 class MyPostService {
-  final String _baseUrl = 'http://10.100.204.189:8080/ourlog';
+  final String _baseUrl = 'http://10.100.204.144:8080/ourlog';
 
   /// 사용자가 작성한 글 목록을 가져오는 API 호출
   Future<List<Post>> fetchMyPosts(int userId, String token) async {

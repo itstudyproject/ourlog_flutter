@@ -6,10 +6,9 @@ import 'package:intl/intl.dart'; // 가격 포맷팅을 위해 intl 패키지 �
 import 'dart:async'; // Timer 사용
 
 import '../../providers/auth_provider.dart';
-import '../../models/post.dart'; // Post 모델 사용
-import '../../models/trade.dart'; // TradeDTO 및 Bid 모델 사용 (필요하다면)
-import '../../models/picture.dart'; // Picture 모델 사용
-
+import '../../models/post.dart';      // Post 모델 사용
+import '../../models/trade.dart';     // TradeDTO 모델 사용
+import '../../models/picture.dart';   // Picture 모델 사용
 
 class BidHistoryScreen extends StatefulWidget {
   const BidHistoryScreen({Key? key}) : super(key: key);
@@ -26,12 +25,13 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
   Timer? _timer; // 남은 시간 표시를 위한 타이머
   DateTime _currentTime = DateTime.now(); // 남은 시간 계산 기준 시간
 
-  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.144:8080/ourlog";
 
   @override
   void initState() {
     super.initState();
     fetchUserTrades();
+
     // 남은 시간 계산을 위한 타이머 시작
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
@@ -46,7 +46,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
 
   @override
   void dispose() {
-    _timer?.cancel(); // 위젯 소멸 시 타이머 해제
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -55,7 +55,6 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
     final token = authProvider.token;
 
     if (token == null || token.isEmpty) {
-      // 토큰이 없는 경우 로그인 페이지로 이동
       if (mounted) {
         Navigator.pushReplacementNamed(context, '/login');
       }
@@ -67,7 +66,6 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       'Content-Type': 'application/json',
     };
   }
-
 
   Future<void> fetchUserTrades() async {
     setState(() {
@@ -101,9 +99,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       debugPrint('API 응답 본문: ${response.body}');
 
       if (response.statusCode == 403) {
-        final authProvider = Provider.of<AuthProvider>(context, listen: false);
         await authProvider.logout();
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -118,70 +114,99 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        // 백엔드 응답 구조에 맞춰 파싱 (Post.fromJson 사용)
         final List<dynamic> currentBidsJson = data['currentBids'] ?? [];
         final List<dynamic> wonTradesJson = data['wonTrades'] ?? [];
 
-        // wonTrades 항목을 Post 모델로 변환 시, 필요한 필드를 매핑 (수정)
-        final List<Post> wonTradesList = wonTradesJson.map((item) {
-           // TradeDTO에 필요한 필드를 매핑하여 TradeDTO 객체 생성
-           TradeDTO? tradeDto;
-           if (item['tradeId'] != null) { // tradeId가 있는 경우 유효한 tradeDTO로 간주
-             try {
-               tradeDto = TradeDTO.fromJson({
-                 'tradeId': item['tradeId'],
-                 'postId': item['postId'],
-                 'sellerId': item['sellerId'],
-                 'bidderId': item['bidderId'],
-                 'bidderNickname': item['bidderNickname'],
-                 'startPrice': item['startPrice'],
-                 'highestBid': item['highestBid'],
-                 'bidAmount': item['bidAmount'],
-                 'nowBuy': item['nowBuy'],
-                 'tradeStatus': item['tradeStatus'], // boolean 값 그대로 사용
-                 'startBidTime': item['startBidTime'], // 문자열 그대로 전달
-                 'lastBidTime': item['lastBidTime'],   // 문자열 그대로 전달
-               });
-             } catch (e) {
-                debugPrint('TradeDTO 파싱 오류: $e, item: $item');
-                tradeDto = null; // 파싱 오류 시 null 처리
-             }
-           }
+        // ────────────────────────────────────────────────────────────────
+        // 1) currentBids 파싱 (Post.fromJson 가 있다고 가정)
+        // ────────────────────────────────────────────────────────────────
+        List<Post> tempCurrent = [];
+        for (var jsonItem in currentBidsJson) {
+          try {
+            debugPrint('▶ [currentBids] JSON 항목: $jsonItem');
 
-           // Post 모델의 다른 필드들을 매핑하여 Post 객체 생성
-           return Post(
-              postId: item['postId'],
-              // userId는 판매자의 ID를 사용 (구매자/입찰자 화면이므로 판매자 정보도 필요할 수 있음)
-              userId: item['sellerId'],
-              title: item['postTitle'], // <-- postTitle을 title로 매핑
-              content: null, // 응답에 없으므로 null
-              nickname: item['bidderNickname'] ?? '알 수 없음', // 구매자 닉네임을 사용
-              fileName: item['postImage'],
-              boardNo: 5, // 아트 게시판
-              views: 0, favoriteCnt: 0,
-              thumbnailImagePath: item['postImage'],
-              resizedImagePath: item['resizedImagePath'],
-              originImagePath: item['originImagePath'] != null ? [item['originImagePath']] : [],
-              pictureDTOList: item['postImage'] != null ? [Picture.fromJson({'uuid': item['postImage'], 'path': item['postImage']})] : [],
-              tradeDTO: tradeDto, // <-- 파싱된 tradeDto 객체 전달
-              // 그 외 필드는 응답에 없거나 기본값 사용
-              tag: null, followers: 0, downloads: 0,
-              profileImage: null, replyCnt: 0,
-              regDate: DateTime.now(),
-              modDate:  DateTime.now(),
-              liked: false, // 구매/입찰 목록에서는 좋아요 상태 정보 불필요
-           );
-        }).toList();
+            // Post.fromJson 내부에서 TradeDTO.fromJson을 호출하거나, 필요한 파싱이 있다면 내부에서 처리하게 합니다.
+            final Post post = Post.fromJson(jsonItem as Map<String, dynamic>);
+
+            tempCurrent.add(post);
+          } catch (e, stack) {
+            debugPrint('【currentBids 파싱 에러】 e: $e');
+            debugPrint('【currentBids 스택 트레이스】\n$stack');
+            // 에러가 난 항목만 건너뛰기
+          }
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // 2) wonTrades 파싱 (직접 Post로 매핑하면서 TradeDTO.fromJson 써보기)
+        // ────────────────────────────────────────────────────────────────
+        List<Post> tempCompleted = [];
+        for (var item in wonTradesJson) {
+          final Map<String, dynamic> jsonItem = item as Map<String, dynamic>;
+          try {
+            debugPrint('▶ [wonTrades] JSON 전체 항목: $jsonItem');
+            debugPrint('▶ [wonTrades] regDate raw: ${jsonItem['regDate']} (type: ${jsonItem['regDate']?.runtimeType})');
+            debugPrint('▶ [wonTrades] startBidTime raw: ${jsonItem['startBidTime']} (type: ${jsonItem['startBidTime']?.runtimeType})');
+            debugPrint('▶ [wonTrades] lastBidTime raw: ${jsonItem['lastBidTime']} (type: ${jsonItem['lastBidTime']?.runtimeType})');
+
+            // TradeDTO 파싱
+            final tradeDto = TradeDTO.fromJson(jsonItem);
+
+            // regDate, startBidTime, lastBidTime는 이미 TradeDTO 내부에서 DateTime.parse를 했다고 가정.
+            // 만약 Post.fromJson으로도 처리 가능하다면, Post.fromJson(jsonItem) 해도 됩니다.
+            // 여기서는 예시로 Post를 직접 생성해 봅니다.
+            final DateTime? parsedRegDate = (jsonItem['regDate'] != null)
+                ? DateTime.parse(jsonItem['regDate'] as String)
+                : null;
+
+            final Post post = Post(
+              postId: jsonItem['postId'] as int,
+              userId: jsonItem['sellerId'] as int,
+              title: jsonItem['postTitle'] as String,
+              content: null,
+              nickname: jsonItem['bidderNickname'] as String? ?? '알 수 없음',
+              fileName: jsonItem['postImage'] as String,
+              boardNo: 5,
+              views: 0,
+              favoriteCnt: 0,
+              regDate: parsedRegDate,
+              modDate: null, // wonTrades에는 modDate 필드가 없으므로 null 처리
+              thumbnailImagePath: jsonItem['postImage'] as String,
+              originImagePath: (jsonItem['postImage'] != null)
+                  ? [jsonItem['postImage'] as String]
+                  : <String>[],
+              pictureDTOList: (jsonItem['postImage'] != null)
+                  ? [
+                Picture.fromJson({
+                  'uuid': jsonItem['postImage'],
+                  'path': jsonItem['postImage']
+                })
+              ]
+                  : <Picture>[],
+              tradeDTO: tradeDto,
+              tag: null,
+              followers: 0,
+              downloads: 0,
+              profileImage: null,
+              replyCnt: 0,
+              liked: false,
+            );
+
+            tempCompleted.add(post);
+          } catch (e, stack) {
+            debugPrint('【wonTrades 파싱 에러】 e: $e');
+            debugPrint('【wonTrades 스택 트레이스】\n$stack');
+            // 에러 난 항목만 건너뛰기
+          }
+        }
 
         setState(() {
-          _currentBids = currentBidsJson.map((json) => Post.fromJson(json)).toList(); // currentBids는 기존대로 파싱
-          _completedTrades = wonTradesList; // wonTradesJson 대신 변환된 wonTradesList 사용
+          _currentBids = tempCurrent;
+          _completedTrades = tempCompleted;
           _isLoading = false;
         });
 
-        debugPrint('Fetched ${_currentBids.length} current bids and ${_completedTrades.length} completed trades.');
-
-      } else if (response.statusCode == 404) { // 404도 데이터 없음으로 처리
+        debugPrint('Fetched currentBids: ${_currentBids.length}, completedTrades: ${_completedTrades.length}');
+      } else if (response.statusCode == 404) {
         setState(() {
           _errorMessage = '데이터를 찾을 수 없습니다: ${response.statusCode}';
           _isLoading = false;
@@ -191,8 +216,9 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       } else {
         throw Exception('서버 오류: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint('구매/입찰 목록 불러오기 실패: $e');
+      debugPrint('스택 트레이스:\n$stack');
       setState(() {
         _errorMessage = '목록을 불러오는 데 실패했습니다: ${e.toString()}';
         _isLoading = false;
@@ -202,7 +228,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
     }
   }
 
-  // 남은 시간 계산 및 포맷팅 함수 (React 코드 로직 참고)
+  // 남은 시간 계산 및 포맷팅 함수
   String _getRemainingTime(DateTime? endTime) {
     if (endTime == null) return "시간 정보 없음";
 
@@ -235,13 +261,12 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
     return formatter.format(price);
   }
 
-
   // 작품 상세 페이지로 이동 함수
   void _handleArtworkClick(int postId) {
     Navigator.pushNamed(
       context,
       '/Art', // ArtDetailScreen 라우트 이름
-      arguments: postId.toString(), // 게시글 ID를 문자열로 전달
+      arguments: postId.toString(),
     );
   }
 
@@ -253,7 +278,6 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       const SnackBar(content: Text('원본 이미지 다운로드 기능은 아직 구현되지 않았습니다.')),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -270,9 +294,9 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('구매 및 입찰 내역이 없습니다.'),
-            const SizedBox(height: 16),
+          children: const [
+            Text('구매 및 입찰 내역이 없습니다.'),
+            SizedBox(height: 16),
           ],
         ),
       );
@@ -298,7 +322,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
               final item = _currentBids[index];
               return GestureDetector(
                 onTap: () => _handleArtworkClick(item.postId!),
-                child: Card( // React의 div.bh-item.data 역할
+                child: Card(
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -337,7 +361,10 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 '현재가: ${_formatPrice(item.tradeDTO?.highestBid ?? item.tradeDTO?.startPrice)}원',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor),
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -391,7 +418,7 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
 
               return GestureDetector(
                 onTap: () => _handleArtworkClick(item.postId!),
-                child: Card( // React의 div.bh-item.data.won 역할
+                child: Card(
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -430,7 +457,10 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
                               const SizedBox(height: 4),
                               Text(
                                 '낙찰가: ${_formatPrice(wonPrice)}원',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: Colors.green),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold, color: Colors.green),
                               ),
                               const SizedBox(height: 4),
                               Text(
@@ -453,7 +483,6 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
                               child: const Text('낙찰', style: TextStyle(color: Colors.white, fontSize: 12)),
                             ),
                             const SizedBox(height: 8),
-                            // 다운로드 버튼 (React 코드 참고)
                             if (item.getImageUrl() != "$baseUrl/picture/display/default-image.jpg")
                               IconButton(
                                 onPressed: () => _handleDownloadOriginal(item),

@@ -185,7 +185,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                 image: post.thumbnailImagePath != null
                     ? DecorationImage(
                   image: NetworkImage(
-                    'http://10.100.204.189:8080${post.thumbnailImagePath}',
+                    'http://10.100.204.144:8080${post.thumbnailImagePath}',
                     headers: {
                       'Authorization':
                       'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}',
@@ -216,7 +216,7 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '작성일: ${_formatDate(post.regDate)}',
+                    '작성일: ${_formatDate(post!.regDate)}',
                     style: const TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 2),
@@ -261,9 +261,9 @@ class _MyPostsScreenState extends State<MyPostsScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.year.toString().padLeft(4, '0')}-'
-        '${date.month.toString().padLeft(2, '0')}-'
-        '${date.day.toString().padLeft(2, '0')}';
+  String _formatDate(DateTime? date) {
+    return '${date?.year.toString().padLeft(4, '0')}-'
+        '${date?.month.toString().padLeft(2, '0')}-'
+        '${date?.day.toString().padLeft(2, '0')}';
   }
 }

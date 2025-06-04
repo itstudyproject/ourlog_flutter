@@ -13,7 +13,7 @@ class ArtListScreen extends StatefulWidget {
 }
 
 class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateMixin {
-  static const String baseUrl = "http://10.100.204.189:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.144:8080/ourlog";
   static const int artworksPerPage = 16;
 
   List<Post> artworks = [];

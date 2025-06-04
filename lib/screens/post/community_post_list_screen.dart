@@ -264,7 +264,7 @@ class _CommunityPostListScreenState extends State<CommunityPostListScreen> {
         onPressed: () {
           Navigator.pushNamed(
             context,
-            '/community/register',
+            '/post/register',
             arguments: {'boardType': widget.boardType},
           ).then((_) {
             _fetchPosts();

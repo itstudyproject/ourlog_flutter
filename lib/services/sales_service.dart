@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/sale.dart'; // Sale 모델 위치에 맞게 경로 조정
 
 class SalesService {
-  final String _baseUrl = 'http://10.100.204.189:8080/ourlog';
+  final String _baseUrl = 'http://10.100.204.144:8080/ourlog';
 
   Future<List<Sale>> fetchSales(int userId, String token) async {
     final uri = Uri.parse('$_baseUrl/profile/sales/$userId');

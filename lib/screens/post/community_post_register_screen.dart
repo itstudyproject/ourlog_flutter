@@ -334,8 +334,8 @@ class _CommunityPostRegisterScreenState
                         runSpacing: 8,
                         children: _existingPictures.map((pic) {
                           final imageUrl = pic.thumbnailImagePath != null
-                              ? "http://10.100.204.189:8080/ourlog/picture/display/${pic.thumbnailImagePath}"
-                              : "http://10.100.204.189:8080/ourlog/picture/display/default-image.jpg";
+                              ? "http://10.100.204.144:8080/ourlog/picture/display/${pic.thumbnailImagePath}"
+                              : "http://10.100.204.144:8080/ourlog/picture/display/default-image.jpg";
                           final bool isSelected =
                           (pic.picId == _selectedThumbnailId);
 

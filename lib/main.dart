@@ -6,10 +6,10 @@ import 'package:ourlog/screens/art/art_detail_screen.dart';
 import 'package:ourlog/screens/bookmark_screen.dart';
 import 'package:ourlog/screens/chat_list_screen.dart';
 import 'package:ourlog/screens/chat_screen.dart';
-
 import 'package:ourlog/screens/customer/answer_screen.dart';
+import 'package:ourlog/screens/post/community_post_detail_screen.dart';
+import 'package:ourlog/screens/post/community_post_list_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
-
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
 import 'package:ourlog/screens/customer/terms_condition_screen.dart';
@@ -53,10 +53,8 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      // 시스템 테마 설정 따르기
       home: const HomeScreen(),
       debugShowCheckedModeBanner: false,
-      // 디버그 배너 제거
       routes: {
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
@@ -65,11 +63,12 @@ class MyApp extends StatelessWidget {
         '/mypage': (context) => const MyPageScreen(),
         '/artWork': (context) => const ArtListScreen(),
         '/art/register': (context) {
-          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-          return ArtRegisterScreen(
-            postData: args?['postData'],
-            isReregister: args?['isReregister'] ?? false,
-          );
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final postData = args?['postData'];
+          final isReregister = args?['isReregister'] as bool? ?? false;
+
+          return ArtRegisterScreen(postData: postData, isReregister: isReregister);
         },
         '/Art': (context) {
           final postId = int.parse(
@@ -79,51 +78,94 @@ class MyApp extends StatelessWidget {
         },
         '/customer/termscondition': (context) => const TermsConditionScreen(),
         '/customer/privacypolicy': (context) => const PrivacyPolicyScreen(),
-        '/customer/customercenter':
-            (context) => CustomerCenterScreen(
+        '/customer/customercenter': (context) => CustomerCenterScreen(
           initialTabIndex: 0,
-          isAdmin: false, // 로그인하지 않은 사용자의 기본값
+          isAdmin: false,
         ),
         '/admin/answer': (context) => AnswerScreen(),
-        // ✅ 추가
+
+        // ─────────── 커뮤니티 4개 라우트 추가 ───────────
+        '/news': (context) {
+          // "새소식" 게시판
+          return const CommunityPostListScreen(boardType: 'news');
+        },
+        '/free': (context) {
+          // "자유게시판"
+          return const CommunityPostListScreen(boardType: 'free');
+        },
+        '/promotion': (context) {
+          // "홍보 게시판"
+          return const CommunityPostListScreen(boardType: 'promotion');
+        },
+        '/request': (context) {
+          // "요청 게시판"
+          return const CommunityPostListScreen(boardType: 'request');
+        },
+
+        // 기존에 있던 community/list 라우트도 남겨둡니다. 필요시 boardType 전달 방식으로 사용 가능
+        '/community/list': (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final boardType = args?['boardType'] as String?;
+          return CommunityPostListScreen(boardType: boardType);
+        },
+
+        '/community/detail': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final postId = args?['postId'] as int?;
+          if (postId == null) {
+            return const Scaffold(body: Center(child: Text('게시글 정보를 찾을 수 없습니다.')));
+          }
+          return CommunityPostDetailScreen(postId: postId);
+        },
+
         '/ranking': (context) => const RankingScreen(),
         '/chatList': (context) => const ChatListScreen(),
 
-        // <-- ChatListScreen 라우트 추가
         '/chat': (context) {
-          // 라우트 인자(arguments)로 전달된 GroupChannel 객체를 가져옴
           final Object? args = ModalRoute.of(context)!.settings.arguments;
           if (args is GroupChannel) {
             return ChatScreen(channel: args);
           } else {
-            // 인자가 null이거나 GroupChannel 타입이 아닐 경우 오류 처리
-            debugPrint(
-              'Error: Navigated to /chat with invalid arguments: $args',
-            );
+            debugPrint('Error: Navigated to /chat with invalid arguments: $args');
             return Scaffold(
               appBar: AppBar(title: const Text('오류')),
               body: const Center(child: Text('잘못된 채팅 채널 정보입니다.')),
             );
           }
         },
+
+        '/profile': (context) {
+          final args = ModalRoute.of(context)!.settings.arguments;
+          final userId = int.parse(args as String);
+          final currentUserId =
+              Provider.of<AuthProvider>(context, listen: false).userId;
+          if (currentUserId == null) {
+            return const LoginScreen();
+          }
+          return WorkerScreen(userId: userId, currentUserId: currentUserId);
+        },
+
         '/worker': (context) {
-          final args = ModalRoute.of(context)?.settings.arguments;
+          final args = ModalRoute.of(context)!.settings.arguments;
           if (args == null || args is! Map<String, dynamic>) {
             return Scaffold(
-              appBar: AppBar(title: Text('오류')),
-              body: Center(child: Text('잘못된 사용자 정보가 전달되었습니다.')),
+              appBar: AppBar(title: const Text('오류')),
+              body: const Center(child: Text('잘못된 사용자 정보가 전달되었습니다.')),
             );
           }
           final userIdRaw = args['userId'];
           final currentUserIdRaw = args['currentUserId'];
-
-          final int? userId = userIdRaw is int ? userIdRaw : int.tryParse(userIdRaw?.toString() ?? '');
-          final int? currentUserId = currentUserIdRaw is int ? currentUserIdRaw : int.tryParse(currentUserIdRaw?.toString() ?? '');
-
+          final int? userId = userIdRaw is int
+              ? userIdRaw
+              : int.tryParse(userIdRaw?.toString() ?? '');
+          final int? currentUserId = currentUserIdRaw is int
+              ? currentUserIdRaw
+              : int.tryParse(currentUserIdRaw?.toString() ?? '');
           if (userId == null || currentUserId == null) {
             return Scaffold(
-              appBar: AppBar(title: Text('오류')),
-              body: Center(child: Text('사용자 ID가 올바르지 않습니다.')),
+              appBar: AppBar(title: const Text('오류')),
+              body: const Center(child: Text('사용자 ID가 올바르지 않습니다.')),
             );
           }
           return WorkerScreen(userId: userId, currentUserId: currentUserId);
@@ -136,43 +178,16 @@ class MyApp extends StatelessWidget {
           final id = ModalRoute.of(ctx)!.settings.arguments as int;
           return AccountEditScreen(userId: id);
         },
-
-        // '/mypage/purchase-bid': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return PurchaseBidScreen(userId: userId);
-        // },
-        // '/mypage/sale': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return SaleScreen(userId: userId);
-        // },
-        // '/mypage/bookmark': (ctx) {
-        //   final userId = ModalRoute.of(ctx)!.settings.arguments as int;
-        //   return BookmarkScreen(userId: userId);
-        // },
-
-        //     // 프로필수정 화면으로 라우팅
-        // '/mypage/edit': (ctx) {
-        // final userId = Provider.of<AuthProvider>(ctx, listen: false).userId;
-        // if (userId == null) {
-        // // 로그인 안 된 상태면 로그인 페이지로
-        // return const LoginScreen();
-        // }
-        // return ProfileEditScreen(userId: userId);
-        // },
-
-        // 회원정보수정
-        // '/mypage/account/edit': (c) {
-        //   final auth = Provider.of<AuthProvider>(c, listen: false);
-        //   final uid  = auth.userId;
-        //   if (uid == null) return const LoginScreen();
-        //   return AccountEditScreen(userId: uid);
-        //   },
         '/mypage/purchase-bid': (context) => const PurchaseBidScreen(),
         '/mypage/sale': (context) => const SaleScreen(),
         '/mypage/bookmark': (context) => const BookmarkScreen(),
         '/mypage/account/delete': (context) => const DeleteUserScreen(),
         '/art/payment': (context) => const PaymentScreen(),
         '/Art/bidhistory': (context) => const BidHistoryScreen(),
+      },
+      // 없는 라우트를 호출할 때 홈 화면으로 보낼 수도 있습니다.
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(builder: (_) => const HomeScreen());
       },
     );
   }

@@ -372,11 +372,34 @@ class ChatProvider with ChangeNotifier implements MessageCollectionHandler {
   }
 
   // TODO: 1:1 채팅 채널 개설 로직 추가 (_create1to1Channel 또는 유사한 메서드)
-  Future<GroupChannel?> create1to1Channel(String targetUserId) async {
+  Future<GroupChannel?> create1to1Channel(String targetUserId, String jwtToken, int currentUserId) async {
      if (!_isSendbirdInitialized || _currentUser == null) {
-        debugPrint('Sendbird not initialized or user not connected. Cannot create channel.');
+        debugPrint('Sendbird not initialized or user not connected. Attempting to connect...');
         // setErrorMessage('채팅 시스템에 연결되지 않았습니다.');
-        return null;
+        try {
+          // Initialize and connect if not already
+          // Fetch Sendbird auth info using JWT token
+          final sendbirdAuth = await fetchSendbirdAuthInfo(jwtToken, currentUserId);
+          if (sendbirdAuth != null && sendbirdAuth['userId'] != null && sendbirdAuth['accessToken'] != null) {
+             // Use fetched Sendbird userId and accessToken for connection
+             await initializeAndConnect(
+                 sendbirdAuth['userId'], sendbirdAuth['accessToken'], jwtToken);
+             if (!_isSendbirdInitialized || _currentUser == null) {
+                debugPrint('Failed to connect to Sendbird after fetching auth info.');
+                // setErrorMessage('채팅 시스템 연결 실패.');
+                return null;
+             }
+             debugPrint('Sendbird connection successful after attempt.');
+          } else {
+             debugPrint('Failed to fetch Sendbird auth info. Cannot connect.');
+             // setErrorMessage('채팅 시스템 연결 실패.');
+             return null;
+          }
+        } catch (e) {
+           debugPrint('Error during Sendbird connection attempt in create1to1Channel: $e');
+           // setErrorMessage('채팅 시스템 연결 중 오류 발생.');
+           return null; // Connection failed
+        }
      }
      if (targetUserId == _currentUser!.userId) {
         debugPrint('Cannot create channel with yourself.');
@@ -410,7 +433,14 @@ class ChatProvider with ChangeNotifier implements MessageCollectionHandler {
            // 또는 AuthProvider를 통해 JWT 토큰에 접근하는 방식 사용
            // 현재 코드 구조상 ChatProvider는 AuthProvider에 직접 접근하지 않으므로, 토큰 전달이 필요합니다.
            // 임시로 여기서는 프로필 정보 가져오는 로직 생략 또는 수정 필요
-           debugPrint('TODO: Fetch user profile for $targetUserId after channel creation.');
+           // fetchProfile 호출 시 JWT 토큰 사용
+           final profileResult = await AuthService.fetchProfile(backendUserId, jwtToken);
+           if (profileResult['success'] && profileResult['profile'] != null) {
+             final userProfile = UserProfile.fromJson(profileResult['profile']);
+             _userProfiles[targetUserId] = userProfile;
+           } else {
+             debugPrint('Failed to fetch user profile for $targetUserId: ${profileResult['message']}');
+           }
         }
 
         return channel;

@@ -4,10 +4,13 @@ import 'package:http/http.dart' as http;
 import 'package:ourlog/services/worker_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/post.dart';
+import 'package:provider/provider.dart';
+import 'package:ourlog/providers/chat_provider.dart';
+import 'package:ourlog/providers/auth_provider.dart';
 
 class WorkerScreen extends StatefulWidget {
-  final int userId; // 작가 id
-  final int currentUserId; // 로그인한 유저 id
+  final int userId;
+  final int currentUserId;
 
   const WorkerScreen({
     super.key,
@@ -23,6 +26,8 @@ class _WorkerScreenState extends State<WorkerScreen> {
   String nickname = '';
   String profileImageUrl = '';
   bool isFollowing = false;
+  int followCnt = 0;
+  int followingCnt = 0;
   List<Post> posts = [];
   int page = 1;
   final int size = 6;
@@ -35,7 +40,7 @@ class _WorkerScreenState extends State<WorkerScreen> {
     super.initState();
     fetchProfile();
     fetchPosts();
-    _scrollController.addListener(_onScroll);  // 리스너 등록
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -51,8 +56,9 @@ class _WorkerScreenState extends State<WorkerScreen> {
         nickname = profile['nickname'] ?? '';
         profileImageUrl = profile['thumbnailImagePath'] ?? '';
         isFollowing = profile['isFollowing'] ?? false;
+        followCnt = profile['followerCount'] ?? 0;
+        followingCnt = profile['followingCount'] ?? 0;
       });
-      print('[DEBUG] 프로필 이미지 URL: $profileImageUrl');
     } catch (e) {
       print('프로필 로딩 에러: $e');
     }
@@ -63,13 +69,13 @@ class _WorkerScreenState extends State<WorkerScreen> {
     setState(() => isLoading = true);
 
     try {
-      final postsData = await WorkerService.fetchUserPosts(widget.userId, page, size);
-
+      final postsData =
+      await WorkerService.fetchUserPosts(widget.userId, page, size);
       final newPostsJson = postsData['pageResultDTO']?['dtoList'] ?? [];
 
       final newPosts = newPostsJson
           .map<Post>((json) => Post.fromJson(json))
-          .where((post) => post.boardNo == 5)
+          .where((post) => post.boardNo == 5 && post.userId == widget.userId)
           .toList();
 
       setState(() {
@@ -86,22 +92,40 @@ class _WorkerScreenState extends State<WorkerScreen> {
 
   Future<void> toggleFollow() async {
     try {
-      await WorkerService.toggleFollow(widget.currentUserId, widget.userId, isFollowing);
-      setState(() => isFollowing = !isFollowing);
+      await WorkerService.toggleFollow(
+          widget.currentUserId, widget.userId, isFollowing);
+      setState(() {
+        isFollowing = !isFollowing;
+        if (isFollowing) {
+          followCnt += 1; // 팔로우 했을 때 +1
+        } else {
+          followCnt = (followCnt > 0) ? followCnt - 1 : 0; // 언팔로우 했을 때 -1 (0 미만 방지)
+        }
+      });
     } catch (e) {
       print('팔로우 토글 에러: $e');
     }
   }
 
   Future<void> toggleLike(int postId, int index) async {
+    final oldLiked = posts[index].liked ?? false;
+    final oldCount = posts[index].favoriteCnt ?? 0;
+
     try {
-      final liked = await WorkerService.toggleLike(widget.currentUserId, postId);
+      final isLikedNow = await WorkerService.toggleLike(widget.currentUserId, postId);
+
       setState(() {
-        posts[index].liked = liked;
-        posts[index].favoriteCnt = (posts[index].favoriteCnt ?? 0) + (liked ? 1 : -1);
+        posts[index].liked = isLikedNow;
+        posts[index].favoriteCnt = isLikedNow
+            ? oldCount + (oldLiked ? 0 : 1) // 좋아요가 새로 눌렸다면 +1
+            : oldCount - (oldLiked ? 1 : 0); // 좋아요가 취소됐다면 -1
       });
     } catch (e) {
       print('좋아요 토글 에러: $e');
+      setState(() {
+        posts[index].liked = oldLiked;
+        posts[index].favoriteCnt = oldCount;
+      });
     }
   }
 
@@ -115,28 +139,21 @@ class _WorkerScreenState extends State<WorkerScreen> {
         headers: {'Authorization': 'Bearer $token'},
       );
 
-      if (response.statusCode == 200) {
-        final contentType = response.headers['content-type'];
-        if (contentType != null && contentType.startsWith('image/')) {
-          return response.bodyBytes;
-        } else {
-          print('[DEBUG] 이미지 아님: content-type=$contentType');
-          return null;
-        }
-      } else {
-        print('[DEBUG] 이미지 요청 실패: ${response.statusCode}, URL: $imageUrl');
-        return null;
+      if (response.statusCode == 200 &&
+          response.headers['content-type']?.startsWith('image/') == true) {
+        return response.bodyBytes;
       }
     } catch (e) {
-      print('[DEBUG] 이미지 요청 예외 발생: $e');
-      return null;
+      print('이미지 요청 실패: $e');
     }
+    return null;
   }
 
-  // ★ 여기가 추가된 부분 ★
   void _onScroll() {
     if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 100) {
+        _scrollController.position.maxScrollExtent - 100 &&
+        !isLoading &&
+        hasMore) {
       fetchPosts();
     }
   }
@@ -152,161 +169,328 @@ class _WorkerScreenState extends State<WorkerScreen> {
       ),
       body: Column(
         children: [
-          // 작가 프로필 영역
+          const SizedBox(height: 16),
+
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.grey[800],
-                  child: profileImageUrl.isNotEmpty
-                      ? FutureBuilder<Uint8List?>(
-                    future: fetchImageBytes(profileImageUrl),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator(color: Colors.white);
-                      } else if (snapshot.hasError || snapshot.data == null) {
-                        return const Icon(Icons.person, size: 40, color: Colors.white);
-                      } else {
-                        return ClipOval(
-                          child: Image.memory(
-                            snapshot.data!,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // 👤 프로필 이미지 (고정 크기)
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.grey[800],
+                      child: profileImageUrl.isNotEmpty
+                          ? FutureBuilder<Uint8List?>(
+                        future: fetchImageBytes(profileImageUrl),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator(
+                                color: Colors.white);
+                          } else if (snapshot.hasError ||
+                              snapshot.data == null) {
+                            return const Icon(Icons.person,
+                                size: 40, color: Colors.white);
+                          } else {
+                            return ClipOval(
+                              child: Image.memory(
+                                snapshot.data!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          }
+                        },
+                      )
+                          : const Icon(Icons.person, size: 40, color: Colors.white),
+                    ),
+                    const SizedBox(width: 16), // 프로필 이미지와 다음 요소 사이 간격
+
+                    // 🔤 닉네임 + 팔로워/팔로잉 (남은 공간의 일부를 차지)
+                    // 이 부분을 Expanded로 감싸서 남은 공간을 유연하게 사용하도록 합니다.
+                    Expanded(
+                      flex: 3, // 이 부분이 더 많은 공간을 차지하도록 flex 값을 줍니다.
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            // 닉네임과 팔로워/팔로잉 숫자를 포함하는 Row
+                            children: [
+                              Flexible( // 닉네임이 길어질 때 오버플로우 방지
+                                child: Text(
+                                  nickname,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis, // 텍스트가 길어지면 ...으로 표시
+                                ),
+                              ),
+                              const SizedBox(width: 16), // 닉네임과 팔로우/팔로잉 텍스트 사이 간격
+                              // 팔로우/팔로잉 카운트 그룹 (고정된 공간을 가집니다)
+                              Column(
+                                children: [
+                                  Row(
+                                    children: const [
+                                      Text('팔로우', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                                      SizedBox(width: 16),
+                                      Text('팔로잉', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        '$followCnt',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 40),
+                                      Text(
+                                        '$followingCnt',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                        );
-                      }
-                    },
-                  )
-                      : const Icon(Icons.person, size: 40, color: Colors.white),
+                        ],
+                      ),
+                    ),
+
+                    // 팔로우/채팅 버튼 (남은 공간의 일부를 차지)
+                    if (widget.userId != widget.currentUserId) ...[
+                      const SizedBox(width: 8), // 프로필 정보와 버튼 사이 간격
+                      Expanded( // 이 부분도 Expanded로 감싸서 남은 공간을 유연하게 사용
+                        flex: 2, // 닉네임/카운트 부분보다 적은 공간을 차지하도록 flex 값을 줍니다.
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end, // 버튼을 오른쪽으로 정렬
+                          children: [
+                            Flexible( // 버튼의 텍스트가 길어질 경우
+                              child: OutlinedButton(
+                                onPressed: toggleFollow,
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.white,
+                                  side: const BorderSide(color: Colors.white),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8), // 패딩 줄이기
+                                  textStyle: const TextStyle(fontSize: 12), // 폰트 크기 줄이기
+                                ),
+                                child: Text(
+                                  isFollowing ? '언팔로우' : '팔로우',
+                                  overflow: TextOverflow.ellipsis, // 텍스트 오버플로우 방지
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 4), // 버튼들 사이 간격 줄이기
+                            Flexible( // 버튼의 텍스트가 길어질 경우
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  // 1:1 채팅 로직
+                                  final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+                                  final authProvider = Provider.of<AuthProvider>(context, listen: false);
+                                  final jwtToken = authProvider.token;
+                                  final currentUserId = authProvider.userId;
+
+                                  if (jwtToken == null || currentUserId == null) {
+                                     debugPrint('JWT token or current user ID is null. Cannot create channel.');
+                                     ScaffoldMessenger.of(context).showSnackBar(
+                                       const SnackBar(content: Text('사용자 인증 정보를 불러올 수 없습니다. 다시 로그인해주세요.')),
+                                     );
+                                     return;
+                                  }
+
+                                  final channel = await chatProvider
+                                      .create1to1Channel(widget.userId.toString(), jwtToken, currentUserId);
+
+                                  if (channel != null) {
+                                    Navigator.pushNamed(context, '/chat', arguments: channel);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('채팅 채널을 생성할 수 없습니다.')),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFF8C147),
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(horizontal: 8), // 패딩 줄이기
+                                  textStyle: const TextStyle(fontSize: 12), // 폰트 크기 줄이기
+                                ),
+                                child: const Text(
+                                  '채팅창',
+                                  overflow: TextOverflow.ellipsis, // 텍스트 오버플로우 방지
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  nickname,
-                  style: const TextStyle(color: Colors.white, fontSize: 20),
-                ),
-                const Spacer(),
-                OutlinedButton(
-                  onPressed: toggleFollow,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: const BorderSide(color: Colors.white),
-                  ),
-                  child: Text(isFollowing ? '언팔로우' : '팔로우'),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/chat');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF8C147),
-                    foregroundColor: Colors.black,
-                  ),
-                  child: const Text('채팅창'),
-                ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
 
-          // 작품 목록 그리드
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 21.0),
+            child: Divider(color: Colors.white, height: 1),
+          ),
+
+          const SizedBox(height: 16),
+
+          // 작품 목록
           Expanded(
             child: GridView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
-                childAspectRatio: 0.7,
+                childAspectRatio: 0.8, // 이전과 동일하게 유지
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
               ),
-              itemCount: posts.length,
+              itemCount: posts.length + (hasMore ? 1 : 0),
               itemBuilder: (context, index) {
+                if (index == posts.length) {
+                  return isLoading
+                      ? const Center(
+                      child: CircularProgressIndicator(color: Colors.white))
+                      : const SizedBox.shrink();
+                }
                 final post = posts[index];
                 final imageUrl = post.getImageUrl();
                 final title = post.title;
-                final likesCount = post.favoriteCnt;
-                final liked = post.liked;
+                final likesCount = post.favoriteCnt ?? 0;
+                final liked = post.liked ?? false;
 
-                return Card(
-                  color: Colors.grey[900],
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: imageUrl.isNotEmpty
-                            ? FutureBuilder<Uint8List?>(
-                          future: fetchImageBytes(imageUrl),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return const Center(child: CircularProgressIndicator());
-                            } else if (snapshot.hasError || snapshot.data == null) {
-                              return const Center(
-                                child: Icon(Icons.broken_image, color: Colors.white),
-                              );
-                            } else {
-                              return Image.memory(
-                                snapshot.data!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                              );
-                            }
-                          },
-                        )
-                            : Container(
-                          color: Colors.grey[700],
-                          child: const Center(
-                            child: Icon(Icons.image, color: Colors.white),
+                return GestureDetector(
+                  onTap: () {
+                    if (post.postId != null) {
+                      Navigator.pushNamed(context, '/postDetail',
+                          arguments: post.postId);
+                    }
+                  },
+                  child: Card(
+                    color: Colors.grey[900],
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AspectRatio(
+                          aspectRatio: 1,
+                          child: Stack(
+                            children: [
+                              imageUrl.isNotEmpty
+                                  ? FutureBuilder<Uint8List?>(
+                                future: fetchImageBytes(imageUrl),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  } else if (snapshot.hasError ||
+                                      snapshot.data == null) {
+                                    return _placeholderImage();
+                                  } else {
+                                    return ClipRRect(
+                                      borderRadius:
+                                      BorderRadius.circular(12),
+                                      child: Image.memory(
+                                        snapshot.data!,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                      ),
+                                    );
+                                  }
+                                },
+                              )
+                                  : _placeholderImage(),
+                              Positioned(
+                                top: 8,
+                                right: 8,
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.translucent,
+                                  onTap: () => toggleLike(post.postId!, index),
+                                  child: Container(
+                                    constraints: const BoxConstraints(
+                                        maxWidth: 80),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black54,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          liked ? '🧡' : '🤍',
+                                          style: const TextStyle(fontSize: 16),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            '$likesCount',
+                                            style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(
-                          post.title ?? '',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            title ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white),
+                          ),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              '$likesCount 좋아요',
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            IconButton(
-                              onPressed: () {
-                                if (post.postId != null) {
-                                  toggleLike(post.postId!, index);
-                                }
-                              },
-                              icon: Icon(
-                                liked ? Icons.favorite : Icons.favorite_border,
-                                color: liked ? Colors.red : Colors.white70,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
-
-          if (isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
         ],
+      ),
+    );
+  }
+
+  Widget _placeholderImage() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        color: Colors.grey[700],
+        child: const Center(
+          child: Icon(Icons.broken_image, color: Colors.white),
+        ),
       ),
     );
   }

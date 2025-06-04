@@ -30,6 +30,7 @@ import 'screens/register_screen.dart';
 import 'providers/chat_provider.dart';
 import 'screens/art/payment_screen.dart';
 import 'screens/art/bid_history_screen.dart';
+import 'screens/post/community_post_register_screen.dart';
 
 void main() {
   runApp(
@@ -184,6 +185,15 @@ class MyApp extends StatelessWidget {
         '/mypage/account/delete': (context) => const DeleteUserScreen(),
         '/art/payment': (context) => const PaymentScreen(),
         '/Art/bidhistory': (context) => const BidHistoryScreen(),
+
+        // ─────────── 커뮤니티 게시글 등록 라우트 추가 ───────────
+        '/community/register': (context) {
+          final args =
+              ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final boardType = args?['boardType'] as String?;
+          // CommunityPostRegisterScreen 위젯이 boardType 인자를 받도록 수정
+          return CommunityPostRegisterScreen(boardType: boardType);
+        },
       },
       // 없는 라우트를 호출할 때 홈 화면으로 보낼 수도 있습니다.
       onUnknownRoute: (settings) {

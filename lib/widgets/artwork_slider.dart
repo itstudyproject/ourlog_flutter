@@ -30,7 +30,7 @@ class Artwork {
   });
 
   static const String _baseUrl =
-      "http://10.100.204.54:8080/ourlog/picture/display/";
+      "http://10.100.204.144:8080/ourlog/picture/display/";
 
   factory Artwork.fromJson(Map<String, dynamic> json, {bool isArtist = false}) {
     String getImageUrl(Map<String, dynamic> item) {
@@ -92,9 +92,9 @@ class ArtworkSlider extends StatefulWidget {
 
 class _ArtworkSliderState extends State<ArtworkSlider> {
   static const String viewsApiUrl =
-      "http://10.100.204.54:8080/ourlog/ranking?type=views";
+      "http://10.100.204.144:8080/ourlog/ranking?type=views";
   static const String followersApiUrl =
-      "http://10.100.204.54:8080/ourlog/ranking?type=followers";
+      "http://10.100.204.144:8080/ourlog/ranking?type=followers";
 
   List<Artwork> artworks = [];
   List<Artwork> artists = [];

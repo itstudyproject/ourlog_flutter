@@ -23,7 +23,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
   String? errorMessage;
   Timer? _timer; // 타이머 추가
   String countdown = '경매 정보 없음'; // 카운트다운 문자열 추가
-  static const String baseUrl = "http://10.100.204.54:8080/ourlog";
+  static const String baseUrl = "http://10.100.204.144:8080/ourlog";
   final TextEditingController _bidAmountController = TextEditingController(); // 입찰 금액 입력 컨트롤러
   bool _isBidding = false; // 입찰 중 상태
 
@@ -502,7 +502,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
           children: [
             // 작품 이미지
             Center(
-              child: artwork!.getImageUrl() != "http://10.100.204.54:8080/ourlog/picture/display/default-image.jpg"
+              child: artwork!.getImageUrl() != "http://10.100.204.144:8080/ourlog/picture/display/default-image.jpg"
                   ? Stack(
                       alignment: Alignment.center,
                       children: [
@@ -565,7 +565,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                                 ? NetworkImage(
                               // React 코드의 profileImage 처리 로직 참고
                                 artwork!.profileImage!.startsWith('/ourlog')
-                                    ? 'http://10.100.204.54:8080${artwork!.profileImage!}' // 도메인 추가
+                                    ? 'http://10.100.204.144:8080${artwork!.profileImage!}' // 도메인 추가
                                     : '$baseUrl/picture/display/${artwork!.profileImage!}' // imageBaseUrl 대체
                             )
                                 : null,

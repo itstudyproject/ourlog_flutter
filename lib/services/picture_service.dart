@@ -8,7 +8,7 @@ import '../models/picture.dart';
 
 class PictureService {
   // 실제 사용하는 IP/포트를 맞춰주세요.
-  static const String _baseUrl = 'http://10.100.204.157:8080/ourlog';
+  static const String _baseUrl = 'http://10.100.204.144:8080/ourlog';
 
   /// 이미지 목록 가져오기 (예시)
   static Future<List<Picture>> getPictures({int page = 0, int size = 10}) async {

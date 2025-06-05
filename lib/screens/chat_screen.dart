@@ -197,7 +197,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               // 사용자 프로필 이미지 표시
                              backgroundImage: chatProvider.userProfiles[message.sender?.userId]?.profileImageUrl != null
                                 ? NetworkImage(
-                                    'http://10.100.204.124:8080' + chatProvider.userProfiles[message.sender?.userId]!.profileImageUrl!,
+                                    'http://10.100.204.144:8080' + chatProvider.userProfiles[message.sender?.userId]!.profileImageUrl!,
                                     // 인증 헤더 추가
                                     headers: userToken != null ? {'Authorization': 'Bearer $userToken'} : null,
                                   ) as ImageProvider
@@ -302,7 +302,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                backgroundColor: Colors.grey[400],
                                 backgroundImage: chatProvider.userProfiles[message.sender?.userId]?.profileImageUrl != null
                                    ? NetworkImage(
-                                       'http://10.100.204.124:8080' + chatProvider.userProfiles[message.sender?.userId]!.profileImageUrl!,
+                                       'http://10.100.204.144:8080' + chatProvider.userProfiles[message.sender?.userId]!.profileImageUrl!,
                                        // 인증 헤더 추가
                                        headers: userToken != null ? {'Authorization': 'Bearer $userToken'} : null,
                                     ) as ImageProvider

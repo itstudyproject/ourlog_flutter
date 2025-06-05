@@ -64,7 +64,7 @@ class _BulletinBoardState extends State<BulletinBoard> {
       final category = entry.key;
       final boardNo = entry.value;
       final url =
-          'http://10.100.204.54:8080/ourlog/post/list?boardNo=$boardNo&size=10&type=t&keyword=';
+          'http://10.100.204.144:8080/ourlog/post/list?boardNo=$boardNo&size=10&type=t&keyword=';
 
       try {
         final response = await http.get(Uri.parse(url));
@@ -85,12 +85,12 @@ class _BulletinBoardState extends State<BulletinBoard> {
             final pictureList = item['pictureDTOList'] ?? [];
             final fileName = item['fileName'];
             final pic = pictureList.firstWhere(
-                  (p) => p['picName'] == fileName,
+                  (p) => p['uuid'] == fileName,
               orElse: () => null,
             );
             if (pic != null) {
               thumbnail =
-              'http://10.100.204.54:8080/ourlog/picture/display/${pic['path']}/s_${pic['uuid']}_${pic['picName']}';
+              'http://10.100.204.144:8080/ourlog/picture/display/${pic['path']}/s_${pic['uuid']}_${pic['picName']}';
             }
 
             return PostItem(

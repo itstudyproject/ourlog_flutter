@@ -608,7 +608,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
             '현재 판매 중인 경매',
             style: Theme.of(context)
                 .textTheme
-                .titleMedium
+                .titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -663,8 +663,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                   item.title ?? '제목 없음',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                      .titleMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -673,8 +672,9 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                   '현재가: ${_formatPrice(currentPrice)}원',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodySmall
+                                      .bodyMedium
                                       ?.copyWith(
+                                      fontWeight: FontWeight.bold,
                                       color:
                                       Theme.of(context).primaryColor),
                                 ),
@@ -714,7 +714,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
             '기간 만료된 경매',
             style: Theme.of(context)
                 .textTheme
-                .titleMedium
+                .titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
@@ -776,8 +776,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                   item.title ?? '제목 없음',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                      .titleMedium,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -786,7 +785,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                   '${isSold ? '판매가' : '최고 입찰가'}: ${_formatPrice(finalPrice)}원',
                                   style: Theme.of(context)
                                       .textTheme
-                                      .bodySmall
+                                      .bodyMedium
                                       ?.copyWith(
                                       fontWeight: FontWeight.bold,
                                       color: statusColor),

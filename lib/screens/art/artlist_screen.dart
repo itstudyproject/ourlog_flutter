@@ -66,18 +66,15 @@ class _ArtListScreenState extends State<ArtListScreen> with TickerProviderStateM
 
   Future<void> _loadUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    final userData = prefs.getString('user');
-    if (userData != null) {
-      try {
-        final user = jsonDecode(userData);
-        if (user['userId'] != null) {
-          setState(() {
-            loggedInUserId = user['userId'];
-          });
-        }
-      } catch (e) {
-        debugPrint("사용자 데이터 파싱 실패: $e");
-      }
+    final userId = prefs.getInt('userId');
+
+    if (userId != null) {
+      setState(() {
+        loggedInUserId = userId;
+      });
+      debugPrint("SharedPreferences에서 loggedInUserId 로드 성공: $loggedInUserId");
+    } else {
+       debugPrint("SharedPreferences에 loggedInUserId가 없습니다.");
     }
   }
 

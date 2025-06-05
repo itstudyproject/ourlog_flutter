@@ -185,6 +185,121 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
     }
   }
 
+  // 좋아요 상태 토글 로직 (artlist_screen.dart 로직 참고하여 수정)
+  Future<void> _toggleLikeStatus() async {
+     if (artwork == null || artwork!.postId == null || _currentUserId == null) {
+       debugPrint('좋아요 토글 실패: 작품 정보, 게시글 ID 또는 사용자 ID 없음');
+        ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text('로그인이 필요합니다.')),
+       );
+       // TODO: 로그인 페이지로 이동하는 로직 추가
+       return;
+     }
+
+     final int postId = artwork!.postId!;
+     final int userId = _currentUserId!;
+     final bool currentLikedStatus = artwork!.liked ?? false;
+     final int currentFavoriteCnt = artwork!.favoriteCnt ?? 0;
+
+     // Optimistic UI 업데이트
+     setState(() {
+       artwork!.liked = !currentLikedStatus;
+       artwork!.favoriteCnt = currentLikedStatus ? currentFavoriteCnt - 1 : currentFavoriteCnt + 1;
+     });
+
+     try {
+       final headers = await _getHeaders();
+       final uri = Uri.parse('$baseUrl/favorites/toggle'); // /favorites/toggle 엔드포인트 사용
+       debugPrint('좋아요/좋아요 취소 API 요청 URL: $uri');
+       debugPrint('좋아요/좋아요 취소 API 요청 헤더: $headers');
+       debugPrint('좋아요/좋아요 취소 API 요청 본문: {"userId": $userId, "postId": $postId}');
+
+       final response = await http.post(
+         uri,
+         headers: headers,
+         body: jsonEncode({
+           'userId': userId,
+           'postId': postId,
+         }),
+       );
+
+       debugPrint('좋아요/좋아요 취소 API 응답 상태 코드: ${response.statusCode}');
+       debugPrint('좋아요/좋아요 취소 API 응답 본문: ${response.body}');
+
+       if (response.statusCode == 200) {
+         final data = jsonDecode(response.body);
+         if (data['favoriteCount'] != null && data['favorited'] != null) {
+           // API 성공 응답에서 최신 상태 반영
+           setState(() {
+             artwork!.favoriteCnt = data['favoriteCount'];
+             artwork!.liked = data['favorited'];
+           });
+           debugPrint('좋아요 상태 토글 성공 및 상태 업데이트 완료');
+         } else {
+            // 예상치 못한 응답 형식, 롤백 및 에러 메시지
+             setState(() {
+               artwork!.liked = currentLikedStatus;
+               artwork!.favoriteCnt = currentFavoriteCnt;
+             });
+             ScaffoldMessenger.of(context).showSnackBar(
+               const SnackBar(content: Text('좋아요 처리 실패: 서버 응답 형식 오류')),
+             );
+             debugPrint('좋아요 토글 성공 응답이지만 예상치 못한 본문: ${response.body}');
+         }
+       } else if (response.statusCode == 403) {
+           // 403 오류 발생 시 롤백 및 메시지
+           setState(() {
+             artwork!.liked = currentLikedStatus;
+             artwork!.favoriteCnt = currentFavoriteCnt;
+           });
+           String errorMessage = '좋아요 권한이 없습니다. 로그인이 필요합니다.';
+            if (response.body.isNotEmpty) {
+             try {
+               final errorBody = jsonDecode(response.body);
+               errorMessage = errorBody['message'] ?? errorMessage;
+             } catch (e) {
+                debugPrint('403 응답 본문 파싱 실패: $e');
+             }
+           }
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text(errorMessage)),
+           );
+           // TODO: 필요하다면 로그인 페이지로 이동 로직 추가
+       }
+       else {
+         // API 실패 시 UI 상태를 원래대로 되돌림 (Rollback)
+         setState(() {
+           artwork!.liked = currentLikedStatus;
+           artwork!.favoriteCnt = currentFavoriteCnt;
+         });
+         // 실패 메시지 표시
+         String errorMessage = '좋아요 상태 업데이트 실패: 서버 오류 (${response.statusCode})';
+         if (response.body.isNotEmpty) {
+           try {
+             final errorBody = jsonDecode(response.body);
+             errorMessage = errorBody['message'] ?? errorMessage;
+           } catch (e) {
+             debugPrint('좋아요/좋아요 취소 응답 본문 파싱 실패: $e');
+              errorMessage = '$errorMessage: ${response.body}'; // 파싱 실패 시 원본 본문 포함
+           }
+         }
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text(errorMessage)),
+         );
+       }
+     } catch (e) {
+       // 네트워크 오류 등 예외 발생 시 UI 상태를 원래대로 되돌림 (Rollback)
+       setState(() {
+         artwork!.liked = currentLikedStatus;
+         artwork!.favoriteCnt = currentFavoriteCnt;
+       });
+       debugPrint('좋아요/좋아요 취소 요청 실패: $e');
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(content: Text('좋아요 상태 업데이트 실패: ${e.toString()}')),
+       );
+     }
+   }
+
 
   // 입찰 로직
   Future<void> _placeBid() async {
@@ -585,11 +700,11 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                   ),
                   // 좋아요 버튼
                   GestureDetector(
-                    onTap: () { /* TODO: 좋아요 토글 로직 */ }, // 좋아요 토글 기능 연결
+                    onTap: _toggleLikeStatus, // 좋아요 토글 기능 연결
                     child: Row(
                         children: [
                           Text(
-                            artwork!.liked ? '🧡' : '🤍',
+                            artwork!.liked ?? false ? '🧡' : '🤍', // null 체크 추가
                             style: const TextStyle(
                               fontSize: 24,
                               shadows: [
@@ -603,7 +718,7 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${artwork!.favoriteCnt ?? 0}',
+                            '${artwork!.favoriteCnt ?? 0}', // null 체크 추가
                             style: Theme.of(context).textTheme.titleMedium,
                           ),
                         ]
@@ -809,10 +924,8 @@ class _ArtDetailScreenState extends State<ArtDetailScreen> {
               ),
               const SizedBox(height: 24),
             ],
-          ],
-        ),
-      )
-          : const Center(child: Text('게시글 정보를 불러올 수 없습니다.')),
+          ),
+        ) : const Center(child: Text('게시글 정보를 불러올 수 없습니다.')),
       bottomNavigationBar: BottomAppBar(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),

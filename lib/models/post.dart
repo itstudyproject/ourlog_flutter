@@ -169,51 +169,65 @@ class Post {
   /// (1) 서버 저장 이미지 중 우선경로를 찾아 URL로 반환
   /// -------------------------------
   String getImageUrl() {
-    const String baseUrl = "http://10.100.204.144:8080/ourlog";
+    const String baseUrl = "http://10.100.204.144:8080";
+    const String imageEndpoint = "/ourlog/picture/display"; // display 뒤에 슬래시 제거 (조합 시 추가)
 
-    if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
-      final picData = pictureDTOList![0];
-      if (picData.resizedImagePath != null && picData.resizedImagePath!.isNotEmpty) {
-        return "$baseUrl/picture/display/${picData.resizedImagePath}";
-      }
-      if (picData.thumbnailImagePath != null && picData.thumbnailImagePath!.isNotEmpty) {
-        return "$baseUrl/picture/display/${picData.thumbnailImagePath}";
-      }
-      if (picData.originImagePath != null) {
-        if (picData.originImagePath is String && (picData.originImagePath as String).isNotEmpty) {
-          return "$baseUrl/picture/display/${picData.originImagePath}";
+    String? rawPath;
+
+    // 1. thumbnailImagePath 또는 resizedImagePath에 완전한 상대 경로가 담겨 있다면 최우선 사용
+    // (판매 목록/구매 목록 API 응답 형태를 고려)
+    if (thumbnailImagePath != null && thumbnailImagePath!.startsWith('/')) {
+       rawPath = thumbnailImagePath;
+    } else if (resizedImagePath != null && resizedImagePath!.startsWith('/')) {
+       rawPath = resizedImagePath;
+    } else if (originImagePath != null && originImagePath is String && originImagePath.startsWith('/')) {
+       rawPath = originImagePath as String;
+    }
+     // fileName도 완전한 상대 경로일 가능성을 고려 (UUID만 있는 경우도 있으므로 startsWith로 구분)
+     else if (fileName != null && fileName!.startsWith('/')) {
+       rawPath = fileName;
+    }
+
+
+    // 2. pictureDTOList에서 경로를 찾는 로직
+    // (내 글 목록/관심 목록 API 응답 형태를 고려)
+    if (rawPath == null || rawPath.isEmpty) {
+      if (pictureDTOList != null && pictureDTOList!.isNotEmpty) {
+        final picData = pictureDTOList![0];
+        // pictureDTOList 내 Picture 객체의 필드를 확인하여 경로 조합
+        if (picData.path != null && picData.path!.isNotEmpty && picData.uuid != null && picData.picName != null) {
+           // "path/uuid_picName" 형태의 순수 상대 경로 조합
+           rawPath = "${picData.path}/${picData.uuid}_${picData.picName}";
+        } else if (picData.resizedImagePath != null && picData.resizedImagePath!.isNotEmpty && !picData.resizedImagePath!.startsWith('/')) {
+           rawPath = picData.resizedImagePath; // '/'로 시작하지 않는 순수 상대 경로라고 가정
+        } else if (picData.thumbnailImagePath != null && picData.thumbnailImagePath!.isNotEmpty && !picData.thumbnailImagePath!.startsWith('/')) {
+           rawPath = picData.thumbnailImagePath; // '/'로 시작하지 않는 순수 상대 경로라고 가정
+        } else if (picData.originImagePath != null && picData.originImagePath is String && (picData.originImagePath as String).isNotEmpty && !(picData.originImagePath as String).startsWith('/')) {
+           rawPath = picData.originImagePath as String; // '/'로 시작하지 않는 순수 상대 경로라고 가정
         }
-        if (picData.originImagePath is List<dynamic> &&
-            (picData.originImagePath as List).isNotEmpty) {
-          return "$baseUrl/picture/display/${(picData.originImagePath as List).first}";
-        }
-      }
-      if (picData.picName != null && picData.picName!.isNotEmpty) {
-        return "$baseUrl/picture/display/${picData.picName}";
+         // pictureDTOList 내 필드에 완전한 상대 경로가 담겨오는 경우도 있을 수 있음
+         // 이 경우 해당 경로가 '/'로 시작할 것이므로 1번 로직에서 걸러져야 함.
       }
     }
 
-    if (resizedImagePath != null && resizedImagePath!.isNotEmpty) {
-      return "$baseUrl/picture/display/$resizedImagePath";
-    }
-    if (thumbnailImagePath != null && thumbnailImagePath!.isNotEmpty) {
-      return "$baseUrl/picture/display/$thumbnailImagePath";
-    }
-    if (originImagePath != null) {
-      if (originImagePath is String && (originImagePath as String).isNotEmpty) {
-        return "$baseUrl/picture/display/$originImagePath";
-      }
-      if (originImagePath is List<dynamic> && (originImagePath as List).isNotEmpty) {
-        return "$baseUrl/picture/display/${(originImagePath as List).first}";
-      }
-    }
-    if (fileName != null && fileName!.isNotEmpty) {
-      return "$baseUrl/picture/display/$fileName";
+    // 3. 최종적으로 얻은 경로를 정제하여 Base URL과 조합
+    if (rawPath != null && rawPath.isNotEmpty) {
+       // 경로가 이미 Base URL 뒤에 바로 붙여서 사용 가능한 완전한 상대 경로인 경우 (예: /ourlog/picture/display/...)
+       if (rawPath.startsWith('/')) {
+           // '/'로 시작하면 Base URL 뒤에 바로 붙임
+           // (이 경우는 1번 로직에서 이미 처리되었어야 함. 혹시 빠진 경우를 위한 안전 장치)
+           return "$baseUrl$rawPath";
+       } else {
+           // '/'로 시작하지 않는 순수한 상대 경로인 경우 (예: 2025/06/04/m_...)
+           // Base URL + Endpoint + '/' + 순수한 상대 경로 조합
+           String cleanPath = rawPath.replaceAll('//', '/'); // 혹시 모를 이중 슬래시 제거
+           return "$baseUrl$imageEndpoint/$cleanPath"; // Endpoint 뒤에 슬래시 추가하여 조합
+       }
     }
 
-    return "$baseUrl/picture/display/default-image.jpg";
+    // 모든 경로를 찾지 못한 경우 기본 이미지 반환
+    return "$baseUrl$imageEndpoint/default-image.jpg"; // Endpoint 뒤에 슬래시 추가하여 조합
   }
-
   /// -------------------------------
   /// (2) 남은 시간 계산 (경매 전용 예시)
   /// -------------------------------

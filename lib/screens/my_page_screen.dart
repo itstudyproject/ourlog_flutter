@@ -12,6 +12,8 @@ import 'package:ourlog/widgets/main_layout.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 
+import 'package:ourlog/models/picture.dart';
+
 import 'art/bid_history_screen.dart';
 
 // ----------------------------
@@ -384,61 +386,122 @@ class __SaleTradeListState extends State<_SaleTradeList> {
           if (element is! Map<String, dynamic>) continue;
           final item = element;
 
-          final String? startBidRaw = item['startBidTime'] as String?;
-          final String? lastBidRaw = item['lastBidTime'] as String?;
-
-          final postJson = <String, dynamic>{
-            'postId': item['postId'] as int?,
-            'userId': item['sellerId'] as int?,
-            'title': item['postTitle'] as String?,
-            'content': null,
-            'nickname': item['sellerNickname'] as String? ?? '알 수 없음',
-            'fileName': item['postImage'] as String?,
-            'boardNo': 5,
-            'thumbnailImagePath': item['postImage'] as String?,
-            'resizedImagePath': item['postImage'] as String?,
-            'originImagePath': [if (item['postImage'] != null) item['postImage'] as String],
-            'pictureDTOList': <Map<String, dynamic>>[
-              if (item['postImage'] != null)
-                {
-                  'uuid': item['postImage'] as String,
-                  'path': item['postImage'] as String,
-                }
-            ],
-            'views': 0,
-            'tag': null,
-            'followers': 0,
-            'downloads': 0,
-            'favoriteCnt': 0,
-            'profileImage': item['sellerProfileImage'] as String?,
-            'replyCnt': 0,
-            'regDate': null,
-            'modDate': null,
-            'liked': false,
-            'tradeDTO': <String, dynamic>{
-              'tradeId': item['tradeId'] as int?,
-              'postId': item['postId'] as int?,
-              'sellerId': item['sellerId'] as int?,
-              'bidderId': item['bidderId'] as int?,
-              'bidderNickname': item['bidderNickname'] as String?,
-              'startPrice': item['startPrice'] as int?,
-              'highestBid': item['highestBid'] as int?,
-              'nowBuy': item['nowBuy'] as int?,
-              'tradeStatus': (item['tradeStatus'] as bool? ?? false) ? 'COMPLETED' : 'ACTIVE',
-              'startBidTime': startBidRaw,
-              'lastBidTime': lastBidRaw,
-            },
-          };
-
           try {
-            final post = Post.fromJson(postJson);
-            if (post.tradeDTO?.tradeStatus == 'ACTIVE') {
+            // tradeDTO 객체 직접 생성 및 파싱 (클래스 이름을 Trade -> TradeDTO로 수정)
+            final tradeJson = item['tradeDTO'] as Map<String, dynamic>? ?? item; // API 응답 구조에 따라 tradeDTO가 중첩될 수도, 아닐 수도 있음
+            final String? startBidRaw = tradeJson['startBidTime'] as String?;
+            final String? lastBidRaw = tradeJson['lastBidTime'] as String?;
+            final bool? tradeStatusBool = tradeJson['tradeStatus'] as bool?; // API 응답의 bool 값 직접 사용
+
+            final TradeDTO? tradeDTO = TradeDTO( // Trade -> TradeDTO
+                tradeId: tradeJson['tradeId'] as int,
+                postId: tradeJson['postId'] as int,
+                sellerId: tradeJson['sellerId'] as int,
+                bidderId: tradeJson['bidderId'] as int?,
+                bidderNickname: tradeJson['bidderNickname'] as String?,
+                startPrice: tradeJson['startPrice'] as int,
+                highestBid: tradeJson['highestBid'] as int?,
+                nowBuy: tradeJson['nowBuy'] as int,
+                // tradeStatus 필드가 bool 타입이므로 boolean 값을 직접 전달
+                tradeStatus: tradeStatusBool ?? false, // nullable bool? 값을 non-nullable bool로 변환 (null이면 false)
+                startBidTime: startBidRaw != null ? DateTime.tryParse(startBidRaw) : null, // 안전하게 파싱
+                lastBidTime: lastBidRaw != null ? DateTime.tryParse(lastBidRaw) : null,   // 안전하게 파싱
+            );
+
+
+            // pictureDTOList 생성: Map 리스트를 Picture 객체 리스트로 변환
+            List<Picture>? pictureList;
+            if (item['pictureDTOList'] is List) {
+               pictureList = (item['pictureDTOList'] as List)
+                   .map((picJson) => Picture.fromJson(picJson as Map<String, dynamic>))
+                   .toList();
+            } else if (item['postImage'] != null) {
+               try {
+                  pictureList = [Picture(
+                    picId: item['picId'] as int?, // API 응답에 picId가 있다면 사용
+                    uuid: item['postImage'] as String?, // uuid와 path, imagePath에 postImage 사용
+                    picName: item['postTitle'] as String? ?? 'image', // 제목 등을 picName으로 사용
+                    path: item['postImage'] as String?,
+                    originImagePath: item['postImage'] as String?,
+                    thumbnailImagePath: item['postImage'] as String?,
+                    resizedImagePath: item['postImage'] as String?,
+                   )];
+               } catch(e) {
+                   debugPrint('Error creating Picture from postImage: $e');
+               }
+            }
+
+
+            final postJson = <String, dynamic>{
+              'postId': item['postId'] as int?,
+              'userId': item['sellerId'] as int?,
+              'title': item['postTitle'] as String?,
+              'content': item['content'] as String? ?? '내용 없음',
+              'nickname': item['sellerNickname'] as String? ?? '알 수 없음',
+              'fileName': item['postImage'] as String?,
+              'boardNo': item['boardNo'] as int? ?? 5,
+
+              'thumbnailImagePath': item['thumbnailImagePath'] as String? ?? (pictureList?.firstOrNull?.thumbnailImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+              'resizedImagePath': item['resizedImagePath'] as String? ?? (pictureList?.firstOrNull?.resizedImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+              'originImagePath': item['originImagePath'] as String? ?? (pictureList?.firstOrNull?.originImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+
+              'pictureDTOList': pictureList, // Picture 객체 리스트 사용
+
+              'views': item['views'] as int? ?? 0,
+              'tag': item['tag'] as String?,
+              'followers': item['followers'] as int? ?? 0,
+              'downloads': item['downloads'] as int? ?? 0,
+              'favoriteCnt': item['favoriteCnt'] as int? ?? 0,
+              'profileImage': item['sellerProfileImage'] as String?,
+              'replyCnt': item['replyCnt'] as int? ?? 0,
+              'regDate': item['regDate'] != null ? DateTime.tryParse(item['regDate'] as String) : null,
+              'modDate': item['modDate'] != null ? DateTime.tryParse(item['modDate'] as String) : null,
+
+              'liked': item['liked'] as bool? ?? false, // nullable bool? 값을 non-nullable bool로 변환 (null이면 false)
+
+              'tradeDTO': tradeDTO, // TradeDTO 객체 사용
+            };
+
+            // Post.fromJson 대신 직접 Post 객체를 생성합니다.
+             final post = Post(
+                postId: postJson['postId'] as int?,
+                userId: postJson['userId'] as int?,
+                title: postJson['title'] as String?,
+                content: postJson['content'] as String?,
+                nickname: postJson['nickname'] as String?,
+                fileName: postJson['fileName'] as String?,
+                boardNo: postJson['boardNo'] as int?,
+                views: postJson['views'] as int?,
+                tag: postJson['tag'] as String?,
+                thumbnailImagePath: postJson['thumbnailImagePath'] as String?,
+                resizedImagePath: postJson['resizedImagePath'] as String?,
+                originImagePath: postJson['originImagePath'], // dynamic 타입 그대로 사용
+                followers: postJson['followers'] as int?,
+                downloads: postJson['downloads'] as int?,
+                favoriteCnt: postJson['favoriteCnt'] as int?,
+                tradeDTO: postJson['tradeDTO'] as TradeDTO?, // TradeDTO 객체로 캐스팅
+                pictureDTOList: postJson['pictureDTOList'] as List<Picture>?, // Picture 리스트로 캐스팅
+                profileImage: postJson['profileImage'] as String?,
+                replyCnt: postJson['replyCnt'] as int?,
+                regDate: postJson['regDate'] as DateTime?,
+                modDate: postJson['modDate'] as DateTime?,
+                liked: postJson['liked'] as bool, // non-nullable bool로 캐스팅 (postJson 생성 시 이미 null-safe 처리됨)
+             );
+
+            // Debug print: Log the generated image URL for each post after creation
+            print('Fetched Post Image URL: ${post.getImageUrl()}');
+
+            // tradeStatusBool 값을 사용하여 분기 (API 응답에 따라 false가 ACTIVE인지 true가 ACTIVE인지 확인 필요)
+            // 현재 로그 기준으로 true가 완료(expired)로 보임
+            if (tradeStatusBool == false) { // tradeStatus가 false일 때 active 리스트에 추가
               active.add(post);
-            } else {
+            } else { // tradeStatus가 true일 때 expired 리스트에 추가
               expired.add(post);
             }
-          } catch (_) {
-            // 유효하지 않은 항목은 건너뜁니다.
+          } catch (e, stacktrace) { // 스택 트레이스도 함께 출력하여 디버깅 용이하게 함
+            debugPrint('Error parsing post item: $e');
+            debugPrint('Stacktrace: $stacktrace');
+            debugPrint('Data causing error: $item');
           }
         }
 
@@ -458,9 +521,11 @@ class __SaleTradeListState extends State<_SaleTradeList> {
           });
         }
       } else {
-        throw Exception('서버 오류: ${response.statusCode}');
+        // 200 또는 404 외의 상태 코드 처리
+         final errorBody = response.body.isNotEmpty ? response.body : '응답 본문 없음';
+         throw Exception('서버 오류: ${response.statusCode}, 응답: $errorBody');
       }
-    } catch (e) {
+    } catch (e, stacktrace) { // 최상위 catch에서도 스택 트레이스 출력
       if (mounted) {
         setState(() {
           _errorMessage = '판매 목록 불러오기 실패: ${e.toString()}';
@@ -468,6 +533,8 @@ class __SaleTradeListState extends State<_SaleTradeList> {
           _sellingPosts = [];
           _soldPosts = [];
         });
+         debugPrint('Error fetching sales: ${e.toString()}');
+         debugPrint('Stacktrace: $stacktrace');
       }
     }
   }
@@ -527,8 +594,6 @@ class __SaleTradeListState extends State<_SaleTradeList> {
 
   @override
   Widget build(BuildContext context) {
-    print(_sellingPosts);
-    print(_soldPosts);
     if (_isLoading) return const Center(child: CircularProgressIndicator());
     if (_errorMessage != null) return Center(child: Text(_errorMessage!));
     if (_sellingPosts.isEmpty && _soldPosts.isEmpty) {
@@ -575,14 +640,16 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                             clipBehavior: Clip.antiAlias,
                             child: item.getImageUrl() !=
                                 "$baseUrl/picture/display/default-image.jpg"
-                                ? Image.network(
-                              item.getImageUrl(),
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image,
-                                  size: 30),
-                            )
+                                ? () {
+                                    return Image.network(
+                                      item.getImageUrl(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image,
+                                          size: 30),
+                                    );
+                                  }()
                                 : const Center(
                                 child: Icon(Icons.image_not_supported,
                                     size: 30)),
@@ -686,14 +753,16 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                             clipBehavior: Clip.antiAlias,
                             child: item.getImageUrl() !=
                                 "$baseUrl/picture/display/default-image.jpg"
-                                ? Image.network(
-                              item.getImageUrl(),
-                              fit: BoxFit.cover,
-                              errorBuilder:
-                                  (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image,
-                                  size: 30),
-                            )
+                                ? () {
+                                    return Image.network(
+                                      item.getImageUrl(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image,
+                                          size: 30),
+                                    );
+                                  }()
                                 : const Center(
                                 child: Icon(Icons.image_not_supported,
                                     size: 30)),
@@ -862,7 +931,10 @@ class __UserPostGridState extends State<_UserPostGrid> {
         for (var element in rawList) {
           if (element is! Map<String, dynamic>) continue;
           try {
-            posts.add(Post.fromJson(element));
+            final post = Post.fromJson(element);
+             // Debug print: Log the generated image URL for each post after creation
+            print('Fetched User Post/Bookmark Image URL: ${post.getImageUrl()}');
+            posts.add(post);
           } catch (_) {
             // 유효하지 않은 항목은 건너뜁니다.
           }
@@ -1102,12 +1174,18 @@ class __UserPostGridState extends State<_UserPostGrid> {
                 Expanded(
                   child: post.getImageUrl() !=
                       "$baseUrl/picture/display/default-image.jpg"
-                      ? Image.network(
-                    post.getImageUrl(),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.broken_image, size: 40),
-                  )
+                      ? () {
+                          return Image.network(
+                            post.getImageUrl(),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('Image loading failed for URL: ${post.getImageUrl()}');
+                              debugPrint('Error: $error');
+                              debugPrint('StackTrace: $stackTrace');
+                              return const Icon(Icons.broken_image, size: 40);
+                            },
+                          );
+                        }()
                       : const Center(
                     child: Icon(Icons.image_not_supported, size: 40),
                   ),

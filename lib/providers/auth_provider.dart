@@ -15,6 +15,7 @@ class AuthProvider extends ChangeNotifier {
   String? _email;
   String? _nickname;
   String? _token; // JWT 토큰 저장
+  String? _userProfileImagePath; // 사용자 프로필 이미지 경로 추가
 
   bool get isLoggedIn => _isLoggedIn;
   bool get isLoading => _isLoading;
@@ -23,6 +24,7 @@ class AuthProvider extends ChangeNotifier {
   String? get userEmail => _email;
   String? get userNickname => _nickname;
   String? get token => _token;
+  String? get userProfileImagePath => _userProfileImagePath; // 프로필 이미지 경로 getter 추가
 
   AuthProvider() {
     // 초기화 시 자동 로그인 체크
@@ -49,6 +51,12 @@ class AuthProvider extends ChangeNotifier {
   // 닉네임 설정
   void setNickname(String? nickname) {
     _nickname = nickname;
+    notifyListeners();
+  }
+  
+  // 프로필 이미지 경로 설정
+  void setUserProfileImagePath(String? path) {
+    _userProfileImagePath = path;
     notifyListeners();
   }
 
@@ -120,11 +128,13 @@ class AuthProvider extends ChangeNotifier {
         _email = null;
         _nickname = null;
         _token = null;
+        _userProfileImagePath = null; // 프로필 이미지 경로 초기화
       }
     } catch (e) {
       print('자동 로그인 처리 중 오류 발생: $e');
       _errorMessage = '자동 로그인 처리 중 오류가 발생했습니다.';
       _isLoggedIn = false;
+      _userProfileImagePath = null; // 프로필 이미지 경로 초기화
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -159,7 +169,7 @@ class AuthProvider extends ChangeNotifier {
         _isLoggedIn = true;
         _email = email;
         _token = response['token'];
-        // userId와 nickname은 loadUserInfoAndProfile에서 처리
+        _userProfileImagePath = null; // 새 로그인 시 프로필 이미지 경로 초기화 후 다시 로드
 
         print('로그인 성공, 사용자 정보 및 프로필 로드 시작');
         // 사용자 정보 및 프로필 로드/생성 메서드 호출
@@ -170,6 +180,7 @@ class AuthProvider extends ChangeNotifier {
         print('   Email: $_email');
         print('   UserId: $_userId');
         print('   Nickname: $_nickname');
+        print('   Profile Image Path: $_userProfileImagePath'); // 프로필 이미지 경로도 출력
 
         _isLoading = false;
         // loadUserInfoAndProfile에서 notifyListeners를 호출하므로 여기서 다시 호출할 필요 없음
@@ -209,12 +220,14 @@ class AuthProvider extends ChangeNotifier {
       await prefs.remove('userNickname');
       await prefs.remove('token');
       await prefs.remove('autoLogin');
+      await prefs.remove('userProfileImagePath'); // 프로필 이미지 경로도 삭제
       
       _isLoggedIn = false;
       _userId = null;
       _email = null;
       _nickname = null;
       _token = null;
+      _userProfileImagePath = null; // 프로필 이미지 경로 초기화
 
       print('앱 로그아웃 성공');
 
@@ -248,8 +261,20 @@ class AuthProvider extends ChangeNotifier {
            // 생성된 프로필 정보를 AuthProvider 상태에 저장 (선택 사항)
            if (profileResponse['profile'] != null) {
              _nickname = profileResponse['profile']['nickname'];
+             _userProfileImagePath = profileResponse['profile']['thumbnailImagePath']; // 프로필 이미지 경로 저장
+
              // 필요에 따라 다른 프로필 정보도 저장
              // 예: _userIntroduction = profileResponse['profile']['introduction'];
+             print('AuthProvider 프로필 정보 업데이트 (생성): nickname=$_nickname, profileImagePath=$_userProfileImagePath');
+
+             // SharedPreferences 업데이트 (닉네임, 프로필 이미지 경로)
+             final prefs = await SharedPreferences.getInstance();
+             if (_nickname != null) {
+               await prefs.setString('userNickname', _nickname!);
+             }
+             if (_userProfileImagePath != null) {
+               await prefs.setString('userProfileImagePath', _userProfileImagePath!);
+             }
            }
         } else {
            print('⚠️ 경고: 프로필 자동 생성 실패: ${profileResponse['message']}');
@@ -293,13 +318,23 @@ class AuthProvider extends ChangeNotifier {
         final userInfoResponse = await AuthService.getUserInfo(_token!, _email);
         if (userInfoResponse['success'] && userInfoResponse['userId'] != null) {
           _userId = userInfoResponse['userId'];
-          print('회원탈퇴를 위해 사용자 정보 API에서 획득한 userId: $_userId');
+          _nickname = userInfoResponse['nickname']; // 닉네임도 다시 가져옴
+           _userProfileImagePath = userInfoResponse['profileImage']; // 프로필 이미지 경로도 다시 가져옴
+
+          print('회원탈퇴를 위해 사용자 정보 API에서 획득한 userId: $_userId, nickname: $_nickname, profileImagePath: $_userProfileImagePath');
           
           // SharedPreferences 업데이트
           final prefs = await SharedPreferences.getInstance();
           if (_userId != null) {
             await prefs.setInt('userId', _userId!);
           }
+           if (_nickname != null) {
+             await prefs.setString('userNickname', _nickname!);
+           }
+           if (_userProfileImagePath != null) {
+             await prefs.setString('userProfileImagePath', _userProfileImagePath!);
+           }
+
         } else {
           print('회원탈퇴를 위한 사용자 정보 획득 실패: ${userInfoResponse['message']}');
           _errorMessage = '사용자 정보를 가져올 수 없습니다.';
@@ -386,25 +421,35 @@ class AuthProvider extends ChangeNotifier {
 
   // 사용자 정보를 로드하고 프로필을 확인/생성하는 메서드 (로그인 성공 시 호출)
   Future<void> loadUserInfoAndProfile(String token, String email) async {
+     // 이 메서드 시작 시 로딩 상태를 true로 설정하고 마지막에 false로 설정하며 notifyListeners 호출
+     // 다른 곳에서 이 메서드 호출 전에 로딩을 설정했다면 중복될 수 있지만, 안전하게 여기서 관리합니다.
      _isLoading = true;
      _errorMessage = null;
-     notifyListeners();
+     // notifyListeners(); // 로딩 상태 업데이트 알림 (필요 시 주석 해제)
 
      try {
        // 1. 사용자 기본 정보 로드 (userId, email, nickname 등)
        //    로그인 시 userId를 토큰에서 추출하거나 getUserInfo로 가져온다고 가정
        //    AuthProvider의 _userId, _email, _nickname 상태가 채워져 있어야 함.
-       print('loadUserInfoAndProfile: 사용자 정보 로드 시도');
+       print('loadUserInfoAndProfile: 사용자 정보 로드 시도 (email: $email)');
 
-       if (_userId == null) {
-          print('loadUserInfoAndProfile: userId가 null입니다. getUserInfo 시도.');
+       // userId와 nickname이 아직 로드되지 않았다면 getUserInfo 시도
+       if (_userId == null || _nickname == null) {
+          print('loadUserInfoAndProfile: userId/nickname이 null입니다. getUserInfo 시도.');
           // getUserInfo 호출 시 토큰 전달
           final userInfoResponse = await AuthService.getUserInfo(token, email);
+
+          // getUserInfo 응답 전체 로그 추가
+          debugPrint('💡 getUserInfo Response: $userInfoResponse'); // <-- 여기 로그 추가
+
            if (userInfoResponse['success'] && userInfoResponse['userId'] != null) {
              _userId = userInfoResponse['userId'];
+             _email = userInfoResponse['email']; // 이메일도 갱신
              _nickname = userInfoResponse['nickname'];
-             _email = userInfoResponse['email'];
-             print('loadUserInfoAndProfile: getUserInfo 성공, userId: $_userId, nickname: $_nickname');
+             // getUserInfo 응답에 프로필 이미지 경로가 있다면 여기서 저장
+             _userProfileImagePath = userInfoResponse['profileImage']; // profileImage 키 사용 가정
+
+             print('loadUserInfoAndProfile: getUserInfo 성공, userId: $_userId, nickname: $_nickname, profileImagePath: $_userProfileImagePath');
 
              // SharedPreferences 업데이트
              final prefs = await SharedPreferences.getInstance();
@@ -412,35 +457,55 @@ class AuthProvider extends ChangeNotifier {
              if (_nickname != null) {
                await prefs.setString('userNickname', _nickname!);
              }
-             await prefs.setString('userEmail', _email!); // 이메일도 저장
+             if (_email != null) {
+               await prefs.setString('userEmail', _email!); // 이메일 저장
+             }
+             if (_userProfileImagePath != null) {
+                await prefs.setString('userProfileImagePath', _userProfileImagePath!); // 프로필 이미지 경로 저장
+             }
+
 
            } else {
              print('loadUserInfoAndProfile: getUserInfo 실패: ${userInfoResponse['message']}');
-             _errorMessage = userInfoResponse['message'] ?? '사용자 정보를 가져오는데 실패했습니다.';
+             // 사용자 정보 로드 실패는 심각하므로 에러 메시지 설정
+             _errorMessage = userInfoResponse['message'] ?? '사용자 기본 정보를 가져오는데 실패했습니다.';
              _isLoading = false;
-             notifyListeners();
+             notifyListeners(); // 상태 업데이트 알림
              return; // 사용자 정보 없으면 프로필 로드/생성 불가
            }
+       } else {
+         print('loadUserInfoAndProfile: userId/nickname 이미 로드됨. SharedPreferences에서 이미지 경로 로드 시도'); // 로그 수정
+          // 이미 userId와 nickname이 있다면 SharedPreferences에서 프로필 이미지 경로를 로드 시도
+          final prefs = await SharedPreferences.getInstance();
+          _userProfileImagePath = prefs.getString('userProfileImagePath');
+          print('loadUserInfoAndProfile: SharedPreferences에서 profileImagePath 로드: $_userProfileImagePath');
        }
 
-       // userId가 확보되었으므로 프로필 로드 시도
+
+       // userId가 확보되었으므로 프로필 로드 시도 (닉네임 등 추가 프로필 정보 확인/갱신)
        print('loadUserInfoAndProfile: userId 확보 ($_userId), 프로필 로드 시도');
        // fetchProfile 호출 시 토큰 전달
        final profileResponse = await AuthService.fetchProfile(_userId!, token); // userId와 토큰 전달
+
+       // fetchProfile 응답 전체 로그 추가
+       debugPrint('💡 fetchProfile Response: $profileResponse'); // <-- 여기 로그 추가
 
        if (profileResponse['success']) {
          print('프로필 로드 성공');
          // 프로필 정보 업데이트
          if (profileResponse['profile'] != null) {
-            _nickname = profileResponse['profile']['nickname'];
-            // 필요에 따라 다른 프로필 정보도 저장
-            // 예: _userIntroduction = profileResponse['profile']['introduction'];
-            print('AuthProvider 프로필 정보 업데이트: nickname=$_nickname');
+            _nickname = profileResponse['profile']['nickname']; // 닉네임 다시 갱신
+            _userProfileImagePath = profileResponse['profile']['thumbnailImagePath']; // 프로필 이미지 경로 저장
 
-            // SharedPreferences 업데이트 (닉네임)
+            print('AuthProvider 프로필 정보 업데이트 (fetch): nickname=$_nickname, profileImagePath=$_userProfileImagePath');
+
+            // SharedPreferences 업데이트 (닉네임, 프로필 이미지 경로)
              final prefs = await SharedPreferences.getInstance();
              if (_nickname != null) {
                await prefs.setString('userNickname', _nickname!);
+             }
+             if (_userProfileImagePath != null) {
+               await prefs.setString('userProfileImagePath', _userProfileImagePath!);
              }
          }
        } else if (profileResponse['statusCode'] == 404) {
@@ -454,15 +519,25 @@ class AuthProvider extends ChangeNotifier {
          // createProfile 호출 시 토큰 전달
          final createProfileResponse = await AuthService.createProfile(_userId!, _nickname!, token); // userId, nickname, 토큰 사용
 
+         // createProfile 응답 전체 로그 추가
+         debugPrint('💡 createProfile Response (after 404): $createProfileResponse'); // <-- 여기 로그 추가
+
+
          if (createProfileResponse['success']) {
             print('프로필 생성 성공 후 정보 로드');
              if (createProfileResponse['profile'] != null) {
                _nickname = createProfileResponse['profile']['nickname'];
-               print('AuthProvider 프로필 정보 업데이트 (생성 후): nickname=$_nickname');
-               // SharedPreferences 업데이트 (닉네임)
+               _userProfileImagePath = createProfileResponse['profile']['thumbnailImagePath']; // 생성 후 프로필 이미지 경로 저장
+
+               print('AuthProvider 프로필 정보 업데이트 (생성 후): nickname=$_nickname, profileImagePath=$_userProfileImagePath');
+
+               // SharedPreferences 업데이트 (닉네임, 프로필 이미지 경로)
                final prefs = await SharedPreferences.getInstance();
                 if (_nickname != null) {
                  await prefs.setString('userNickname', _nickname!);
+               }
+               if (_userProfileImagePath != null) {
+                 await prefs.setString('userProfileImagePath', _userProfileImagePath!);
                }
              }
          } else {
@@ -480,7 +555,7 @@ class AuthProvider extends ChangeNotifier {
        _errorMessage = '사용자 정보 및 프로필 로드 중 오류가 발생했습니다.';
      } finally {
        _isLoading = false;
-       notifyListeners();
+       notifyListeners(); // 최종 상태 업데이트 알림
      }
   }
 
@@ -541,24 +616,29 @@ class AuthProvider extends ChangeNotifier {
         final int? userId = responseData['userId']; // 백엔드 응답에서 userId 키 확인
         final String? nickname = responseData['nickname']; // 백엔드 응답에서 nickname 키 확인
         final String? email = responseData['email']; // 백엔드 응답에서 email 키 확인
+        final String? profileImagePath = responseData['profileImage']; // 백엔드 응답에서 profileImage 키 사용 가정
   
         if (token != null && userId != null && (nickname != null || email != null)) { // nickname 또는 email이 있으면 진행
           _token = token;
           _userId = userId;
           _email = email; // Google 로그인 이메일 저장
           _nickname = nickname; // 백엔드에서 받은 닉네임 저장
+          _userProfileImagePath = profileImagePath; // Google 로그인 응답에서 프로필 이미지 경로 저장
           _isLoggedIn = true;
   
           // 토큰 영구 저장
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', token);
-          // 사용자 ID, 닉네임, 이메일도 저장
+          // 사용자 ID, 닉네임, 이메일, 프로필 이미지 경로도 저장
           await prefs.setInt('userId', userId);
            if (_nickname != null) {
              await prefs.setString('userNickname', _nickname!);
            }
            if (_email != null) {
              await prefs.setString('userEmail', _email!); // 이메일 저장
+           }
+           if (_userProfileImagePath != null) {
+              await prefs.setString('userProfileImagePath', _userProfileImagePath!); // 프로필 이미지 경로 저장
            }
 
 
@@ -587,9 +667,10 @@ class AuthProvider extends ChangeNotifier {
            print('   Email: $_email');
            print('   UserId: $_userId');
            print('   Nickname: $_nickname');
+           print('   Profile Image Path: $_userProfileImagePath'); // 프로필 이미지 경로도 출력
 
 
-          return {'success': true, 'token': token, 'userId': userId, 'nickname': nickname, 'email': email}; // email도 포함하여 반환
+          return {'success': true, 'token': token, 'userId': userId, 'nickname': nickname, 'email': email, 'profileImage': profileImagePath}; // profileImage도 포함하여 반환
         } else {
           // 응답 형식 오류 또는 필수 정보 누락
           _errorMessage = '백엔드 Google 인증 응답 형식 오류 또는 필수 정보 누락';

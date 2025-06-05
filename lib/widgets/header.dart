@@ -196,14 +196,26 @@ class _HeaderState extends State<Header> with SingleTickerProviderStateMixin {
                                 Row(
                                   children: [
                                     // 프로필 이미지
-                                    const CircleAvatar(
+                                    CircleAvatar(
                                       backgroundColor: Colors.grey,
                                       radius: 30,
-                                      child: Icon(
-                                        Icons.person,
-                                        size: 40,
-                                        color: Colors.white,
-                                      ),
+                                      backgroundImage: () {
+                                        final profilePath = authProvider.userProfileImagePath;
+                                        if (profilePath != null) {
+                                          final imageUrl = 'http://10.100.204.144:8080$profilePath';
+                                          debugPrint('💡 Profile Image URL for sidebar: $imageUrl');
+                                          return NetworkImage(imageUrl);
+                                        }
+                                        debugPrint('💡 Profile Image Path is null, showing default icon.');
+                                        return null;
+                                      }() as ImageProvider?,
+                                      child: authProvider.userProfileImagePath == null
+                                          ? const Icon(
+                                              Icons.person,
+                                              size: 40,
+                                              color: Colors.white,
+                                            )
+                                          : null,
                                     ),
                                     const SizedBox(width: 16),
 

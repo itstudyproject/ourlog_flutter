@@ -118,15 +118,56 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
         final List<dynamic> wonTradesJson = data['wonTrades'] ?? [];
 
         // ────────────────────────────────────────────────────────────────
-        // 1) currentBids 파싱 (Post.fromJson 가 있다고 가정)
+        // 1) currentBids 파싱 (API 응답 구조에 맞춰 직접 Post 객체 생성)
         // ────────────────────────────────────────────────────────────────
         List<Post> tempCurrent = [];
         for (var jsonItem in currentBidsJson) {
           try {
             debugPrint('▶ [currentBids] JSON 항목: $jsonItem');
 
-            // Post.fromJson 내부에서 TradeDTO.fromJson을 호출하거나, 필요한 파싱이 있다면 내부에서 처리하게 합니다.
-            final Post post = Post.fromJson(jsonItem as Map<String, dynamic>);
+            // API 응답의 필드를 직접 사용하여 TradeDTO 생성
+            final TradeDTO tradeDto = TradeDTO(
+              tradeId: jsonItem['tradeId'] as int,
+              postId: jsonItem['postId'] as int,
+              sellerId: jsonItem['sellerId'] as int,
+              bidderId: jsonItem['bidderId'] as int?,
+              bidderNickname: jsonItem['bidderNickname'] as String?,
+              startPrice: jsonItem['startPrice'] as int,
+              highestBid: jsonItem['highestBid'] as int?,
+              nowBuy: jsonItem['nowBuy'] as int,
+              tradeStatus: jsonItem['tradeStatus'] as bool? ?? false, // bool? 처리
+              startBidTime: jsonItem['startBidTime'] != null ? DateTime.tryParse(jsonItem['startBidTime'] as String) : null,
+              lastBidTime: jsonItem['lastBidTime'] != null ? DateTime.tryParse(jsonItem['lastBidTime'] as String) : null,
+              bidAmount: jsonItem['bidAmount'] as int?, // bidAmount 추가
+            );
+
+            // API 응답의 필드를 직접 사용하여 Post 객체 생성
+            final Post post = Post(
+              postId: jsonItem['postId'] as int,
+              userId: jsonItem['sellerId'] as int, // 또는 userId 필드가 있다면 사용
+              title: jsonItem['postTitle'] as String? ?? '제목 없음',
+              content: jsonItem['content'] as String?, // content 필드가 있다면 사용
+              nickname: jsonItem['sellerNickname'] as String?, // 또는 nickname 필드가 있다면 사용
+              fileName: jsonItem['postImage'] as String?,
+              boardNo: jsonItem['boardNo'] as int?, // boardNo 필드가 있다면 사용
+              views: jsonItem['views'] as int?, // views 필드가 있다면 사용
+              tag: jsonItem['tag'] as String?, // tag 필드가 있다면 사용
+              thumbnailImagePath: jsonItem['postImage'] as String?, // postImage를 썸네일로 사용
+              resizedImagePath: jsonItem['postImage'] as String?, // postImage를 리사이즈 이미지로 사용
+              originImagePath: jsonItem['postImage'] as String?, // postImage를 원본 이미지로 사용
+              followers: jsonItem['followers'] as int?, // followers 필드가 있다면 사용
+              downloads: jsonItem['downloads'] as int?, // downloads 필드가 있다면 사용
+              favoriteCnt: jsonItem['favoriteCnt'] as int?, // favoriteCnt 필드가 있다면 사용
+              profileImage: jsonItem['profileImage'] as String?, // profileImage 필드가 있다면 사용
+              replyCnt: jsonItem['replyCnt'] as int?, // replyCnt 필드가 있다면 사용
+              regDate: jsonItem['regDate'] != null ? DateTime.tryParse(jsonItem['regDate'] as String) : null,
+              modDate: jsonItem['modDate'] != null ? DateTime.tryParse(jsonItem['modDate'] as String) : null,
+              liked: jsonItem['liked'] as bool? ?? false, // liked 필드가 있다면 사용
+              tradeDTO: tradeDto, // 생성한 TradeDTO 객체 할당
+              pictureDTOList: (jsonItem['postImage'] != null) // postImage를 Picture 리스트로 변환
+                  ? [Picture(originImagePath: jsonItem['postImage'] as String)]
+                  : null,
+            );
 
             tempCurrent.add(post);
           } catch (e, stack) {
@@ -137,58 +178,58 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
         }
 
         // ────────────────────────────────────────────────────────────────
-        // 2) wonTrades 파싱 (직접 Post로 매핑하면서 TradeDTO.fromJson 써보기)
+        // 2) wonTrades 파싱 (기존 로직 유지 또는 위 currentBids처럼 수정)
+        // wonTrades의 API 응답 구조가 currentBids와 동일하다면 위처럼 수정해야 합니다.
+        // 현재 로그에는 wonTrades가 비어있으므로 currentBids에 맞춰 수정하는 것으로 가정합니다.
         // ────────────────────────────────────────────────────────────────
         List<Post> tempCompleted = [];
         for (var item in wonTradesJson) {
           final Map<String, dynamic> jsonItem = item as Map<String, dynamic>;
           try {
             debugPrint('▶ [wonTrades] JSON 전체 항목: $jsonItem');
-            debugPrint('▶ [wonTrades] regDate raw: ${jsonItem['regDate']} (type: ${jsonItem['regDate']?.runtimeType})');
-            debugPrint('▶ [wonTrades] startBidTime raw: ${jsonItem['startBidTime']} (type: ${jsonItem['startBidTime']?.runtimeType})');
-            debugPrint('▶ [wonTrades] lastBidTime raw: ${jsonItem['lastBidTime']} (type: ${jsonItem['lastBidTime']?.runtimeType})');
 
-            // TradeDTO 파싱
-            final tradeDto = TradeDTO.fromJson(jsonItem);
+             // API 응답의 필드를 직접 사용하여 TradeDTO 생성 (currentBids와 구조 동일 가정)
+            final tradeDto = TradeDTO(
+              tradeId: jsonItem['tradeId'] as int,
+              postId: jsonItem['postId'] as int,
+              sellerId: jsonItem['sellerId'] as int,
+              bidderId: jsonItem['bidderId'] as int?,
+              bidderNickname: jsonItem['bidderNickname'] as String?,
+              startPrice: jsonItem['startPrice'] as int,
+              highestBid: jsonItem['highestBid'] as int?,
+              nowBuy: jsonItem['nowBuy'] as int,
+              tradeStatus: jsonItem['tradeStatus'] as bool? ?? false, // bool? 처리
+              startBidTime: jsonItem['startBidTime'] != null ? DateTime.tryParse(jsonItem['startBidTime'] as String) : null,
+              lastBidTime: jsonItem['lastBidTime'] != null ? DateTime.tryParse(jsonItem['lastBidTime'] as String) : null,
+              bidAmount: jsonItem['bidAmount'] as int?, // bidAmount 추가
+            );
 
-            // regDate, startBidTime, lastBidTime는 이미 TradeDTO 내부에서 DateTime.parse를 했다고 가정.
-            // 만약 Post.fromJson으로도 처리 가능하다면, Post.fromJson(jsonItem) 해도 됩니다.
-            // 여기서는 예시로 Post를 직접 생성해 봅니다.
-            final DateTime? parsedRegDate = (jsonItem['regDate'] != null)
-                ? DateTime.parse(jsonItem['regDate'] as String)
-                : null;
-
+            // API 응답의 필드를 직접 사용하여 Post 객체 생성 (currentBids와 구조 동일 가정)
             final Post post = Post(
               postId: jsonItem['postId'] as int,
-              userId: jsonItem['sellerId'] as int,
-              title: jsonItem['postTitle'] as String,
-              content: null,
-              nickname: jsonItem['bidderNickname'] as String? ?? '알 수 없음',
-              fileName: jsonItem['postImage'] as String,
-              boardNo: 5,
-              views: 0,
-              favoriteCnt: 0,
-              regDate: parsedRegDate,
-              modDate: null, // wonTrades에는 modDate 필드가 없으므로 null 처리
-              thumbnailImagePath: jsonItem['postImage'] as String,
-              originImagePath: (jsonItem['postImage'] != null)
-                  ? [jsonItem['postImage'] as String]
-                  : <String>[],
-              pictureDTOList: (jsonItem['postImage'] != null)
-                  ? [
-                Picture.fromJson({
-                  'uuid': jsonItem['postImage'],
-                  'path': jsonItem['postImage']
-                })
-              ]
-                  : <Picture>[],
-              tradeDTO: tradeDto,
-              tag: null,
-              followers: 0,
-              downloads: 0,
-              profileImage: null,
-              replyCnt: 0,
-              liked: false,
+              userId: jsonItem['sellerId'] as int, // 또는 userId 필드가 있다면 사용
+              title: jsonItem['postTitle'] as String? ?? '제목 없음',
+              content: jsonItem['content'] as String?, // content 필드가 있다면 사용
+              nickname: jsonItem['sellerNickname'] as String?, // 또는 nickname 필드가 있다면 사용
+              fileName: jsonItem['postImage'] as String?,
+              boardNo: jsonItem['boardNo'] as int?, // boardNo 필드가 있다면 사용
+              views: jsonItem['views'] as int?, // views 필드가 있다면 사용
+              tag: jsonItem['tag'] as String?, // tag 필드가 있다면 사용
+              thumbnailImagePath: jsonItem['postImage'] as String?, // postImage를 썸네일로 사용
+              resizedImagePath: jsonItem['postImage'] as String?, // postImage를 리사이즈 이미지로 사용
+              originImagePath: jsonItem['postImage'] as String?, // postImage를 원본 이미지로 사용
+              followers: jsonItem['followers'] as int?, // followers 필드가 있다면 사용
+              downloads: jsonItem['downloads'] as int?, // downloads 필드가 있다면 사용
+              favoriteCnt: jsonItem['favoriteCnt'] as int?, // favoriteCnt 필드가 있다면 사용
+              profileImage: jsonItem['profileImage'] as String?, // profileImage 필드가 있다면 사용
+              replyCnt: jsonItem['replyCnt'] as int?, // replyCnt 필드가 있다면 사용
+              regDate: jsonItem['regDate'] != null ? DateTime.tryParse(jsonItem['regDate'] as String) : null,
+              modDate: jsonItem['modDate'] != null ? DateTime.tryParse(jsonItem['modDate'] as String) : null,
+              liked: jsonItem['liked'] as bool? ?? false, // liked 필드가 있다면 사용
+              tradeDTO: tradeDto, // 생성한 TradeDTO 객체 할당
+              pictureDTOList: (jsonItem['postImage'] != null) // postImage를 Picture 리스트로 변환
+                  ? [Picture(originImagePath: jsonItem['postImage'] as String)]
+                  : null,
             );
 
             tempCompleted.add(post);
@@ -227,7 +268,6 @@ class _BidHistoryScreenState extends State<BidHistoryScreen> {
       });
     }
   }
-
   // 남은 시간 계산 및 포맷팅 함수
   String _getRemainingTime(DateTime? endTime) {
     if (endTime == null) return "시간 정보 없음";

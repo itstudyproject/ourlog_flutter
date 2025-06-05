@@ -85,7 +85,7 @@ class _BulletinBoardState extends State<BulletinBoard> {
             final pictureList = item['pictureDTOList'] ?? [];
             final fileName = item['fileName'];
             final pic = pictureList.firstWhere(
-                  (p) => p['picName'] == fileName,
+                  (p) => p['uuid'] == fileName,
               orElse: () => null,
             );
             if (pic != null) {

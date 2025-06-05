@@ -1,24 +1,26 @@
-// lib/screens/my_page_screen.dart
-
 import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:ourlog/models/post.dart';        // Post 모델
-import 'package:ourlog/models/trade.dart';            // TradeDTO 모델
-import 'package:ourlog/services/trade_service.dart';  // TradeService.fetchSales
+import 'package:intl/intl.dart';
+import 'package:ourlog/models/post.dart';
+import 'package:ourlog/models/trade.dart';
+import 'package:ourlog/models/user_profile.dart';
+import 'package:ourlog/providers/auth_provider.dart';
 import 'package:ourlog/services/profile_service.dart';
 import 'package:ourlog/widgets/main_layout.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
-import '../providers/auth_provider.dart';
-import '../models/user_profile.dart';
-import 'art/bid_history_screen.dart'; // 이미 사용 중이셨다고 가정
+import 'package:ourlog/models/picture.dart';
 
+import 'art/bid_history_screen.dart';
+
+// ----------------------------
+// MyPageScreen
+// ----------------------------
 class MyPageScreen extends StatefulWidget {
-  const MyPageScreen({Key? key}) : super(key: key);
+  const MyPageScreen({super.key});
 
   @override
   _MyPageScreenState createState() => _MyPageScreenState();
@@ -30,7 +32,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   UserProfile? _profile;
   bool _loading = true;
 
-  // Tab 상태: 'purchase-bid', 'sale', 'my-posts', 'bookmark'
+  /// 현재 활성 탭: 'purchase-bid', 'sale', 'my-posts', 'bookmark'
   String _activeTab = 'purchase-bid';
 
   @override
@@ -53,14 +55,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
       final profile = await _service.fetchProfile(_userId!);
       if (mounted) setState(() => _profile = profile);
     } catch (_) {
-      // 에러 처리(필요하다면)
+      // 필요 시 에러 처리
     } finally {
-      if (mounted) {
-        debugPrint(
-          '★★★ fetchProfile 성공: thumbnail=${_profile?.thumbnailImagePath}, profileImage=${_profile?.profileImageUrl}',
-        );
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -75,27 +72,24 @@ class _MyPageScreenState extends State<MyPageScreen> {
     if (_profile == null) {
       return Scaffold(
         backgroundColor: const Color(0xFF1A1A1A),
-        body: const Center(
+        body: Center(
           child: Text(
             '프로필을 불러올 수 없습니다.',
-            style: TextStyle(color: Colors.grey, fontSize: 16),
+            style: TextStyle(color: Colors.grey[400], fontSize: 16),
           ),
         ),
       );
     }
-
     return MainLayout(
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
           children: [
             _buildProfileCard(),
             const SizedBox(height: 30),
             const _SectionTitle('메뉴'),
             const SizedBox(height: 10),
-            // Tab 버튼
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -108,7 +102,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Flexible(child: _buildTabContent()),
+             _buildTabContent(),
           ],
         ),
       ),
@@ -116,19 +110,20 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Widget _buildTabButton(String label, String tabName) {
+    final isActive = _activeTab == tabName;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4.0),
       child: ElevatedButton(
         onPressed: () {
-          setState(() {
-            _activeTab = tabName;
-          });
+          setState(() => _activeTab = tabName);
         },
         style: ElevatedButton.styleFrom(
           backgroundColor:
-          _activeTab == tabName ? Theme.of(context).primaryColor : const Color(0xFF232323),
+          isActive ? Theme.of(context).primaryColor : const Color(0xFF232323),
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(4),
+          ),
         ),
         child: Text(label),
       ),
@@ -144,7 +139,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
         ),
       );
     }
-
     switch (_activeTab) {
       case 'purchase-bid':
         return const BidHistoryScreen();
@@ -160,6 +154,8 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Widget _buildProfileCard() {
+    final thumbnail = _profile?.thumbnailImagePath ?? '';
+    final imageUrl = 'http://10.100.204.144:8080$thumbnail';
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF232323),
@@ -172,11 +168,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
             radius: 40,
             backgroundColor: const Color(0xFF333333),
             backgroundImage: NetworkImage(
-              'http://10.100.204.144:8080' + (_profile?.thumbnailImagePath ?? ''),
+              imageUrl,
               headers: {
-                'Authorization': 'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}'
+                'Authorization':
+                'Bearer ${Provider.of<AuthProvider>(context, listen: false).token}',
               },
-            ) as ImageProvider,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -186,10 +183,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 Text(
                   _profile!.nickname,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -204,7 +200,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF333333),
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                         onPressed: () async {
                           if (_userId == null) {
@@ -216,17 +214,22 @@ class _MyPageScreenState extends State<MyPageScreen> {
                             '/mypage/edit',
                             arguments: _userId!,
                           ) as bool?;
-                          if (result == true) {
-                            _loadProfile();
-                          }
+                          if (result == true) _loadProfile();
                         },
-                        child: const Text('프로필수정', style: TextStyle(color: Colors.white)),
+                        child: const Text(
+                          '프로필수정',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     _actionButton('회원정보수정', '/mypage/account/edit'),
                     const SizedBox(width: 8),
-                    _actionButton('회원탈퇴', '/mypage/account/delete', backgroundColor: Colors.red),
+                    _actionButton(
+                      '회원탈퇴',
+                      '/mypage/account/delete',
+                      backgroundColor: Colors.red,
+                    ),
                   ],
                 ),
               ],
@@ -237,13 +240,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 
-  Widget _actionButton(String label, String route, {Color backgroundColor = const Color(0xFF333333)}) {
+  Widget _actionButton(String label, String route,
+      {Color backgroundColor = const Color(0xFF333333)}) {
     return Expanded(
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: backgroundColor,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         ),
         onPressed: () {
           if (_userId == null) {
@@ -258,9 +263,12 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 }
 
+// ----------------------------
+// Section Title
+// ----------------------------
 class _SectionTitle extends StatelessWidget {
   final String text;
-  const _SectionTitle(this.text, {Key? key}) : super(key: key);
+  const _SectionTitle(this.text);
 
   @override
   Widget build(BuildContext context) {
@@ -274,18 +282,15 @@ class _SectionTitle extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.w600,
-        ),
+            color: Colors.white, fontSize: 24, fontWeight: FontWeight.w600),
       ),
     );
   }
 }
 
-/// --------------------------------------
-/// (A) 판매 목록/현황을 표시하는 위젯
-/// --------------------------------------
+// ----------------------------
+// _SaleTradeList
+// ----------------------------
 class _SaleTradeList extends StatefulWidget {
   final int userId;
   const _SaleTradeList({Key? key, required this.userId}) : super(key: key);
@@ -295,7 +300,6 @@ class _SaleTradeList extends StatefulWidget {
 }
 
 class __SaleTradeListState extends State<_SaleTradeList> {
-  final TradeService _tradeService = TradeService();
   bool _isLoading = true;
   List<Post> _sellingPosts = [];
   List<Post> _soldPosts = [];
@@ -314,9 +318,7 @@ class __SaleTradeListState extends State<_SaleTradeList> {
         timer.cancel();
         return;
       }
-      setState(() {
-        _currentTime = DateTime.now();
-      });
+      setState(() => _currentTime = DateTime.now());
     });
   }
 
@@ -324,6 +326,18 @@ class __SaleTradeListState extends State<_SaleTradeList> {
   void dispose() {
     _timer?.cancel();
     super.dispose();
+  }
+
+  Future<Map<String, String>> _getHeaders() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final token = authProvider.token;
+    if (token == null || token.isEmpty) {
+      throw Exception('인증 토큰이 없습니다.');
+    }
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    };
   }
 
   Future<void> _fetchUserSales() async {
@@ -335,125 +349,202 @@ class __SaleTradeListState extends State<_SaleTradeList> {
     });
 
     try {
-      // TradeService.fetchSales를 호출하여 List<TradeDTO>를 받아옵니다.
-      final List<TradeDTO> trades = await _tradeService.fetchSales(widget.userId);
-      debugPrint('SaleTradeList: fetchSales 결과 수 = ${trades.length}');
+      final headers = await _getHeaders();
+      final uri = Uri.parse('$baseUrl/profile/sales/${widget.userId}');
+      final response = await http.get(uri, headers: headers);
 
-      // (1) “판매 중인 경매”: tradeStatus == false, bidderId == userId, sellerId != userId
-      final sellingList = trades.where((t) {
-        return t.tradeStatus == false &&
-            t.bidderId == widget.userId &&
-            t.sellerId != widget.userId;
-      }).map((t) {
-        // TradeDTO에 postTitle, postImage 등의 필드가 없으므로 최소한의 정보만 넣습니다.
-        return Post.fromJson({
-          'postId': t.postId,
-          'userId': t.sellerId,
-          // 제목: “게시글 #<postId>”
-          'title': '게시글 #${t.postId}',
-          'content': null,
-          'nickname': null,
-          'fileName': null,
-          'boardNo': 5,
-          'views': 0,
-          'tag': null,
-          'thumbnailImagePath': null,  // 이미지가 없으므로 null
-          'resizedImagePath': null,
-          'originImagePath': null,
-          'followers': 0,
-          'downloads': 0,
-          'favoriteCnt': 0,
-          'profileImage': null,
-          'replyCnt': 0,
-          // regDate, modDate는 유의미한 값이 없다면 지금 시각을 넣어 둡니다.
-          'regDate': DateTime.now().toIso8601String(),
-          'modDate': DateTime.now().toIso8601String(),
-          'liked': false,
-          'pictureDTOList': [],
+      if (response.statusCode == 403) {
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        await authProvider.logout();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('세션이 만료되었습니다. 다시 로그인해주세요.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+        return;
+      }
+        print("🏷️ [SaleStatus] API 요청 URL: $uri");
+        print("🏷️ [SaleStatus] 응답 상태 코드: ${response.statusCode}");
+        print("🏷️ [SaleStatus] 응답 본문: ${response.body}");
 
-          'tradeDTO': {
-            'tradeId': t.tradeId,
-            'postId': t.postId,
-            'sellerId': t.sellerId,
-            'bidderId': t.bidderId,
-            'bidderNickname': t.bidderNickname,
-            'startPrice': t.startPrice,
-            'highestBid': t.highestBid,
-            'nowBuy': t.nowBuy,
-            'tradeStatus': t.tradeStatus,
-            'startBidTime': t.startBidTime?.toIso8601String(),
-            'lastBidTime': t.lastBidTime?.toIso8601String(),
-          },
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is! List<dynamic>) {
+          throw Exception('판매 목록 응답 형식 오류: ${decoded.runtimeType}');
+        }
+        final List<dynamic> rawList = decoded;
+
+        final active = <Post>[];
+        final expired = <Post>[];
+
+
+        for (var element in rawList) {
+          if (element is! Map<String, dynamic>) continue;
+          final item = element;
+
+          try {
+            // tradeDTO 객체 직접 생성 및 파싱 (클래스 이름을 Trade -> TradeDTO로 수정)
+            final tradeJson = item['tradeDTO'] as Map<String, dynamic>? ?? item; // API 응답 구조에 따라 tradeDTO가 중첩될 수도, 아닐 수도 있음
+            final String? startBidRaw = tradeJson['startBidTime'] as String?;
+            final String? lastBidRaw = tradeJson['lastBidTime'] as String?;
+            final bool? tradeStatusBool = tradeJson['tradeStatus'] as bool?; // API 응답의 bool 값 직접 사용
+
+            final TradeDTO? tradeDTO = TradeDTO( // Trade -> TradeDTO
+                tradeId: tradeJson['tradeId'] as int,
+                postId: tradeJson['postId'] as int,
+                sellerId: tradeJson['sellerId'] as int,
+                bidderId: tradeJson['bidderId'] as int?,
+                bidderNickname: tradeJson['bidderNickname'] as String?,
+                startPrice: tradeJson['startPrice'] as int,
+                highestBid: tradeJson['highestBid'] as int?,
+                nowBuy: tradeJson['nowBuy'] as int,
+                // tradeStatus 필드가 bool 타입이므로 boolean 값을 직접 전달
+                tradeStatus: tradeStatusBool ?? false, // nullable bool? 값을 non-nullable bool로 변환 (null이면 false)
+                startBidTime: startBidRaw != null ? DateTime.tryParse(startBidRaw) : null, // 안전하게 파싱
+                lastBidTime: lastBidRaw != null ? DateTime.tryParse(lastBidRaw) : null,   // 안전하게 파싱
+            );
+
+
+            // pictureDTOList 생성: Map 리스트를 Picture 객체 리스트로 변환
+            List<Picture>? pictureList;
+            if (item['pictureDTOList'] is List) {
+               pictureList = (item['pictureDTOList'] as List)
+                   .map((picJson) => Picture.fromJson(picJson as Map<String, dynamic>))
+                   .toList();
+            } else if (item['postImage'] != null) {
+               try {
+                  pictureList = [Picture(
+                    picId: item['picId'] as int?, // API 응답에 picId가 있다면 사용
+                    uuid: item['postImage'] as String?, // uuid와 path, imagePath에 postImage 사용
+                    picName: item['postTitle'] as String? ?? 'image', // 제목 등을 picName으로 사용
+                    path: item['postImage'] as String?,
+                    originImagePath: item['postImage'] as String?,
+                    thumbnailImagePath: item['postImage'] as String?,
+                    resizedImagePath: item['postImage'] as String?,
+                   )];
+               } catch(e) {
+                   debugPrint('Error creating Picture from postImage: $e');
+               }
+            }
+
+
+            final postJson = <String, dynamic>{
+              'postId': item['postId'] as int?,
+              'userId': item['sellerId'] as int?,
+              'title': item['postTitle'] as String?,
+              'content': item['content'] as String? ?? '내용 없음',
+              'nickname': item['sellerNickname'] as String? ?? '알 수 없음',
+              'fileName': item['postImage'] as String?,
+              'boardNo': item['boardNo'] as int? ?? 5,
+
+              'thumbnailImagePath': item['thumbnailImagePath'] as String? ?? (pictureList?.firstOrNull?.thumbnailImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+              'resizedImagePath': item['resizedImagePath'] as String? ?? (pictureList?.firstOrNull?.resizedImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+              'originImagePath': item['originImagePath'] as String? ?? (pictureList?.firstOrNull?.originImagePath ?? item['postImage'] as String?), // firstOrNull 사용
+
+              'pictureDTOList': pictureList, // Picture 객체 리스트 사용
+
+              'views': item['views'] as int? ?? 0,
+              'tag': item['tag'] as String?,
+              'followers': item['followers'] as int? ?? 0,
+              'downloads': item['downloads'] as int? ?? 0,
+              'favoriteCnt': item['favoriteCnt'] as int? ?? 0,
+              'profileImage': item['sellerProfileImage'] as String?,
+              'replyCnt': item['replyCnt'] as int? ?? 0,
+              'regDate': item['regDate'] != null ? DateTime.tryParse(item['regDate'] as String) : null,
+              'modDate': item['modDate'] != null ? DateTime.tryParse(item['modDate'] as String) : null,
+
+              'liked': item['liked'] as bool? ?? false, // nullable bool? 값을 non-nullable bool로 변환 (null이면 false)
+
+              'tradeDTO': tradeDTO, // TradeDTO 객체 사용
+            };
+
+            // Post.fromJson 대신 직접 Post 객체를 생성합니다.
+             final post = Post(
+                postId: postJson['postId'] as int?,
+                userId: postJson['userId'] as int?,
+                title: postJson['title'] as String?,
+                content: postJson['content'] as String?,
+                nickname: postJson['nickname'] as String?,
+                fileName: postJson['fileName'] as String?,
+                boardNo: postJson['boardNo'] as int?,
+                views: postJson['views'] as int?,
+                tag: postJson['tag'] as String?,
+                thumbnailImagePath: postJson['thumbnailImagePath'] as String?,
+                resizedImagePath: postJson['resizedImagePath'] as String?,
+                originImagePath: postJson['originImagePath'], // dynamic 타입 그대로 사용
+                followers: postJson['followers'] as int?,
+                downloads: postJson['downloads'] as int?,
+                favoriteCnt: postJson['favoriteCnt'] as int?,
+                tradeDTO: postJson['tradeDTO'] as TradeDTO?, // TradeDTO 객체로 캐스팅
+                pictureDTOList: postJson['pictureDTOList'] as List<Picture>?, // Picture 리스트로 캐스팅
+                profileImage: postJson['profileImage'] as String?,
+                replyCnt: postJson['replyCnt'] as int?,
+                regDate: postJson['regDate'] as DateTime?,
+                modDate: postJson['modDate'] as DateTime?,
+                liked: postJson['liked'] as bool, // non-nullable bool로 캐스팅 (postJson 생성 시 이미 null-safe 처리됨)
+             );
+
+            // Debug print: Log the generated image URL for each post after creation
+            print('Fetched Post Image URL: ${post.getImageUrl()}');
+
+            // tradeStatusBool 값을 사용하여 분기 (API 응답에 따라 false가 ACTIVE인지 true가 ACTIVE인지 확인 필요)
+            // 현재 로그 기준으로 true가 완료(expired)로 보임
+            if (tradeStatusBool == false) { // tradeStatus가 false일 때 active 리스트에 추가
+              active.add(post);
+            } else { // tradeStatus가 true일 때 expired 리스트에 추가
+              expired.add(post);
+            }
+          } catch (e, stacktrace) { // 스택 트레이스도 함께 출력하여 디버깅 용이하게 함
+            debugPrint('Error parsing post item: $e');
+            debugPrint('Stacktrace: $stacktrace');
+            debugPrint('Data causing error: $item');
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _sellingPosts = active;
+            _soldPosts = expired;
+            _isLoading = false;
+          });
+        }
+      } else if (response.statusCode == 404) {
+        if (mounted) {
+          setState(() {
+            _sellingPosts = [];
+            _soldPosts = [];
+            _isLoading = false;
+          });
+        }
+      } else {
+        // 200 또는 404 외의 상태 코드 처리
+         final errorBody = response.body.isNotEmpty ? response.body : '응답 본문 없음';
+         throw Exception('서버 오류: ${response.statusCode}, 응답: $errorBody');
+      }
+    } catch (e, stacktrace) { // 최상위 catch에서도 스택 트레이스 출력
+      if (mounted) {
+        setState(() {
+          _errorMessage = '판매 목록 불러오기 실패: ${e.toString()}';
+          _isLoading = false;
+          _sellingPosts = [];
+          _soldPosts = [];
         });
-      }).toList();
-
-      // (2) “판매 완료/유찰된 경매”: tradeStatus == true, sellerId != userId, bidderId == userId
-      final soldList = trades.where((t) {
-        return t.tradeStatus == true &&
-            t.sellerId != widget.userId &&
-            (t.bidderId == widget.userId);
-      }).map((t) {
-        return Post.fromJson({
-          'postId': t.postId,
-          'userId': t.sellerId,
-          'title': '게시글 #${t.postId}',
-          'content': null,
-          'nickname': null,
-          'fileName': null,
-          'boardNo': 5,
-          'views': 0,
-          'tag': null,
-          'thumbnailImagePath': null,
-          'resizedImagePath': null,
-          'originImagePath': null,
-          'followers': 0,
-          'downloads': 0,
-          'favoriteCnt': 0,
-          'profileImage': null,
-          'replyCnt': 0,
-          'regDate': DateTime.now().toIso8601String(),
-          'modDate': DateTime.now().toIso8601String(),
-          'liked': false,
-          'pictureDTOList': [],
-
-          'tradeDTO': {
-            'tradeId': t.tradeId,
-            'postId': t.postId,
-            'sellerId': t.sellerId,
-            'bidderId': t.bidderId,
-            'bidderNickname': t.bidderNickname,
-            'startPrice': t.startPrice,
-            'highestBid': t.highestBid,
-            'nowBuy': t.nowBuy,
-            'tradeStatus': t.tradeStatus,
-            'startBidTime': t.startBidTime?.toIso8601String(),
-            'lastBidTime': t.lastBidTime?.toIso8601String(),
-          },
-        });
-      }).toList();
-
-      setState(() {
-        _sellingPosts = sellingList;
-        _soldPosts = soldList;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('판매 목록 불러오기 실패: $e');
-      setState(() {
-        _errorMessage = '판매 목록을 불러오는 데 실패했습니다: ${e.toString()}';
-        _isLoading = false;
-        _sellingPosts = [];
-        _soldPosts = [];
-      });
+         debugPrint('Error fetching sales: ${e.toString()}');
+         debugPrint('Stacktrace: $stacktrace');
+      }
     }
   }
 
   String _getRemainingTime(Post item) {
-    if (item.tradeDTO?.lastBidTime == null || item.tradeDTO?.tradeStatus == true) {
+    final endTime = item.tradeDTO?.lastBidTime;
+    if (endTime == null || item.tradeDTO?.tradeStatus != 'ACTIVE') {
       return '경매 종료';
     }
-    final end = item.tradeDTO!.lastBidTime!;
-    final diff = end.difference(_currentTime);
+    final diff = endTime.difference(_currentTime);
     if (diff.isNegative) return '경매 종료';
     final days = diff.inDays;
     final hours = diff.inHours.remainder(24);
@@ -472,59 +563,70 @@ class __SaleTradeListState extends State<_SaleTradeList> {
 
   String _formatPrice(int? price) {
     if (price == null) return '가격 정보 없음';
-    final formatter = NumberFormat('#,###');
-    return formatter.format(price);
+    return NumberFormat('#,###').format(price);
   }
 
-  void _handleArtworkClick(int postId) {
+  void _handleArtworkClick(int? postId) {
+    if (postId == null) return;
     Navigator.pushNamed(context, '/Art', arguments: postId.toString());
   }
 
   void _handleDownloadOriginal(Post item) {
-    // TradeDTO에는 originImagePath가 없으므로 다운로드 기능은 미구현 상태로 둡니다.
+    final origin = item.fileName ??
+        item.thumbnailImagePath ??
+        ((item.originImagePath is List && (item.originImagePath as List).isNotEmpty)
+            ? (item.originImagePath as List).first
+            : null);
+    if (origin == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('다운로드할 이미지가 없습니다.')),
+      );
+      return;
+    }
+    final imageUrl = origin.startsWith('/ourlog')
+        ? 'http://10.100.204.144:8080$origin'
+        : '$baseUrl/picture/display/$origin';
+    debugPrint('Download original image URL: $imageUrl');
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('다운로드 기능은 구현되지 않았습니다.')),
+      SnackBar(content: Text('다운로드 기능 미구현: $imageUrl')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_errorMessage != null) {
-      return Center(child: Text(_errorMessage!));
-    }
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_errorMessage != null) return Center(child: Text(_errorMessage!));
     if (_sellingPosts.isEmpty && _soldPosts.isEmpty) {
       return const Center(child: Text('판매 내역이 없습니다.'));
     }
-
     return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 판매 중인 경매
-            Text(
-              '현재 판매 중인 경매',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _sellingPosts.isNotEmpty
-                ? ListView.builder(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '현재 판매 중인 경매',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (_sellingPosts.isNotEmpty)
+            ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _sellingPosts.length,
               itemBuilder: (context, index) {
                 final item = _sellingPosts[index];
-                final currentPrice = item.tradeDTO?.highestBid ?? item.tradeDTO?.startPrice;
+                final currentPrice =
+                    item.tradeDTO?.highestBid ?? item.tradeDTO?.startPrice;
                 return GestureDetector(
-                  onTap: () => _handleArtworkClick(item.postId!),
+                  onTap: () => _handleArtworkClick(item.postId),
                   child: Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -536,13 +638,21 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                               color: Colors.grey[300],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.network(
-                              // 기본 이미지 사용
-                              '$baseUrl/picture/display/default-image.jpg',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 30),
-                            ),
+                            child: item.getImageUrl() !=
+                                "$baseUrl/picture/display/default-image.jpg"
+                                ? () {
+                                    return Image.network(
+                                      item.getImageUrl(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image,
+                                          size: 30),
+                                    );
+                                  }()
+                                : const Center(
+                                child: Icon(Icons.image_not_supported,
+                                    size: 30)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -560,11 +670,13 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '현재가: ${_formatPrice(currentPrice as int?)}원',
+                                  '현재가: ${_formatPrice(currentPrice)}원',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(color: Theme.of(context).primaryColor),
+                                      ?.copyWith(
+                                      color:
+                                      Theme.of(context).primaryColor),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -578,13 +690,15 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.orange,
                               borderRadius: BorderRadius.circular(4),
                             ),
-                            child:
-                            const Text('판매 중', style: TextStyle(color: Colors.white, fontSize: 12)),
+                            child: const Text('판매 중',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 12)),
                           ),
                         ],
                       ),
@@ -593,34 +707,39 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                 );
               },
             )
-                : const Text('판매 중인 경매가 없습니다.'),
-            const SizedBox(height: 32),
-            // 판매 완료/유찰된 경매
-            Text(
-              '기간 만료된 경매',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            _soldPosts.isNotEmpty
-                ? ListView.builder(
+          else
+            const Text('판매 중인 경매가 없습니다.'),
+          const SizedBox(height: 32),
+          Text(
+            '기간 만료된 경매',
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          if (_soldPosts.isNotEmpty)
+            ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _soldPosts.length,
               itemBuilder: (context, index) {
                 final item = _soldPosts[index];
-                final finalPrice = item.tradeDTO?.highestBid ?? item.tradeDTO?.startPrice;
+                final finalPrice =
+                    item.tradeDTO?.highestBid ?? item.tradeDTO?.startPrice;
                 final endTimeString = item.tradeDTO?.lastBidTime != null
-                    ? DateFormat('yyyy.MM.dd HH:mm').format(item.tradeDTO!.lastBidTime!)
+                    ? DateFormat('yyyy.MM.dd HH:mm')
+                    .format(item.tradeDTO!.lastBidTime!)
                     : '시간 정보 없음';
-                final status = item.tradeDTO?.bidderId != null ? '판매 완료' : '유찰';
-                final statusColor = item.tradeDTO?.bidderId != null ? Colors.green : Colors.grey;
-
+                final isSold = item.tradeDTO?.bidderId != null;
+                final status = isSold ? '판매 완료' : '유찰';
+                final statusColor = isSold ? Colors.green : Colors.grey;
                 return GestureDetector(
-                  onTap: () => _handleArtworkClick(item.postId!),
+                  onTap: () => _handleArtworkClick(item.postId),
                   child: Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4.0),
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                     child: Padding(
-                      padding: const EdgeInsets.all(12.0),
+                      padding: const EdgeInsets.all(12),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -632,12 +751,21 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                               color: Colors.grey[300],
                             ),
                             clipBehavior: Clip.antiAlias,
-                            child: Image.network(
-                              '$baseUrl/picture/display/default-image.jpg',
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 30),
-                            ),
+                            child: item.getImageUrl() !=
+                                "$baseUrl/picture/display/default-image.jpg"
+                                ? () {
+                                    return Image.network(
+                                      item.getImageUrl(),
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                      const Icon(Icons.broken_image,
+                                          size: 30),
+                                    );
+                                  }()
+                                : const Center(
+                                child: Icon(Icons.image_not_supported,
+                                    size: 30)),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -655,11 +783,13 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '${item.tradeDTO?.bidderId != null ? '판매가' : '최고 입찰가'}: ${_formatPrice(finalPrice as int?)}원',
+                                  '${isSold ? '판매가' : '최고 입찰가'}: ${_formatPrice(finalPrice)}원',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
-                                      ?.copyWith(fontWeight: FontWeight.bold, color: statusColor),
+                                      ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: statusColor),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -676,15 +806,28 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: statusColor,
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(status, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                child: Text(status,
+                                    style: const TextStyle(
+                                        color: Colors.white, fontSize: 12)),
                               ),
                               const SizedBox(height: 8),
-                              // 다운로드 버튼은 TradeDTO에 이미지 정보가 없으므로 숨깁니다.
+                              if (isSold &&
+                                  item.getImageUrl() !=
+                                      "$baseUrl/picture/display/default-image.jpg")
+                                IconButton(
+                                  onPressed: () => _handleDownloadOriginal(item),
+                                  icon: const Icon(Icons.download),
+                                  tooltip: '원본 이미지 다운로드',
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  color: Colors.grey[600],
+                                ),
                             ],
                           ),
                         ],
@@ -694,22 +837,22 @@ class __SaleTradeListState extends State<_SaleTradeList> {
                 );
               },
             )
-                : const Text('기간 만료된 경매가 없습니다.'),
-          ],
-        ),
+          else
+            const Text('기간 만료된 경매가 없습니다.'),
+        ],
       ),
     );
   }
 }
 
-/// --------------------------------------
-/// (B) 내 글 / 관심목록 그리드 위젯
-/// --------------------------------------
+// ----------------------------
+// _UserPostGrid
+// ----------------------------
 class _UserPostGrid extends StatefulWidget {
   final int userId;
-  final String listType; // 'my-posts' or 'bookmark'
-
-  const _UserPostGrid({Key? key, required this.userId, required this.listType}) : super(key: key);
+  final String listType; // 'my-posts' 또는 'bookmark'
+  const _UserPostGrid({Key? key, required this.userId, required this.listType})
+      : super(key: key);
 
   @override
   __UserPostGridState createState() => __UserPostGridState();
@@ -719,9 +862,7 @@ class __UserPostGridState extends State<_UserPostGrid> {
   bool _isLoading = true;
   List<Post> _posts = [];
   String? _errorMessage;
-
   static const String baseUrl = "http://10.100.204.144:8080/ourlog";
-  static const String imageBaseUrl = "$baseUrl/picture/display/";
 
   @override
   void initState() {
@@ -732,7 +873,8 @@ class __UserPostGridState extends State<_UserPostGrid> {
   @override
   void didUpdateWidget(covariant _UserPostGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.listType != oldWidget.listType || widget.userId != oldWidget.userId) {
+    if (widget.listType != oldWidget.listType ||
+        widget.userId != oldWidget.userId) {
       _fetchPosts();
     }
   }
@@ -740,12 +882,9 @@ class __UserPostGridState extends State<_UserPostGrid> {
   Future<Map<String, String>> _getHeaders() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
-
     if (token == null || token.isEmpty) {
-      debugPrint('_UserPostGrid: 인증 토큰 없음.');
       throw Exception('인증 토큰이 없습니다.');
     }
-
     return {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -761,26 +900,11 @@ class __UserPostGridState extends State<_UserPostGrid> {
 
     try {
       final headers = await _getHeaders();
-      String endpoint;
-      if (widget.listType == 'my-posts') {
-        endpoint = '$baseUrl/followers/getPost/${widget.userId}';
-      } else if (widget.listType == 'bookmark') {
-        endpoint = '$baseUrl/favorites/user/${widget.userId}';
-      } else {
-        setState(() {
-          _errorMessage = '알 수 없는 목록 타입: ${widget.listType}';
-          _isLoading = false;
-        });
-        return;
-      }
-
+      final endpoint = widget.listType == 'my-posts'
+          ? '$baseUrl/followers/getPost/${widget.userId}'
+          : '$baseUrl/favorites/user/${widget.userId}';
       final uri = Uri.parse(endpoint);
-      debugPrint('_UserPostGrid 요청 URL: $uri');
-      debugPrint('_UserPostGrid 요청 헤더: $headers');
-
       final response = await http.get(uri, headers: headers);
-      debugPrint('_UserPostGrid 응답 코드: ${response.statusCode}');
-      debugPrint('_UserPostGrid 응답 본문: ${response.body}');
 
       if (response.statusCode == 403) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -798,43 +922,59 @@ class __UserPostGridState extends State<_UserPostGrid> {
       }
 
       if (response.statusCode == 200) {
-        final List<dynamic> jsonList = jsonDecode(response.body) ?? [];
-        final fetched = jsonList.map((e) {
-          return Post.fromJson(e as Map<String, dynamic>);
-        }).toList();
-
-        setState(() {
-          _posts = fetched;
-          _isLoading = false;
-        });
+        final decoded = jsonDecode(response.body);
+        if (decoded is! List<dynamic>) {
+          throw Exception('게시글 응답 형식 오류: ${decoded.runtimeType}');
+        }
+        final List<dynamic> rawList = decoded;
+        final posts = <Post>[];
+        for (var element in rawList) {
+          if (element is! Map<String, dynamic>) continue;
+          try {
+            final post = Post.fromJson(element);
+             // Debug print: Log the generated image URL for each post after creation
+            print('Fetched User Post/Bookmark Image URL: ${post.getImageUrl()}');
+            posts.add(post);
+          } catch (_) {
+            // 유효하지 않은 항목은 건너뜁니다.
+          }
+        }
+        if (mounted) {
+          setState(() {
+            _posts = posts;
+            _isLoading = false;
+          });
+        }
       } else if (response.statusCode == 404) {
-        setState(() {
-          _posts = [];
-          _isLoading = false;
-        });
-        debugPrint('_UserPostGrid: ${widget.listType} 목록 없음 (404)');
+        if (mounted) {
+          setState(() {
+            _posts = [];
+            _isLoading = false;
+          });
+        }
       } else {
         throw Exception('서버 오류: ${response.statusCode}');
       }
     } catch (e) {
-      debugPrint('${widget.listType} 목록 불러오기 실패: $e');
-      setState(() {
-        _errorMessage = '목록을 불러오는 데 실패했습니다: ${e.toString()}';
-        _isLoading = false;
-        _posts = [];
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = '${widget.listType} 목록 불러오기 실패: ${e.toString()}';
+          _isLoading = false;
+          _posts = [];
+        });
+      }
     }
   }
 
-  void _handlePostClick(int postId) {
+  void _handlePostClick(int? postId) {
+    if (postId == null) return;
     Navigator.pushNamed(context, '/Art', arguments: postId.toString());
   }
 
   Future<void> _handleLikeToggle(Post post) async {
-    if (widget.userId == null || post.postId == null) {
-      debugPrint("로그인이 필요하거나 게시글 정보가 없습니다.");
+    if (post.postId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요하거나 게시글 정보가 없습니다.')),
+        const SnackBar(content: Text('로그인이 필요하거나 작품 정보가 없습니다.')),
       );
       return;
     }
@@ -842,7 +982,6 @@ class __UserPostGridState extends State<_UserPostGrid> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final token = authProvider.token;
     if (token == null || token.isEmpty) {
-      debugPrint("인증 토큰이 없습니다.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('인증 토큰이 없습니다. 다시 로그인해주세요.')),
       );
@@ -853,8 +992,9 @@ class __UserPostGridState extends State<_UserPostGrid> {
     setState(() {
       _posts = _posts.map((item) {
         if (item.postId == post.postId) {
-          final newLiked = !(item.liked);
-          final newCnt = (item.favoriteCnt ?? 0) + (newLiked ? 1 : -1);
+          final newLiked = !(item.liked ?? false);
+          final newFavoriteCnt = (item.favoriteCnt ?? 0) + (newLiked ? 1 : -1);
+          // 새 Post 객체 생성
           return Post(
             postId: item.postId,
             userId: item.userId,
@@ -871,7 +1011,7 @@ class __UserPostGridState extends State<_UserPostGrid> {
             originImagePath: item.originImagePath,
             followers: item.followers,
             downloads: item.downloads,
-            favoriteCnt: newCnt,
+            favoriteCnt: newFavoriteCnt,
             tradeDTO: item.tradeDTO,
             pictureDTOList: item.pictureDTOList,
             profileImage: item.profileImage,
@@ -905,16 +1045,18 @@ class __UserPostGridState extends State<_UserPostGrid> {
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       if (data.containsKey('favoriteCount') && data.containsKey('favorited')) {
-        final latestCnt = data['favoriteCount'] as int;
-        final userLiked = data['favorited'] as bool;
-
+        final int latestCount = data['favoriteCount'] as int;
+        final bool userLiked = data['favorited'] as bool;
         setState(() {
-          _posts = _posts.map((item) {
+          _posts = _posts.where((item) {
+            if (widget.listType == 'bookmark' &&
+                item.postId == post.postId &&
+                !userLiked) {
+              return false;
+            }
+            return true;
+          }).map((item) {
             if (item.postId == post.postId) {
-              // 북마크 탭에서 좋아요 해제 시 목록에서 제거
-              if (widget.listType == 'bookmark' && !userLiked) {
-                return null;
-              }
               return Post(
                 postId: item.postId,
                 userId: item.userId,
@@ -931,7 +1073,7 @@ class __UserPostGridState extends State<_UserPostGrid> {
                 originImagePath: item.originImagePath,
                 followers: item.followers,
                 downloads: item.downloads,
-                favoriteCnt: latestCnt,
+                favoriteCnt: latestCount,
                 tradeDTO: item.tradeDTO,
                 pictureDTOList: item.pictureDTOList,
                 profileImage: item.profileImage,
@@ -942,19 +1084,17 @@ class __UserPostGridState extends State<_UserPostGrid> {
               );
             }
             return item;
-          }).where((e) => e != null).cast<Post>().toList();
+          }).toList();
         });
-
-        debugPrint('좋아요 토글 성공: postId=${post.postId}, favorited=$userLiked, count=$latestCnt');
       } else {
-        debugPrint('좋아요 API 응답 형식 오류: $data');
         _rollbackLikeToggle(post);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('좋아요 처리에 실패했습니다. 다시 시도해주세요.')),
+          const SnackBar(
+            content: Text('좋아요 처리에 실패했습니다 (응답 형식 오류). 다시 시도해주세요.'),
+          ),
         );
       }
-    } catch (e) {
-      debugPrint('좋아요 토글 실패: ${post.postId}, 오류: $e');
+    } catch (_) {
       _rollbackLikeToggle(post);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('좋아요 처리에 실패했습니다. 다시 시도해주세요.')),
@@ -966,8 +1106,8 @@ class __UserPostGridState extends State<_UserPostGrid> {
     setState(() {
       _posts = _posts.map((item) {
         if (item.postId == post.postId) {
-          final rolledBackLiked = !item.liked;
-          final rolledBackCnt = (item.favoriteCnt ?? 0) + (rolledBackLiked ? 1 : -1);
+          final rolledBackLiked = !(item.liked ?? false);
+          final rolledBackCount = (item.favoriteCnt ?? 0) + (rolledBackLiked ? 1 : -1);
           return Post(
             postId: item.postId,
             userId: item.userId,
@@ -984,7 +1124,7 @@ class __UserPostGridState extends State<_UserPostGrid> {
             originImagePath: item.originImagePath,
             followers: item.followers,
             downloads: item.downloads,
-            favoriteCnt: rolledBackCnt,
+            favoriteCnt: rolledBackCount,
             tradeDTO: item.tradeDTO,
             pictureDTOList: item.pictureDTOList,
             profileImage: item.profileImage,
@@ -1001,57 +1141,66 @@ class __UserPostGridState extends State<_UserPostGrid> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_errorMessage != null) {
-      return Center(child: Text(_errorMessage!));
-    }
+    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_errorMessage != null) return Center(child: Text(_errorMessage!));
+
     if (_posts.isEmpty) {
       final emptyMsg = widget.listType == 'my-posts'
           ? '작성한 게시글이 없습니다.'
-          : '관심 등록된 게시글이 없습니다.';
+          : '관심 등록한 게시글이 없습니다.';
       return Center(child: Text(emptyMsg));
     }
 
     return GridView.builder(
+      padding: const EdgeInsets.all(8),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(8.0),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 8.0,
-        mainAxisSpacing: 8.0,
+        crossAxisSpacing: 8,
+        mainAxisSpacing: 8,
         childAspectRatio: 0.7,
       ),
       itemCount: _posts.length,
       itemBuilder: (context, index) {
         final post = _posts[index];
         return GestureDetector(
-          onTap: () => _handlePostClick(post.postId!),
+          onTap: () => _handlePostClick(post.postId),
           child: Card(
             clipBehavior: Clip.antiAlias,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Expanded(
-                  child: post.getImageUrl() != "$baseUrl/picture/display/default-image.jpg"
-                      ? Image.network(
-                    post.getImageUrl(),
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.broken_image, size: 40),
-                  )
-                      : const Center(child: Icon(Icons.image_not_supported, size: 40)),
+                  child: post.getImageUrl() !=
+                      "$baseUrl/picture/display/default-image.jpg"
+                      ? () {
+                          return Image.network(
+                            post.getImageUrl(),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              debugPrint('Image loading failed for URL: ${post.getImageUrl()}');
+                              debugPrint('Error: $error');
+                              debugPrint('StackTrace: $stackTrace');
+                              return const Icon(Icons.broken_image, size: 40);
+                            },
+                          );
+                        }()
+                      : const Center(
+                    child: Icon(Icons.image_not_supported, size: 40),
+                  ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         post.title ?? '제목 없음',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -1062,7 +1211,9 @@ class __UserPostGridState extends State<_UserPostGrid> {
                             onTap: () => _handleLikeToggle(post),
                             child: Icon(
                               Icons.favorite,
-                              color: post.liked ? Colors.redAccent : Colors.grey,
+                              color: post.liked == true
+                                  ? Colors.redAccent
+                                  : Colors.grey,
                               size: 16,
                             ),
                           ),

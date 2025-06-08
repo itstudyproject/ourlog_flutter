@@ -150,13 +150,11 @@ class _BulletinBoardState extends State<BulletinBoard> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    //커뮤니티 페이지 이동
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //     builder: (context) => CommunityPostListScreen(category: category),
-                    //   ),
-                    // );
+                    Navigator.pushNamed(
+                      context,
+                      '/community/list',
+                      arguments: {'boardType': category},
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -192,13 +190,11 @@ class _BulletinBoardState extends State<BulletinBoard> {
                         ),
                         child: InkWell(
                           onTap: () {
-                            // 상세페이지 이동
-                            // Navigator.push(
-                            //   context,
-                            //   MaterialPageRoute(
-                            //     builder: (context) => CommunityPostDetailScreen(postId: post.id),
-                            //   ),
-                            // );
+                            Navigator.pushNamed(
+                              context,
+                              '/community/detail',
+                              arguments: {'postId': post.id},
+                            );
                           },
                           child: Padding(
                             padding: const EdgeInsets.all(10),

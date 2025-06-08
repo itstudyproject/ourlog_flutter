@@ -9,6 +9,7 @@ import 'package:ourlog/screens/chat_screen.dart';
 import 'package:ourlog/screens/customer/answer_screen.dart';
 import 'package:ourlog/screens/post/community_post_detail_screen.dart';
 import 'package:ourlog/screens/post/community_post_list_screen.dart';
+import 'package:ourlog/screens/post/community_post_register_screen.dart';
 import 'package:ourlog/screens/ranking_screen.dart';
 import 'package:ourlog/screens/customer/customer_center_screen.dart';
 import 'package:ourlog/screens/customer/privacy_policy_screen.dart';
@@ -101,16 +102,23 @@ class MyApp extends StatelessWidget {
           // "요청 게시판"
           return const CommunityPostListScreen(boardType: 'request');
         },
-
+        // ─────────── 커뮤니티 게시글 등록 라우트 추가 ───────────
+        '/post/register': (context) {
+          final args =
+          ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+          final boardType = args?['boardType'] as String?;
+          // CommunityPostRegisterScreen 위젯이 boardType 인자를 받도록 수정
+          return CommunityPostRegisterScreen(boardType: boardType);
+        },
         // 기존에 있던 community/list 라우트도 남겨둡니다. 필요시 boardType 전달 방식으로 사용 가능
-        '/community/list': (context) {
+        '/post/list': (context) {
           final args =
           ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
           final boardType = args?['boardType'] as String?;
           return CommunityPostListScreen(boardType: boardType);
         },
 
-        '/community/detail': (context) {
+        '/post/detail': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
           final postId = args?['postId'] as int?;
           if (postId == null) {
